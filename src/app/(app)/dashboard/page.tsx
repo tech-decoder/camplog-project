@@ -74,8 +74,8 @@ export default function DashboardPage() {
       label: "Pending Reviews",
       value: pendingReviews.length,
       icon: Clock,
-      color: "text-[#366ae8]/80",
-      bgColor: "bg-[#366ae8]/5",
+      color: "text-amber-700",
+      bgColor: "bg-amber-50",
     },
     {
       label: "Avg Margin",
@@ -215,7 +215,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Pending Reviews</CardTitle>
               {pendingReviews.length > 0 && (
-                <Badge variant="secondary" className="bg-[#366ae8]/8 text-[#366ae8] text-xs">
+                <Badge variant="secondary" className="bg-amber-50 text-amber-700 text-xs">
                   {pendingReviews.length}
                 </Badge>
               )}
@@ -224,8 +224,8 @@ export default function DashboardPage() {
           <CardContent>
             {pendingReviews.length === 0 ? (
               <div className="text-center py-8">
-                <div className="w-10 h-10 rounded-xl bg-[#366ae8]/8 flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-5 w-5 text-[#366ae8]" />
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-5 w-5 text-amber-700" />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   All caught up
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                     <Link
                       key={change.id}
                       href={`/changes/${change.id}`}
-                      className="block p-3.5 rounded-xl border border-[#366ae8]/15 bg-[#366ae8]/[0.03] hover:bg-[#366ae8]/5 transition-colors"
+                      className="block p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors"
                     >
                       <div className="flex items-start gap-2.5">
                         {config && (
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="mt-2.5 w-full text-xs h-8 border-[#366ae8]/20 hover:bg-[#366ae8]/5"
+                        className="mt-2.5 w-full text-xs h-8 border-amber-200 text-amber-700 hover:bg-amber-50"
                       >
                         Review Now
                       </Button>

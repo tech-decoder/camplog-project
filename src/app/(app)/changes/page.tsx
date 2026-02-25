@@ -192,7 +192,7 @@ export default function ChangesPage() {
                       ) : isPendingReview ? (
                         <Badge
                           variant="secondary"
-                          className="bg-[#366ae8]/8 text-[#366ae8] text-xs"
+                          className="bg-amber-50 text-amber-700 text-xs"
                         >
                           Review Due
                         </Badge>
