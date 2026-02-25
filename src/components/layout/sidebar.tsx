@@ -50,9 +50,9 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-[#0F172A] border-r border-white/[0.06]">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-white/[0.06]">
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-200">
         <Image
           src="/camplog.png"
           alt="CampLog"
@@ -60,7 +60,7 @@ export function Sidebar() {
           height={32}
           className="rounded-lg"
         />
-        <span className="text-lg font-semibold text-white">CampLog</span>
+        <span className="text-lg font-semibold text-slate-900">CampLog</span>
       </div>
 
       {/* Nav */}
@@ -76,7 +76,7 @@ export function Sidebar() {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-[#366ae8] text-white"
-                  : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -87,17 +87,17 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-4 border-t border-white/[0.06] space-y-1">
+      <div className="px-3 py-4 border-t border-slate-200 space-y-1">
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/[0.06] hover:text-slate-200 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         >
           <Settings className="h-5 w-5" />
           Settings
         </Link>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/[0.06] hover:text-slate-200 transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors w-full"
         >
           <LogOut className="h-5 w-5" />
           Sign Out
