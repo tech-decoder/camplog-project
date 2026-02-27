@@ -38,13 +38,15 @@ import {
   Upload,
   ArrowUpRight,
   ArrowDownRight,
-  Minus,
+  Menu,
+  X,
 } from "lucide-react";
 
 /* ─── Navbar ──────────────────────────────────────────────────────────── */
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -53,13 +55,13 @@ function Navbar() {
 
   return (
     <motion.header
-      className={`fixed top-0 inset-x-0 z-50 h-16 transition-all duration-300 ${
-        scrolled
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        scrolled || mobileOpen
           ? "bg-white/90 backdrop-blur-lg border-b border-slate-200/60 shadow-sm"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
           <Image src="/camplog.svg" alt="CampLog" width={36} height={36} className="rounded-lg" />
           <span className="font-semibold text-lg text-slate-900">CampLog</span>
@@ -77,13 +79,49 @@ function Navbar() {
           </a>
         </nav>
 
-        <a href="#waitlist">
-          <Button size="sm" className="bg-[#366ae8] text-white hover:bg-[#2b5bc9] rounded-lg px-5">
-            Get Early Access
-            <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
-        </a>
+        <div className="flex items-center gap-3">
+          <a href="#waitlist" className="hidden md:block">
+            <Button size="sm" className="bg-[#366ae8] text-white hover:bg-[#2b5bc9] rounded-lg px-5">
+              Get Early Access
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </a>
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-lg"
+        >
+          <nav className="flex flex-col px-6 py-4 space-y-1">
+            <a href="#features" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm text-slate-600 hover:text-slate-900 transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm text-slate-600 hover:text-slate-900 transition-colors">
+              How It Works
+            </a>
+            <a href="#waitlist" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm text-slate-600 hover:text-slate-900 transition-colors">
+              Join Waitlist
+            </a>
+            <a href="#waitlist" onClick={() => setMobileOpen(false)} className="mt-2">
+              <Button size="sm" className="w-full bg-[#366ae8] text-white hover:bg-[#2b5bc9] rounded-lg">
+                Get Early Access
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </a>
+          </nav>
+        </motion.div>
+      )}
     </motion.header>
   );
 }
@@ -166,7 +204,7 @@ function HeroSection() {
                     <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="text-xs text-slate-400">app.camplog.dev</span>
+                    <span className="text-xs text-slate-400">camplog-ltv.vercel.app</span>
                   </div>
                 </div>
                 <div className="p-6 space-y-4 bg-slate-50/20 min-h-[300px]">
@@ -791,7 +829,7 @@ function Footer() {
         </div>
 
         <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-slate-400">&copy; 2026 CampLog. All rights reserved.</p>
+          <p className="text-sm text-slate-400">&copy; {new Date().getFullYear()} CampLog. All rights reserved.</p>
           <p className="text-sm text-slate-400">
             Built at{" "}
             <a href="https://ltv.so" target="_blank" rel="noopener noreferrer" className="text-[#366ae8] hover:text-[#2b5bc9]">
