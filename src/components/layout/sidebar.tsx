@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   List,
+  Target,
   BarChart3,
   Settings,
   LogOut,
@@ -30,6 +31,11 @@ const navItems = [
     label: "Changes",
     href: "/changes",
     icon: List,
+  },
+  {
+    label: "Goals",
+    href: "/goals",
+    icon: Target,
   },
   {
     label: "Reports",

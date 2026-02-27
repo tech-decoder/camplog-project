@@ -12,19 +12,24 @@ import {
   ArrowRight,
   BarChart3,
   ChevronRight,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { Change } from "@/lib/types/changes";
 import { ACTION_TYPE_CONFIG, VERDICT_CONFIG } from "@/lib/constants";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatRelative } from "@/lib/utils/dates";
+import { RevenueGoal } from "@/lib/types/goals";
+import { format, startOfMonth } from "date-fns";
 
 export default function DashboardPage() {
   const [changes, setChanges] = useState<Change[]>([]);
+  const [goal, setGoal] = useState<RevenueGoal | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchChanges();
+    fetchGoal();
   }, []);
 
   async function fetchChanges() {
@@ -38,6 +43,19 @@ export default function DashboardPage() {
       console.error("Failed to fetch changes:", err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchGoal() {
+    try {
+      const month = format(startOfMonth(new Date()), "yyyy-MM");
+      const res = await fetch(`/api/goals?month=${month}`);
+      if (res.ok) {
+        const data = await res.json();
+        setGoal(data.goals?.[0] || null);
+      }
+    } catch {
+      // Goal fetch is non-critical
     }
   }
 
@@ -117,6 +135,53 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* Monthly Goal Progress */}
+      {goal && goal.target_revenue && (
+        <Card className="border-slate-200/60">
+          <CardContent className="pt-5 pb-4 px-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-[#366ae8]" />
+                <p className="text-sm font-semibold">
+                  {format(new Date(goal.month), "MMMM")} Revenue Goal
+                </p>
+              </div>
+              <Link href="/goals">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1 h-7">
+                  Details
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-2xl font-bold">
+                    ${Number(goal.actual_revenue).toLocaleString()}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    / ${Number(goal.target_revenue).toLocaleString()}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div
+                    className="h-2.5 rounded-full bg-[#366ae8] transition-all"
+                    style={{
+                      width: `${Math.min((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-[#366ae8]">
+                  {((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100).toFixed(0)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Recent Changes */}

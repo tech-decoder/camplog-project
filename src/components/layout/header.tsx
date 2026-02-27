@@ -6,6 +6,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/chat": "Chat",
   "/changes": "Changes",
+  "/goals": "Goals",
   "/reports": "Reports",
   "/settings": "Settings",
 };

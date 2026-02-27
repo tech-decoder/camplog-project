@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   List,
+  Target,
   BarChart3,
 } from "lucide-react";
 
@@ -14,6 +15,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Chat", href: "/chat", icon: MessageSquare },
   { label: "Changes", href: "/changes", icon: List },
+  { label: "Goals", href: "/goals", icon: Target },
   { label: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
