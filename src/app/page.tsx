@@ -132,6 +132,7 @@ function HeroSection() {
   return (
     <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[#366ae8]/[0.04] to-transparent" />
+      <div className="absolute inset-0 opacity-[0.4]" style={{ backgroundImage: "radial-gradient(circle, #366ae8 0.5px, transparent 0.5px)", backgroundSize: "24px 24px" }} />
 
       <div className="relative max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -147,7 +148,7 @@ function HeroSection() {
               <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-slate-900 leading-[1.1]">
                 Stop Tracking Campaign Changes in{" "}
                 <span className="relative inline-block">
-                  <span className="text-[#366ae8]">Spreadsheets</span>
+                  <span className="bg-gradient-to-r from-[#366ae8] to-[#6d5ce7] bg-clip-text text-transparent">Spreadsheets</span>
                 </span>
               </h1>
             </FadeIn>
@@ -196,7 +197,8 @@ function HeroSection() {
           {/* Product Mockup */}
           <FadeIn direction="right" delay={0.2}>
             <div className="relative overflow-visible px-2">
-              <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/80 overflow-hidden">
+              <div className="bg-gradient-to-br from-[#366ae8]/20 via-[#6d5ce7]/20 to-[#366ae8]/20 rounded-2xl p-[1px]">
+              <div className="bg-white rounded-2xl shadow-xl shadow-[#366ae8]/10 overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/60">
                   <div className="flex gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
@@ -210,7 +212,7 @@ function HeroSection() {
                 <div className="p-6 space-y-4 bg-slate-50/20 min-h-[300px]">
                   <div className="flex justify-end">
                     <div className="bg-[#366ae8] text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] text-sm">
-                      Increased Coca-Cola spend 30% in CA and 25% in AU
+                      Increased SunBrew spend 30% in CA and 25% in AU
                     </div>
                   </div>
                   <div className="flex justify-start">
@@ -221,13 +223,13 @@ function HeroSection() {
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-[#366ae8] bg-[#366ae8]/10 px-2 py-0.5 rounded">
                             <TrendingUp className="h-3 w-3" /> Increase Spend
                           </span>
-                          <span className="text-xs text-slate-600">Coca-Cola CA +30%</span>
+                          <span className="text-xs text-slate-600">SunBrew CA +30%</span>
                         </div>
                         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/10">
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-[#366ae8] bg-[#366ae8]/10 px-2 py-0.5 rounded">
                             <TrendingUp className="h-3 w-3" /> Increase Spend
                           </span>
-                          <span className="text-xs text-slate-600">Coca-Cola AU +25%</span>
+                          <span className="text-xs text-slate-600">SunBrew AU +25%</span>
                         </div>
                       </div>
                     </div>
@@ -235,7 +237,7 @@ function HeroSection() {
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="hidden sm:flex absolute right-2 lg:-right-2 top-28 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-[#366ae8] items-center gap-1.5"
+                    className="hidden sm:flex absolute right-2 lg:-right-2 top-28 bg-white/80 backdrop-blur-md shadow-lg shadow-[#366ae8]/10 border border-[#366ae8]/15 rounded-lg px-3 py-2 text-xs font-medium text-[#366ae8] items-center gap-1.5"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     AI Extraction
@@ -243,12 +245,13 @@ function HeroSection() {
                   <motion.div
                     animate={{ y: [0, -4, 0] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="hidden sm:flex absolute left-2 lg:-left-2 bottom-16 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 items-center gap-1.5"
+                    className="hidden sm:flex absolute left-2 lg:-left-2 top-80 bg-white/80 backdrop-blur-md shadow-lg shadow-slate-200/10 border border-slate-200/60 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 items-center gap-1.5"
                   >
                     <ImageIcon className="h-3.5 w-3.5" />
                     Screenshot Support
                   </motion.div>
                 </div>
+              </div>
               </div>
             </div>
           </FadeIn>
@@ -294,7 +297,7 @@ function PainSection() {
         <StaggerContainer className="grid md:grid-cols-3 gap-6">
           {pains.map((pain) => (
             <StaggerItem key={pain.title}>
-              <div className="bg-white border border-slate-100 rounded-xl p-7 h-full hover:border-[#366ae8]/20 hover:shadow-sm transition-all">
+              <div className="bg-white border border-slate-100 rounded-xl p-7 h-full hover:border-[#366ae8]/20 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <div className="w-10 h-10 rounded-lg bg-[#366ae8]/8 flex items-center justify-center mb-4">
                   <pain.icon className="h-5 w-5 text-[#366ae8]" />
                 </div>
@@ -340,8 +343,9 @@ function FeaturesSection() {
   ];
 
   return (
-    <section id="features" className="py-20 md:py-28 bg-slate-50/50">
-      <div className="max-w-6xl mx-auto px-6">
+    <section id="features" className="py-20 md:py-28 bg-slate-50/50 relative">
+      <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: "radial-gradient(circle, #94a3b8 0.5px, transparent 0.5px)", backgroundSize: "32px 32px" }} />
+      <div className="relative max-w-6xl mx-auto px-6">
         <FadeIn className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
             Everything You Need to Track Changes
@@ -410,7 +414,7 @@ function ChatMockup() {
       <div className="p-5 space-y-3 min-h-[240px]">
         <div className="flex justify-end">
           <div className="bg-[#366ae8] text-white rounded-xl rounded-tr-sm px-3.5 py-2.5 max-w-[75%] text-sm">
-            Paused Walmart PR, margins dropped below 5%
+            Paused NovaMart PR, margins dropped below 5%
           </div>
         </div>
         <div className="flex justify-end">
@@ -425,7 +429,7 @@ function ChatMockup() {
             <div className="mt-2 p-2.5 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/10">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-[#366ae8] bg-[#366ae8]/10 px-2 py-0.5 rounded">Pause Campaign</span>
-                <span className="text-xs text-slate-600">Walmart PR</span>
+                <span className="text-xs text-slate-600">NovaMart PR</span>
               </div>
             </div>
           </div>
@@ -453,11 +457,11 @@ function ExtractionMockup() {
       </div>
       <div className="p-5 space-y-4 min-h-[240px]">
         <div className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-3 border border-slate-100">
-          &ldquo;Increased Coca-Cola spend 30% in CA, also bumped AU by 25%. Current margins at 18%&rdquo;
+          &ldquo;Increased SunBrew spend 30% in CA, also bumped AU by 25%. Current margins at 18%&rdquo;
         </div>
         <div className="space-y-2.5">
           {[
-            { label: "Campaign", value: "Coca-Cola" },
+            { label: "Campaign", value: "SunBrew" },
             { label: "Action", value: "Increase Spend" },
             { label: "Geo", value: "CA, AU" },
             { label: "Change", value: "+30%, +25%" },
@@ -482,10 +486,10 @@ function ImpactMockup() {
           <TrendingUp className="h-4 w-4 text-[#366ae8]" />
           <span className="text-sm font-medium text-slate-700">Impact Review</span>
         </div>
-        <span className="text-xs font-medium text-[#366ae8] bg-[#366ae8]/8 px-2 py-0.5 rounded">Positive</span>
+        <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Positive</span>
       </div>
       <div className="p-5 space-y-4 min-h-[240px]">
-        <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Coca-Cola CA +30% Spend</div>
+        <div className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">SunBrew CA +30% Spend</div>
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-3 rounded-lg bg-slate-50 border border-slate-100">
             <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Before</p>
@@ -497,25 +501,25 @@ function ImpactMockup() {
             <p className="text-sm font-bold text-slate-800">$1,890</p>
             <p className="text-[10px] text-slate-400">Revenue</p>
           </div>
-          <div className="text-center p-3 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/10">
-            <p className="text-[10px] text-[#366ae8] uppercase tracking-wide mb-1">Delta</p>
-            <p className="text-sm font-bold text-[#366ae8]">+52.4%</p>
-            <p className="text-[10px] text-[#366ae8]/70">Revenue</p>
+          <div className="text-center p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+            <p className="text-[10px] text-emerald-600 uppercase tracking-wide mb-1">Delta</p>
+            <p className="text-sm font-bold text-emerald-600">+52.4%</p>
+            <p className="text-[10px] text-emerald-500">Revenue</p>
           </div>
         </div>
         <div className="space-y-2">
           {[
-            { metric: "FB Spend", before: "$420", after: "$546", delta: "+30%", direction: "up" },
-            { metric: "Revenue", before: "$1,240", after: "$1,890", delta: "+52.4%", direction: "up" },
-            { metric: "Margin %", before: "18.2%", after: "24.1%", delta: "+5.9pp", direction: "up" },
-            { metric: "FB CPC", before: "$0.42", after: "$0.38", delta: "-9.5%", direction: "down" },
+            { metric: "FB Spend", before: "$420", after: "$546", delta: "+30%", direction: "up", good: false },
+            { metric: "Revenue", before: "$1,240", after: "$1,890", delta: "+52.4%", direction: "up", good: true },
+            { metric: "Margin %", before: "18.2%", after: "24.1%", delta: "+5.9pp", direction: "up", good: true },
+            { metric: "FB CPC", before: "$0.42", after: "$0.38", delta: "-9.5%", direction: "down", good: true },
           ].map((row) => (
             <div key={row.metric} className="flex items-center justify-between py-1.5 px-3 rounded-lg text-xs">
               <span className="text-slate-500 w-20">{row.metric}</span>
               <span className="text-slate-600">{row.before}</span>
               <ArrowRight className="h-3 w-3 text-slate-300" />
               <span className="text-slate-800 font-medium">{row.after}</span>
-              <span className="text-[#366ae8] font-medium flex items-center gap-0.5 w-16 justify-end">
+              <span className={`font-medium flex items-center gap-0.5 w-16 justify-end ${row.good ? "text-emerald-600" : "text-rose-500"}`}>
                 {row.direction === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                 {row.delta}
               </span>
@@ -549,7 +553,7 @@ function HowItWorksSection() {
 
           {steps.map((step) => (
             <StaggerItem key={step.number} className="relative text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#366ae8] text-white flex items-center justify-center mx-auto mb-6 relative z-10 shadow-lg shadow-[#366ae8]/20">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#366ae8] to-[#2b5bc9] text-white flex items-center justify-center mx-auto mb-6 relative z-10 shadow-lg shadow-[#366ae8]/25 ring-4 ring-[#366ae8]/10">
                 <step.icon className="h-6 w-6" />
               </div>
               <div className="text-xs font-semibold text-[#366ae8] mb-1.5">STEP {step.number}</div>
@@ -575,13 +579,14 @@ function DashboardPreview() {
         </FadeIn>
 
         <FadeIn>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/30 overflow-hidden">
+          <div className="bg-gradient-to-br from-[#366ae8]/15 via-slate-200/50 to-[#366ae8]/15 rounded-2xl p-[1px]">
+          <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/30 overflow-hidden">
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: "Changes Today", value: "8", icon: BarChart3, color: "text-[#366ae8] bg-[#366ae8]/8" },
-                  { label: "Pending Reviews", value: "3", icon: Clock, color: "text-[#366ae8]/80 bg-[#366ae8]/5" },
-                  { label: "Avg Margin", value: "24.5%", icon: TrendingUp, color: "text-[#366ae8] bg-[#366ae8]/8" },
+                  { label: "Pending Reviews", value: "3", icon: Clock, color: "text-amber-600 bg-amber-50" },
+                  { label: "Avg Margin", value: "24.5%", icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
                   { label: "Total Changes", value: "147", icon: BarChart3, color: "text-slate-600 bg-slate-100" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -601,9 +606,9 @@ function DashboardPreview() {
                 <p className="text-sm font-medium text-slate-900 mb-3">Recent Changes</p>
                 <div className="space-y-2">
                   {[
-                    { action: "Increase Spend", campaign: "Coca-Cola CA +30%", verdict: "Positive", vClass: "bg-[#366ae8]/8 text-[#366ae8]", aClass: "bg-[#366ae8]/8 text-[#366ae8]" },
-                    { action: "Pause Campaign", campaign: "Wendy\u2019s PR", verdict: "\u2014", vClass: "bg-slate-100 text-slate-400", aClass: "bg-slate-100 text-slate-600" },
-                    { action: "Decrease Spend", campaign: "Walmart PR -25%", verdict: "Review Due", vClass: "bg-[#366ae8]/5 text-[#366ae8]/70", aClass: "bg-[#366ae8]/5 text-[#366ae8]/80" },
+                    { action: "Increase Spend", campaign: "SunBrew CA +30%", verdict: "Positive", vClass: "bg-emerald-50 text-emerald-600", aClass: "bg-[#366ae8]/8 text-[#366ae8]" },
+                    { action: "Pause Campaign", campaign: "UrbanEats PR", verdict: "Paused", vClass: "bg-amber-50 text-amber-600", aClass: "bg-amber-50 text-amber-600" },
+                    { action: "Decrease Spend", campaign: "NovaMart PR -25%", verdict: "Review Due", vClass: "bg-blue-50 text-[#366ae8]", aClass: "bg-rose-50 text-rose-600" },
                   ].map((row) => (
                     <div key={row.campaign} className="flex items-center gap-3 p-2.5 rounded-lg">
                       <span className={`text-xs font-medium px-2 py-1 rounded ${row.aClass}`}>{row.action}</span>
@@ -614,6 +619,7 @@ function DashboardPreview() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </FadeIn>
       </div>
