@@ -77,6 +77,8 @@ export interface Change {
   status: ChangeStatus;
   void_reason: string | null;
   tags: string[];
+  test_category?: string | null;
+  hypothesis?: string | null;
   created_at: string;
   updated_at: string;
 }

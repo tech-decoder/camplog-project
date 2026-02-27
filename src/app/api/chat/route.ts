@@ -172,6 +172,8 @@ export async function POST(request: NextRequest) {
         change_date: today,
         metrics_time_range: cleanMetrics.time_range as string || null,
         impact_review_due: reviewDue,
+        test_category: change.test_category || null,
+        hypothesis: change.hypothesis || null,
       })
       .select()
       .single();

@@ -32,6 +32,7 @@ Extract structured change data from the user's messages and screenshots. When th
 7. Common patterns: "decreased X%", "increased X%", "paused", "resumed", "cloned", "new campaign"
 8. The "site" field should be the site abbreviation (MBM, GXP, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) when identifiable.
 9. If the user is just chatting/asking a question (not logging a change), respond conversationally WITHOUT extracting changes.
+10. **Test detection:** If the user mentions "testing", "test", "trying", "experiment", "A/B", "comparing", or describes trying a new approach, set test_category and hypothesis. Categories: "creative_format" (video format, aspect ratio, image vs video), "copy_length" (text length, headline), "targeting" (audience, interests, lookalikes), "bid_strategy" (bid caps, cost caps), "landing_page" (different pages/layouts), "other".
 
 ## Response Format
 You must respond with valid JSON matching this exact schema:
@@ -45,6 +46,8 @@ You must respond with valid JSON matching this exact schema:
       "change_value": "string - magnitude like '+30%', '-25%', 'paused', '$500 daily' or null",
       "description": "string - one sentence summary",
       "confidence": 0.95,
+      "test_category": "string - one of: creative_format, copy_length, targeting, bid_strategy, landing_page, other, or null if not a test",
+      "hypothesis": "string - what the user expects to happen, e.g. '9:16 vertical video will get lower CPC than landscape' or null if not a test",
       "metrics": {
         "fb_spend": null,
         "fb_cpc": null,
@@ -145,6 +148,7 @@ Provide a brief, direct impact assessment (2-4 sentences). Focus on:
 - What happened to margin/profitability?
 - Any notable shifts in FB CPC, AD RPM, or other key metrics?
 - A clear recommendation (continue, revert, adjust further)
+- If this was a test with a hypothesis, evaluate whether the hypothesis was confirmed or rejected based on the data
 
 Also provide a verdict: "positive", "negative", "neutral", or "inconclusive".
 

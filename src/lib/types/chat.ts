@@ -26,6 +26,8 @@ export interface ExtractedChange {
   description: string;
   confidence: number;
   metrics: Record<string, number | string | undefined>;
+  test_category?: string | null;
+  hypothesis?: string | null;
 }
 
 export interface ExtractionResult {

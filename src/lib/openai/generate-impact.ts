@@ -18,11 +18,18 @@ export async function generateImpactAssessment(
     )
     .join("\n");
 
+  const hypothesisLine = change.hypothesis
+    ? `\nHypothesis being tested: ${change.hypothesis}`
+    : "";
+  const testLine = change.test_category
+    ? `\nTest category: ${change.test_category}`
+    : "";
+
   const context = `
 Change: ${change.action_type} on ${change.campaign_name}${change.geo ? ` (${change.geo})` : ""}
 Value: ${change.change_value || "N/A"}
 Date: ${change.change_date}
-Description: ${change.description || "N/A"}
+Description: ${change.description || "N/A"}${testLine}${hypothesisLine}
 
 Before → After metrics:
 ${deltasTable || "No comparable metrics available."}

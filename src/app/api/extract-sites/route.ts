@@ -1,45 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAIClient } from "@/lib/openai/client";
+import { KNOWN_SITES } from "@/lib/constants/sites";
 
-const SITE_EXTRACTION_PROMPT = `You are a data extraction assistant. Extract all per-site revenue data from this dash.ltv.so dashboard screenshot.
+// Build the prompt dynamically from our known sites config
+const siteList = KNOWN_SITES.map(
+  (s) => `  - "${s.domain}" → abbreviation: "${s.abbreviation}" (${s.shortName})`
+).join("\n");
 
-The screenshot shows a table of sites with columns like: Site, Revenue, FBR (FB Revenue), FBS (FB Spend), FBM (FB Margin %), Gross, Margin.
+const SITE_EXTRACTION_PROMPT = `You are a data extraction assistant for an ad arbitrage marketer. Extract per-site revenue data from this dash.ltv.so dashboard screenshot.
 
-For each site row that has revenue > 0 or spend > 0, extract:
-- site_name: the domain name shown
-- abbreviation: the abbreviation in parentheses (e.g. "MBM", "GXP", "NASI")
-- revenue: total revenue number
-- fb_spend: FBS column value (Facebook Spend)
-- fb_revenue: FBR column value (Facebook Revenue)
-- gross: Gross profit
-- margin_pct: Margin percentage
+## CRITICAL: Known Sites to Extract
+I ONLY care about these 10 specific sites. Match them by their EXACT domain name shown in the screenshot:
+${siteList}
 
-Also extract the totals row if visible.
+IMPORTANT: The dashboard has ~45 sites. Many have similar names (e.g. "mhbharti.com" vs "moneyblog.mhbharti.com", "gkbix.com" vs "portal.gkbix.com"). You MUST match the EXACT full domain listed above. Do NOT confuse parent domains with subdomains.
 
+## Columns to Extract
+The table has columns: Site, Revenue, FBR (FB Revenue), FBS (FB Spend), FBM (FB Margin %), Gross, Margin.
+
+For each of our 10 sites found in the screenshot, extract:
+- abbreviation: MUST be one of: ${KNOWN_SITES.map((s) => s.abbreviation).join(", ")}
+- revenue: the Revenue column value
+- fb_spend: the FBS column value (Facebook Spend)
+- fb_revenue: the FBR column value
+- gross: the Gross column value
+- margin_pct: the Margin % column value
+- fbm_pct: the FBM column value (Facebook Margin %)
+
+Also extract the totals row (first row, usually says "Total: 45" or similar).
+
+## Response Format
 Return valid JSON:
 {
-  "period": "string - date range if visible, e.g. 'Feb 1, 2026 - Feb 28, 2026'",
+  "period": "string - date range shown, e.g. 'Feb 1, 2026 - Feb 28, 2026'",
   "total": {
-    "revenue": 0,
-    "fb_spend": 0,
-    "fb_revenue": 0,
-    "gross": 0,
-    "margin_pct": 0
+    "sites_count": 45,
+    "revenue": 16852.52,
+    "fb_spend": 14659.31,
+    "fb_revenue": 16802.48,
+    "gross": 1618.42,
+    "margin_pct": 9.16,
+    "fbm_pct": 12.76
   },
   "sites": [
     {
-      "site_name": "moneyblog.mhbharti.com",
       "abbreviation": "MBM",
-      "revenue": 6412.78,
-      "fb_spend": 5531.56,
-      "fb_revenue": 6412.78,
-      "gross": 727.08,
-      "margin_pct": 10.92
+      "domain": "moneyblog.mhbharti.com",
+      "revenue": 6426.37,
+      "fb_spend": 5540.09,
+      "fb_revenue": 6426.37,
+      "gross": 731.53,
+      "margin_pct": 10.97,
+      "fbm_pct": 13.79
     }
   ]
 }
 
-Only include sites with revenue > 0 or fb_spend > 0. Use null for values you can't read clearly.`;
+Only include our 10 known sites. If a site is not visible in the screenshot or has 0 revenue AND 0 spend, omit it.`;
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();

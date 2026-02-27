@@ -212,17 +212,17 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2 mt-1">
                     {weekChanges.filter((c) => c.impact_verdict === "positive").length > 0 && (
                       <span className="text-xs text-emerald-700">
-                        {weekChanges.filter((c) => c.impact_verdict === "positive").length} positive
+                        {weekChanges.filter((c) => c.impact_verdict === "positive").length} improved
                       </span>
                     )}
                     {weekChanges.filter((c) => c.impact_verdict === "negative").length > 0 && (
                       <span className="text-xs text-rose-700">
-                        {weekChanges.filter((c) => c.impact_verdict === "negative").length} negative
+                        {weekChanges.filter((c) => c.impact_verdict === "negative").length} hurt performance
                       </span>
                     )}
                     {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length > 0 && (
                       <span className="text-xs text-amber-700">
-                        {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length} pending
+                        {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length} need review
                       </span>
                     )}
                   </div>

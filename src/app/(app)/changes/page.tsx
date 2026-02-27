@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Clock,
   CalendarRange,
+  FlaskConical,
 } from "lucide-react";
 import Link from "next/link";
 import { Change } from "@/lib/types/changes";
@@ -31,8 +32,9 @@ import { CalendarView } from "@/components/changes/calendar-view";
 import { GroupedView } from "@/components/changes/grouped-view";
 import { WeeklyView } from "@/components/changes/weekly-view";
 import { MonthlyView } from "@/components/changes/monthly-view";
+import { TestsView } from "@/components/changes/tests-view";
 
-type ViewMode = "list" | "calendar" | "grouped" | "weekly" | "monthly";
+type ViewMode = "list" | "calendar" | "grouped" | "weekly" | "monthly" | "tests";
 
 export default function ChangesPage() {
   const [changes, setChanges] = useState<Change[]>([]);
@@ -133,6 +135,7 @@ export default function ChangesPage() {
               { mode: "monthly" as const, icon: CalendarRange, label: "Monthly" },
               { mode: "calendar" as const, icon: CalendarDays, label: "Calendar" },
               { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
+              { mode: "tests" as const, icon: FlaskConical, label: "Tests" },
             ] as const).map(({ mode, icon: Icon, label }) => (
               <Button
                 key={mode}
@@ -186,6 +189,8 @@ export default function ChangesPage() {
         <WeeklyView changes={changes} />
       ) : viewMode === "monthly" ? (
         <MonthlyView changes={changes} />
+      ) : viewMode === "tests" ? (
+        <TestsView changes={changes} />
       ) : (
         /* List view */
         <Card>

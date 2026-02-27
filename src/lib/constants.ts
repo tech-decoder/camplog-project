@@ -150,6 +150,48 @@ export const METRIC_LABELS: Record<
 
 export const IMPACT_REVIEW_DAYS = 3;
 
+export const TEST_CATEGORIES: Record<
+  string,
+  { label: string; color: string; bgColor: string; description: string }
+> = {
+  creative_format: {
+    label: "Creative Format",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Testing video format, aspect ratio, image vs video, etc.",
+  },
+  copy_length: {
+    label: "Copy Length",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Testing primary text length, headline variations, etc.",
+  },
+  targeting: {
+    label: "Targeting",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Testing audiences, interests, lookalikes, broad vs narrow, etc.",
+  },
+  bid_strategy: {
+    label: "Bid Strategy",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Testing bid caps, cost caps, lowest cost, etc.",
+  },
+  landing_page: {
+    label: "Landing Page",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Testing different landing pages, article layouts, etc.",
+  },
+  other: {
+    label: "Other Test",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    description: "Other types of tests",
+  },
+};
+
 export const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bgColor: string }

@@ -25,6 +25,8 @@ import {
   Pencil,
   Globe,
   Check,
+  FlaskConical,
+  Lightbulb,
 } from "lucide-react";
 import Link from "next/link";
 import { Change, CampaignMetrics } from "@/lib/types/changes";
@@ -32,14 +34,25 @@ import {
   ACTION_TYPE_CONFIG,
   VERDICT_CONFIG,
   METRIC_LABELS,
+  TEST_CATEGORIES,
 } from "@/lib/constants";
-import { SITE_ABBREVIATION_MAP } from "@/lib/constants/sites";
+import { KNOWN_SITES, SITE_ABBREVIATION_MAP } from "@/lib/constants/sites";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatDate } from "@/lib/utils/dates";
 import {
   computeMetricDeltas,
   formatMetricValue,
   formatDelta,
+  getMetricColorClass,
+  getMetricBgClass,
+  toNumericValue,
 } from "@/lib/utils/metrics";
 import { toast } from "sonner";
 
@@ -223,14 +236,27 @@ export default function ChangeDetailPage() {
     if (!change) return;
     setSavingEdit(true);
     try {
+      const siteValue = editSite && editSite !== "none" ? editSite : null;
+
+      // Update the change itself
       const res = await fetch(`/api/changes/${change.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaign_name: editCampaignName,
-          site: editSite || null,
+          site: siteValue,
         }),
       });
+
+      // Also update the parent campaign's site if campaign_id exists
+      if (change.campaign_id && siteValue !== (change.site || null)) {
+        await fetch(`/api/campaigns/${change.campaign_id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ site: siteValue }),
+        });
+      }
+
       if (res.ok) {
         const updated = await res.json();
         setChange(updated);
@@ -441,6 +467,15 @@ export default function ChangeDetailPage() {
                   Review Due
                 </Badge>
               )}
+              {change.test_category && (
+                <Badge
+                  variant="secondary"
+                  className="bg-purple-50 text-purple-700 text-sm px-3 py-1 gap-1.5"
+                >
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  {TEST_CATEGORIES[change.test_category]?.label || change.test_category}
+                </Badge>
+              )}
             </div>
 
             {/* Campaign name + value */}
@@ -457,12 +492,19 @@ export default function ChangeDetailPage() {
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Site</Label>
-                    <Input
-                      value={editSite}
-                      onChange={(e) => setEditSite(e.target.value)}
-                      placeholder="e.g. MBM, GXP, MMM"
-                      className="mt-1"
-                    />
+                    <Select value={editSite} onValueChange={setEditSite}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select site" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No site</SelectItem>
+                        {KNOWN_SITES.map((s) => (
+                          <SelectItem key={s.abbreviation} value={s.abbreviation}>
+                            {s.abbreviation} — {s.shortName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -529,188 +571,180 @@ export default function ChangeDetailPage() {
                 {change.description}
               </p>
             )}
+
+            {/* Hypothesis */}
+            {change.hypothesis && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50/50 border border-purple-100">
+                <Lightbulb className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium text-purple-700 uppercase tracking-wider">Hypothesis</p>
+                  <p className="text-sm text-foreground mt-0.5">{change.hypothesis}</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Two column layout for metrics and impact */}
-      {!isVoided && (hasPreMetrics || deltas.length > 0 || change.impact_summary) && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Left: Pre-Change Metrics */}
-          {hasPreMetrics && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Metrics at Time of Change
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {grouped.fb.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                      Facebook / Cost
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {grouped.fb.map(([key, value]) => {
-                        const meta = METRIC_LABELS[key];
-                        return (
-                          <div
-                            key={key}
-                            className="text-center p-3 rounded-lg bg-muted/50"
-                          >
-                            <p className="text-xs text-muted-foreground">
-                              {meta?.label || key}
-                            </p>
-                            <p className="text-lg font-semibold mt-0.5">
-                              {formatMetricValue(value, meta?.unit || "")}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
+      {/* Before vs After — most important section */}
+      {!isVoided && deltas.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Before vs After</CardTitle>
+              {reviewDaysAfter !== null && (
+                <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-xs">
+                  {reviewDaysAfter}d after change
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {deltas.map((d) => (
+                <div
+                  key={d.key}
+                  className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/30 border-b border-border/30 last:border-0"
+                >
+                  <span className="text-sm font-medium w-24">{d.label}</span>
+                  <div className="flex items-center gap-4 flex-1 justify-end">
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {formatMetricValue(d.before, d.unit)}
+                    </span>
+                    <span className="text-muted-foreground/50">&rarr;</span>
+                    <span className="text-base font-semibold tabular-nums">
+                      {formatMetricValue(d.after, d.unit)}
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs font-medium px-2 py-0.5 min-w-[70px] justify-center gap-1 ${
+                        d.isImprovement
+                          ? "bg-emerald-100 text-emerald-700"
+                          : d.direction === "flat"
+                            ? "bg-slate-100 text-slate-500"
+                            : "bg-rose-100 text-rose-700"
+                      }`}
+                    >
+                      {d.direction === "up" ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : d.direction === "down" ? (
+                        <TrendingDown className="h-3 w-3" />
+                      ) : (
+                        <Minus className="h-3 w-3" />
+                      )}
+                      {d.percentChange >= 0 ? "+" : ""}
+                      {d.percentChange.toFixed(1)}%
+                    </Badge>
                   </div>
-                )}
-                {grouped.ad.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                      AdSense / Revenue
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {grouped.ad.map(([key, value]) => {
-                        const meta = METRIC_LABELS[key];
-                        return (
-                          <div
-                            key={key}
-                            className="text-center p-3 rounded-lg bg-muted/50"
-                          >
-                            <p className="text-xs text-muted-foreground">
-                              {meta?.label || key}
-                            </p>
-                            <p className="text-lg font-semibold mt-0.5">
-                              {formatMetricValue(value, meta?.unit || "")}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                {grouped.profit.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                      Profitability
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {grouped.profit.map(([key, value]) => {
-                        const meta = METRIC_LABELS[key];
-                        return (
-                          <div
-                            key={key}
-                            className="text-center p-3 rounded-lg bg-muted/50"
-                          >
-                            <p className="text-xs text-muted-foreground">
-                              {meta?.label || key}
-                            </p>
-                            <p className="text-lg font-semibold mt-0.5">
-                              {formatMetricValue(value, meta?.unit || "")}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Right: Impact Assessment or Before vs After */}
-          <div className="space-y-6">
-            {/* Before vs After Comparison */}
-            {deltas.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Before vs After</CardTitle>
-                    {reviewDaysAfter !== null && (
-                      <span className="text-xs text-muted-foreground">
-                        {reviewDaysAfter}d after change
-                      </span>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {deltas.map((d) => (
-                      <div
-                        key={d.key}
-                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
-                      >
-                        <span className="text-sm font-medium">{d.label}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground">
-                            {formatMetricValue(d.before, d.unit)}
-                          </span>
-                          <span className="text-muted-foreground">&rarr;</span>
-                          <span className="text-sm font-medium">
-                            {formatMetricValue(d.after, d.unit)}
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-0.5 text-xs font-medium min-w-[60px] justify-end ${
-                              d.isImprovement
-                                ? "text-emerald-700"
-                                : d.direction === "flat"
-                                  ? "text-slate-500"
-                                  : "text-rose-700"
-                            }`}
-                          >
-                            {d.direction === "up" ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : d.direction === "down" ? (
-                              <TrendingDown className="h-3 w-3" />
-                            ) : (
-                              <Minus className="h-3 w-3" />
-                            )}
-                            {d.percentChange >= 0 ? "+" : ""}
-                            {d.percentChange.toFixed(1)}%
-                          </span>
+      {/* Metrics at Time of Change — compact grid with conditional formatting */}
+      {!isVoided && hasPreMetrics && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Metrics at Time of Change</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {grouped.fb.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Facebook / Cost
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+                    {grouped.fb.map(([key, value]) => {
+                      const meta = METRIC_LABELS[key];
+                      const numVal = toNumericValue(value) ?? 0;
+                      return (
+                        <div key={key} className={`text-center p-2.5 rounded-lg ${getMetricBgClass(key, numVal)}`}>
+                          <p className="text-[10px] text-muted-foreground">{meta?.label || key}</p>
+                          <p className={`text-base font-semibold mt-0.5 tabular-nums ${getMetricColorClass(key, numVal)}`}>
+                            {formatMetricValue(value, meta?.unit || "")}
+                          </p>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
+              {grouped.ad.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    AdSense / Revenue
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+                    {grouped.ad.map(([key, value]) => {
+                      const meta = METRIC_LABELS[key];
+                      const numVal = toNumericValue(value) ?? 0;
+                      return (
+                        <div key={key} className={`text-center p-2.5 rounded-lg ${getMetricBgClass(key, numVal)}`}>
+                          <p className="text-[10px] text-muted-foreground">{meta?.label || key}</p>
+                          <p className={`text-base font-semibold mt-0.5 tabular-nums ${getMetricColorClass(key, numVal)}`}>
+                            {formatMetricValue(value, meta?.unit || "")}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {grouped.profit.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Profitability
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5">
+                    {grouped.profit.map(([key, value]) => {
+                      const meta = METRIC_LABELS[key];
+                      const numVal = toNumericValue(value) ?? 0;
+                      return (
+                        <div key={key} className={`text-center p-2.5 rounded-lg ${getMetricBgClass(key, numVal)}`}>
+                          <p className="text-[10px] text-muted-foreground">{meta?.label || key}</p>
+                          <p className={`text-base font-semibold mt-0.5 tabular-nums ${getMetricColorClass(key, numVal)}`}>
+                            {formatMetricValue(value, meta?.unit || "")}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            {/* AI Impact Assessment */}
-            {change.impact_summary && (
-              <Card className={
-                change.impact_verdict === "positive"
-                  ? "border-emerald-200 bg-emerald-50/30"
-                  : change.impact_verdict === "negative"
-                    ? "border-rose-200 bg-rose-50/30"
-                    : ""
-              }>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">AI Impact Assessment</CardTitle>
-                    {change.impact_verdict && (
-                      <Badge
-                        variant="secondary"
-                        className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
-                      >
-                        {VERDICT_CONFIG[change.impact_verdict]?.label}
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-relaxed">{change.impact_summary}</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+      {/* AI Impact Assessment — full width */}
+      {!isVoided && change.impact_summary && (
+        <Card className={
+          change.impact_verdict === "positive"
+            ? "border-emerald-200 bg-emerald-50/30"
+            : change.impact_verdict === "negative"
+              ? "border-rose-200 bg-rose-50/30"
+              : ""
+        }>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">AI Impact Assessment</CardTitle>
+              {change.impact_verdict && (
+                <Badge
+                  variant="secondary"
+                  className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
+                >
+                  {VERDICT_CONFIG[change.impact_verdict]?.label}
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed">{change.impact_summary}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Impact Review Form — only for non-pause, non-reviewed, non-voided changes */}

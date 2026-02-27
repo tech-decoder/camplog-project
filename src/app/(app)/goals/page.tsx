@@ -26,18 +26,27 @@ import {
   Check,
 } from "lucide-react";
 import { format, startOfMonth, addMonths, subMonths } from "date-fns";
+import { RevenueGoal, SiteMonthlyRevenue, GoalStrategy } from "@/lib/types/goals";
+import { KNOWN_SITES } from "@/lib/constants/sites";
+import { formatDollar, formatPercent } from "@/lib/utils/metrics";
 import {
-  ResponsiveContainer,
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
+  Cell,
+  ResponsiveContainer,
 } from "recharts";
-import { RevenueGoal, SiteMonthlyRevenue, GoalStrategy } from "@/lib/types/goals";
-import { KNOWN_SITES } from "@/lib/constants/sites";
 
 export default function GoalsPage() {
   const [currentMonth, setCurrentMonth] = useState(() =>
@@ -59,9 +68,27 @@ export default function GoalsPage() {
 
   // Site editing
   const [siteEdits, setSiteEdits] = useState<
-    Record<string, { revenue: string; fb_spend: string }>
+    Record<
+      string,
+      {
+        revenue: string;
+        fb_spend: string;
+        fb_revenue: string;
+        gross: string;
+        margin_pct: string;
+        fbm_pct: string;
+      }
+    >
   >({});
   const [savingSites, setSavingSites] = useState(false);
+  const [extractedTotal, setExtractedTotal] = useState<{
+    revenue: number;
+    fb_spend: number;
+    fb_revenue: number;
+    gross: number;
+    margin_pct: number;
+    fbm_pct: number;
+  } | null>(null);
 
   // Screenshot upload
   const [extracting, setExtracting] = useState(false);
@@ -134,26 +161,39 @@ export default function GoalsPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.sites && Array.isArray(data.sites)) {
-          const newEdits: Record<string, { revenue: string; fb_spend: string }> = {};
+          const newEdits: typeof siteEdits = {};
           let matched = 0;
 
           for (const extracted of data.sites) {
-            // Match by abbreviation first, then by domain substring
+            // Match by abbreviation directly — the API returns our exact abbreviations
             const abbr = extracted.abbreviation?.toUpperCase();
             const knownSite = KNOWN_SITES.find(
-              (s) =>
-                s.abbreviation === abbr ||
-                extracted.site_name?.includes(s.domain) ||
-                s.domain.includes(extracted.site_name?.split(".")[0] || "___")
+              (s) => s.abbreviation === abbr
             );
 
             if (knownSite) {
               newEdits[knownSite.abbreviation] = {
                 revenue: extracted.revenue?.toString() || "0",
                 fb_spend: extracted.fb_spend?.toString() || "0",
+                fb_revenue: extracted.fb_revenue?.toString() || "0",
+                gross: extracted.gross?.toString() || "0",
+                margin_pct: extracted.margin_pct?.toString() || "0",
+                fbm_pct: extracted.fbm_pct?.toString() || "0",
               };
               matched++;
             }
+          }
+
+          // Store extracted totals for display
+          if (data.total) {
+            setExtractedTotal({
+              revenue: data.total.revenue || 0,
+              fb_spend: data.total.fb_spend || 0,
+              fb_revenue: data.total.fb_revenue || 0,
+              gross: data.total.gross || 0,
+              margin_pct: data.total.margin_pct || 0,
+              fbm_pct: data.total.fbm_pct || 0,
+            });
           }
 
           setSiteEdits((prev) => ({ ...prev, ...newEdits }));
@@ -226,7 +266,10 @@ export default function GoalsPage() {
           fb_spend: edit?.fb_spend
             ? parseFloat(edit.fb_spend)
             : Number(existing?.fb_spend || 0),
-          source: "manual" as const,
+          fb_revenue: edit?.fb_revenue
+            ? parseFloat(edit.fb_revenue)
+            : Number(existing?.fb_revenue || 0),
+          source: (edit ? "screenshot" : "manual") as "screenshot" | "manual",
         };
       }).filter((s) => s.revenue > 0 || s.fb_spend > 0);
 
@@ -304,18 +347,50 @@ export default function GoalsPage() {
         ? "close"
         : "behind";
 
-  // Chart data
-  const chartData = KNOWN_SITES.map((s) => {
+  // Site rows: computed from KNOWN_SITES + current edits (used by chart + table)
+  const siteRows = KNOWN_SITES.map((s) => {
     const siteData = sites.find((sr) => sr.site === s.abbreviation);
-    return {
-      site: s.abbreviation,
-      revenue: Number(siteData?.revenue || 0),
-      spend: Number(siteData?.fb_spend || 0),
-      profit: Number(siteData?.profit || 0),
-    };
-  })
-    .filter((d) => d.revenue > 0 || d.spend > 0)
-    .sort((a, b) => b.revenue - a.revenue);
+    const edit = siteEdits[s.abbreviation];
+    const rev = edit?.revenue ? parseFloat(edit.revenue) : Number(siteData?.revenue || 0);
+    const spend = edit?.fb_spend ? parseFloat(edit.fb_spend) : Number(siteData?.fb_spend || 0);
+    const fbRev = edit?.fb_revenue ? parseFloat(edit.fb_revenue) : Number(siteData?.fb_revenue || 0);
+    const gross = rev - spend;
+    const margin = rev > 0 ? ((rev - spend) / rev) * 100 : 0;
+    const fbm = fbRev > 0 ? ((fbRev - spend) / fbRev) * 100 : 0;
+    return { ...s, siteData, edit, rev, spend, fbRev, gross, margin, fbm, isEdited: !!edit };
+  }).sort((a, b) => b.rev - a.rev);
+
+  const totalRev = siteRows.reduce((s, r) => s + r.rev, 0);
+  const totalSpend = siteRows.reduce((s, r) => s + r.spend, 0);
+  const totalFbRev = siteRows.reduce((s, r) => s + r.fbRev, 0);
+  const totalGross = siteRows.reduce((s, r) => s + r.gross, 0);
+  const totalMargin = totalRev > 0 ? ((totalRev - totalSpend) / totalRev) * 100 : 0;
+  const totalFbm = totalFbRev > 0 ? ((totalFbRev - totalSpend) / totalFbRev) * 100 : 0;
+
+  function updateSiteField(abbreviation: string, field: string, value: string) {
+    setSiteEdits((prev) => {
+      const sData = sites.find((sr) => sr.site === abbreviation);
+      const current = prev[abbreviation] || {
+        revenue: sData?.revenue ? Number(sData.revenue).toString() : "",
+        fb_spend: sData?.fb_spend ? Number(sData.fb_spend).toString() : "",
+        fb_revenue: sData?.fb_revenue ? Number(sData.fb_revenue).toString() : "",
+        gross: "", margin_pct: "", fbm_pct: "",
+      };
+      return { ...prev, [abbreviation]: { ...current, [field]: value } };
+    });
+  }
+
+  const marginColor = (v: number) =>
+    v > 10 ? "text-emerald-700" : v > 0 ? "text-amber-700" : v < 0 ? "text-rose-700" : "text-slate-400";
+  const grossColor = (v: number) =>
+    v > 0 ? "text-emerald-700" : v < 0 ? "text-rose-700" : "text-slate-400";
+
+  // Chart data: only sites with revenue
+  const chartRows = siteRows
+    .filter((r) => r.rev > 0)
+    .map((r) => ({ name: r.abbreviation, revenue: r.rev, margin: r.margin }));
+  const barColor = (margin: number) =>
+    margin > 10 ? "#10b981" : margin > 0 ? "#f59e0b" : "#f43f5e";
 
   if (loading) {
     return (
@@ -610,52 +685,61 @@ export default function GoalsPage() {
             </Card>
           </div>
 
-          {/* Site Revenue Chart */}
-          {chartData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Revenue by Site
-                </CardTitle>
+          {/* Site Health Chart */}
+          {chartRows.length > 0 && (
+            <Card className="border-slate-200/60">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Site Health</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[11px] font-medium text-muted-foreground">Margin</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span className="text-[11px] text-muted-foreground">&gt;10%</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      <span className="text-[11px] text-muted-foreground">0–10%</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                      <span className="text-[11px] text-muted-foreground">&lt;0%</span>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis
-                      dataKey="site"
-                      tick={{ fontSize: 12 }}
-                      stroke="#94a3b8"
-                    />
+                <ResponsiveContainer width="100%" height={chartRows.length * 32 + 8}>
+                  <BarChart
+                    data={chartRows}
+                    layout="vertical"
+                    margin={{ top: 0, right: 60, left: 0, bottom: 0 }}
+                  >
+                    <XAxis type="number" hide />
                     <YAxis
-                      tick={{ fontSize: 12 }}
-                      stroke="#94a3b8"
-                      tickFormatter={(v) => `$${v}`}
+                      type="category"
+                      dataKey="name"
+                      tick={{ fontSize: 11, fontWeight: 600 }}
+                      width={40}
+                      axisLine={false}
+                      tickLine={false}
                     />
                     <Tooltip
-                      formatter={(value) => [
-                        `$${Number(value).toLocaleString()}`,
-                      ]}
+                      formatter={(value) => {
+                        const num = typeof value === "number" ? value : Number(value);
+                        return [formatDollar(num), "Revenue"];
+                      }}
+                      labelFormatter={(label) => {
+                        const row = chartRows.find((r) => r.name === label);
+                        return row ? `${label} · ${row.margin.toFixed(1)}% margin` : label;
+                      }}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                    <Legend />
-                    <Bar
-                      dataKey="revenue"
-                      name="Revenue"
-                      fill="#366ae8"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="spend"
-                      name="FB Spend"
-                      fill="#94a3b8"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="profit"
-                      name="Profit"
-                      fill="#10b981"
-                      radius={[4, 4, 0, 0]}
-                    />
+                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                      {chartRows.map((entry, index) => (
+                        <Cell key={index} fill={barColor(entry.margin)} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -748,180 +832,90 @@ export default function GoalsPage() {
               />
             </CardContent>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2.5 pr-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Site
-                      </th>
-                      <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Revenue
-                      </th>
-                      <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        FB Spend
-                      </th>
-                      <th className="text-right py-2.5 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Profit
-                      </th>
-                      <th className="text-right py-2.5 pl-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Margin
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {KNOWN_SITES.map((s) => {
-                      const siteData = sites.find(
-                        (sr) => sr.site === s.abbreviation
-                      );
-                      const edit = siteEdits[s.abbreviation];
-                      const rev = edit?.revenue
-                        ? parseFloat(edit.revenue)
-                        : Number(siteData?.revenue || 0);
-                      const spend = edit?.fb_spend
-                        ? parseFloat(edit.fb_spend)
-                        : Number(siteData?.fb_spend || 0);
-                      const profit = rev - spend;
-                      const margin =
-                        rev > 0 ? ((rev - spend) / rev) * 100 : 0;
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs font-medium">Site</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Revenue</TableHead>
+                          <TableHead className="text-xs font-medium text-right">FB Spend</TableHead>
+                          <TableHead className="text-xs font-medium text-right">FB Rev</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Gross</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Margin</TableHead>
+                          <TableHead className="text-xs font-medium text-right">FBM</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {siteRows.map((row) => (
+                          <TableRow
+                            key={row.abbreviation}
+                            className={`${row.rev === 0 && row.spend === 0 ? "opacity-40" : ""} ${row.isEdited ? "bg-amber-50/40" : ""}`}
+                          >
+                            <TableCell className="py-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-[11px] font-bold px-1.5 py-0">
+                                  {row.abbreviation}
+                                </Badge>
+                                <span className="text-xs font-medium">{row.shortName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2 pr-0">
+                              <Input
+                                type="number" step="0.01" placeholder="0.00"
+                                value={row.edit?.revenue ?? (row.siteData?.revenue ? Number(row.siteData.revenue).toString() : "")}
+                                onChange={(e) => updateSiteField(row.abbreviation, "revenue", e.target.value)}
+                                className="h-7 w-full text-right text-xs font-medium tabular-nums pr-2"
+                              />
+                            </TableCell>
+                            <TableCell className="py-2 pr-0">
+                              <Input
+                                type="number" step="0.01" placeholder="0.00"
+                                value={row.edit?.fb_spend ?? (row.siteData?.fb_spend ? Number(row.siteData.fb_spend).toString() : "")}
+                                onChange={(e) => updateSiteField(row.abbreviation, "fb_spend", e.target.value)}
+                                className="h-7 w-full text-right text-xs font-medium tabular-nums pr-2"
+                              />
+                            </TableCell>
+                            <TableCell className="py-2 pr-0">
+                              <Input
+                                type="number" step="0.01" placeholder="0.00"
+                                value={row.edit?.fb_revenue ?? (row.siteData?.fb_revenue ? Number(row.siteData.fb_revenue).toString() : "")}
+                                onChange={(e) => updateSiteField(row.abbreviation, "fb_revenue", e.target.value)}
+                                className="h-7 w-full text-right text-xs font-medium tabular-nums pr-2"
+                              />
+                            </TableCell>
+                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${grossColor(row.gross)}`}>
+                              {formatDollar(row.gross)}
+                            </TableCell>
+                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${marginColor(row.margin)}`}>
+                              {row.margin.toFixed(1)}%
+                            </TableCell>
+                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${marginColor(row.fbm)}`}>
+                              {row.fbm.toFixed(1)}%
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow className="font-semibold">
+                          <TableCell className="text-xs">Total ({siteRows.filter(r => r.rev > 0 || r.spend > 0).length} sites)</TableCell>
+                          <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalRev)}</TableCell>
+                          <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalSpend)}</TableCell>
+                          <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalFbRev)}</TableCell>
+                          <TableCell className={`text-right text-xs tabular-nums ${grossColor(totalGross)}`}>{formatDollar(totalGross)}</TableCell>
+                          <TableCell className={`text-right text-xs tabular-nums ${marginColor(totalMargin)}`}>{totalMargin.toFixed(1)}%</TableCell>
+                          <TableCell className={`text-right text-xs tabular-nums ${marginColor(totalFbm)}`}>{totalFbm.toFixed(1)}%</TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
 
-                      return (
-                        <tr
-                          key={s.abbreviation}
-                          className="border-b border-border/50 hover:bg-muted/30"
-                        >
-                          <td className="py-2.5 pr-4">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="secondary"
-                                className="bg-[#366ae8]/10 text-[#366ae8] text-xs font-semibold"
-                              >
-                                {s.abbreviation}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground hidden lg:inline">
-                                {s.shortName}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={
-                                edit?.revenue ??
-                                (siteData?.revenue
-                                  ? Number(siteData.revenue).toString()
-                                  : "")
-                              }
-                              onChange={(e) =>
-                                setSiteEdits((prev) => ({
-                                  ...prev,
-                                  [s.abbreviation]: {
-                                    ...prev[s.abbreviation],
-                                    revenue: e.target.value,
-                                    fb_spend:
-                                      prev[s.abbreviation]?.fb_spend ??
-                                      (siteData?.fb_spend
-                                        ? Number(
-                                            siteData.fb_spend
-                                          ).toString()
-                                        : ""),
-                                  },
-                                }))
-                              }
-                              className="h-8 text-right text-sm w-28"
-                            />
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={
-                                edit?.fb_spend ??
-                                (siteData?.fb_spend
-                                  ? Number(siteData.fb_spend).toString()
-                                  : "")
-                              }
-                              onChange={(e) =>
-                                setSiteEdits((prev) => ({
-                                  ...prev,
-                                  [s.abbreviation]: {
-                                    ...prev[s.abbreviation],
-                                    fb_spend: e.target.value,
-                                    revenue:
-                                      prev[s.abbreviation]?.revenue ??
-                                      (siteData?.revenue
-                                        ? Number(
-                                            siteData.revenue
-                                          ).toString()
-                                        : ""),
-                                  },
-                                }))
-                              }
-                              className="h-8 text-right text-sm w-28"
-                            />
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            <span
-                              className={`font-medium ${
-                                profit > 0
-                                  ? "text-emerald-700"
-                                  : profit < 0
-                                    ? "text-rose-700"
-                                    : "text-slate-500"
-                              }`}
-                            >
-                              ${profit.toFixed(2)}
-                            </span>
-                          </td>
-                          <td className="py-2.5 pl-3 text-right">
-                            <span
-                              className={`font-medium ${
-                                margin > 10
-                                  ? "text-emerald-700"
-                                  : margin > 0
-                                    ? "text-amber-700"
-                                    : margin < 0
-                                      ? "text-rose-700"
-                                      : "text-slate-500"
-                              }`}
-                            >
-                              {margin.toFixed(1)}%
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 font-semibold">
-                      <td className="py-3 pr-4">Total</td>
-                      <td className="py-3 px-3 text-right">
-                        ${Number(goal.actual_revenue).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        ${Number(goal.actual_fb_spend).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <span
-                          className={
-                            Number(goal.actual_profit) >= 0
-                              ? "text-emerald-700"
-                              : "text-rose-700"
-                          }
-                        >
-                          ${Number(goal.actual_profit).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="py-3 pl-3 text-right">
-                        {Number(goal.actual_margin_pct).toFixed(1)}%
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+                    {/* Extracted dashboard totals reference */}
+                    {extractedTotal && (
+                      <div className="mt-3 px-2 py-2 rounded-lg bg-slate-50/80 border border-border/30">
+                        <p className="text-[11px] text-muted-foreground">
+                          <span className="font-medium">All 45 sites:</span>{" "}
+                          Rev {formatDollar(extractedTotal.revenue)} · Spend {formatDollar(extractedTotal.fb_spend)} · Gross {formatDollar(extractedTotal.gross)} · Margin {extractedTotal.margin_pct}% · FBM {extractedTotal.fbm_pct}%
+                        </p>
+                      </div>
+                    )}
             </CardContent>
           </Card>
 

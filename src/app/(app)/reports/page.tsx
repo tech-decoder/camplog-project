@@ -17,7 +17,17 @@ import {
   FileText,
   Calendar,
   ChevronRight,
+  ArrowRight,
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth } from "date-fns";
 
 interface Report {
@@ -249,52 +259,167 @@ export default function ReportsPage() {
                     </div>
                   )}
                 </div>
-                <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground">
-                  {selectedReport.content.split("\n").map((line, i) => {
-                    if (line.startsWith("## ")) {
-                      return (
-                        <h2
-                          key={i}
-                          className="text-base font-semibold mt-6 mb-2 text-foreground"
-                        >
-                          {line.replace("## ", "")}
-                        </h2>
-                      );
-                    }
-                    if (line.startsWith("### ")) {
-                      return (
-                        <h3
-                          key={i}
-                          className="text-sm font-semibold mt-4 mb-1.5 text-foreground"
-                        >
-                          {line.replace("### ", "")}
-                        </h3>
-                      );
-                    }
-                    if (line.startsWith("- ")) {
-                      return (
-                        <p
-                          key={i}
-                          className="text-sm text-muted-foreground pl-4 py-0.5"
-                        >
-                          &bull; {line.replace("- ", "")}
+                <div className="space-y-1">
+                  {(() => {
+                    const lines = selectedReport.content.split("\n");
+                    const elements: React.ReactNode[] = [];
+                    let idx = 0;
+
+                    while (idx < lines.length) {
+                      const line = lines[idx];
+
+                      // Detect markdown table block (consecutive | lines)
+                      if (line.trim().startsWith("|")) {
+                        const tableLines: string[] = [];
+                        while (idx < lines.length && lines[idx].trim().startsWith("|")) {
+                          tableLines.push(lines[idx]);
+                          idx++;
+                        }
+                        // Parse table: need at least header + separator + 1 row
+                        if (tableLines.length >= 3) {
+                          const parseRow = (l: string) =>
+                            l.split("|").map((c) => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length);
+                          const isSeparator = (l: string) => /^[\s|:-]+$/.test(l.replace(/\|/g, ""));
+                          const headers = parseRow(tableLines[0]);
+                          const dataRows = tableLines.slice(isSeparator(tableLines[1]) ? 2 : 1).map(parseRow);
+
+                          elements.push(
+                            <div key={`table-${idx}`} className="my-4 rounded-lg border overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/30">
+                                    {headers.map((h, hi) => (
+                                      <TableHead key={hi} className="text-xs font-semibold">{h}</TableHead>
+                                    ))}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {dataRows.map((row, ri) => (
+                                    <TableRow key={ri}>
+                                      {row.map((cell, ci) => (
+                                        <TableCell key={ci} className="text-xs py-2">{cell}</TableCell>
+                                      ))}
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          );
+                        } else {
+                          // Fallback: render as plain text
+                          tableLines.forEach((tl, ti) => {
+                            elements.push(
+                              <p key={`tl-${idx}-${ti}`} className="text-sm text-muted-foreground py-0.5 font-mono text-xs">{tl}</p>
+                            );
+                          });
+                        }
+                        continue;
+                      }
+
+                      // Section headings with separator
+                      if (line.startsWith("## ")) {
+                        elements.push(
+                          <div key={idx} className="mt-6 mb-2">
+                            <h2 className="text-base font-semibold text-foreground">
+                              {line.replace("## ", "")}
+                            </h2>
+                            <Separator className="mt-2" />
+                          </div>
+                        );
+                        idx++;
+                        continue;
+                      }
+
+                      if (line.startsWith("### ")) {
+                        elements.push(
+                          <h3 key={idx} className="text-sm font-semibold mt-4 mb-1.5 text-foreground">
+                            {line.replace("### ", "")}
+                          </h3>
+                        );
+                        idx++;
+                        continue;
+                      }
+
+                      // Numbered recommendations (1. **Bold:**)
+                      const numberedMatch = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)/);
+                      if (numberedMatch) {
+                        elements.push(
+                          <div key={idx} className="flex items-start gap-3 p-3 my-1 rounded-lg border border-border/50 bg-muted/20">
+                            <span className="text-xs font-bold text-[#366ae8] bg-[#366ae8]/10 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              {numberedMatch[1]}
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold">{numberedMatch[2]}</p>
+                              {numberedMatch[3] && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{numberedMatch[3]}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                        idx++;
+                        continue;
+                      }
+
+                      // Bullet points with inline bold
+                      if (line.startsWith("- ")) {
+                        const content = line.replace("- ", "");
+                        const parts = content.split(/(\*\*[^*]+\*\*)/g);
+                        elements.push(
+                          <p key={idx} className="text-sm text-muted-foreground pl-4 py-0.5">
+                            <span className="text-muted-foreground/60 mr-1.5">&bull;</span>
+                            {parts.map((part, pi) =>
+                              part.startsWith("**") && part.endsWith("**") ? (
+                                <span key={pi} className="font-semibold text-foreground">
+                                  {part.replace(/\*\*/g, "")}
+                                </span>
+                              ) : (
+                                <span key={pi}>{part}</span>
+                              )
+                            )}
+                          </p>
+                        );
+                        idx++;
+                        continue;
+                      }
+
+                      // Standalone bold
+                      if (line.startsWith("**") && line.endsWith("**")) {
+                        elements.push(
+                          <p key={idx} className="text-sm font-semibold mt-3 mb-1 text-foreground">
+                            {line.replace(/\*\*/g, "")}
+                          </p>
+                        );
+                        idx++;
+                        continue;
+                      }
+
+                      // Empty lines
+                      if (line.trim() === "") {
+                        elements.push(<div key={idx} className="h-2" />);
+                        idx++;
+                        continue;
+                      }
+
+                      // Default paragraph with inline bold support
+                      const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                      elements.push(
+                        <p key={idx} className="text-sm text-muted-foreground py-0.5">
+                          {parts.map((part, pi) =>
+                            part.startsWith("**") && part.endsWith("**") ? (
+                              <span key={pi} className="font-semibold text-foreground">
+                                {part.replace(/\*\*/g, "")}
+                              </span>
+                            ) : (
+                              <span key={pi}>{part}</span>
+                            )
+                          )}
                         </p>
                       );
+                      idx++;
                     }
-                    if (line.startsWith("**") && line.endsWith("**")) {
-                      return (
-                        <p key={i} className="text-sm font-semibold mt-3 mb-1">
-                          {line.replace(/\*\*/g, "")}
-                        </p>
-                      );
-                    }
-                    if (line.trim() === "") return <br key={i} />;
-                    return (
-                      <p key={i} className="text-sm text-muted-foreground py-0.5">
-                        {line}
-                      </p>
-                    );
-                  })}
+
+                    return elements;
+                  })()}
                 </div>
               </div>
             ) : (

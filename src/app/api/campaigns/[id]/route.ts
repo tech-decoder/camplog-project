@@ -10,14 +10,14 @@ export async function GET(
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
-    .from("changes")
+    .from("campaigns")
     .select("*")
     .eq("id", id)
     .eq("user_id", DEFAULT_USER_ID)
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Change not found" }, { status: 404 });
+    return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   }
 
   return NextResponse.json(data);
@@ -31,20 +31,7 @@ export async function PATCH(
   const supabase = createAdminClient();
   const body = await request.json();
 
-  // Only allow updating specific fields
-  const allowedFields = [
-    "campaign_name",
-    "site",
-    "geo",
-    "action_type",
-    "change_value",
-    "description",
-    "status",
-    "void_reason",
-    "tags",
-    "test_category",
-    "hypothesis",
-  ];
+  const allowedFields = ["name", "site", "platform", "status", "notes"];
 
   const updates: Record<string, unknown> = {};
   for (const key of allowedFields) {
@@ -60,7 +47,7 @@ export async function PATCH(
   updates.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
-    .from("changes")
+    .from("campaigns")
     .update(updates)
     .eq("id", id)
     .eq("user_id", DEFAULT_USER_ID)
@@ -71,25 +58,14 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const supabase = createAdminClient();
-
-  const { error } = await supabase
-    .from("changes")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", DEFAULT_USER_ID);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  // If site was updated, also update all changes under this campaign
+  if ("site" in body) {
+    await supabase
+      .from("changes")
+      .update({ site: body.site, updated_at: new Date().toISOString() })
+      .eq("campaign_id", id)
+      .eq("user_id", DEFAULT_USER_ID);
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json(data);
 }

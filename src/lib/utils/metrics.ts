@@ -74,7 +74,8 @@ export function toNumericValue(val: unknown): number | null {
 export function formatMetricValue(value: unknown, unit: string): string {
   const num = toNumericValue(value);
   if (num === null) return String(value);
-  if (unit === "$") return `$${num.toFixed(2)}`;
+  if (unit === "$")
+    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (unit === "%") return `${num.toFixed(2)}%`;
   if (unit === "x") return `${num.toFixed(2)}x`;
   if (unit === "#") return num.toLocaleString();
@@ -83,9 +84,46 @@ export function formatMetricValue(value: unknown, unit: string): string {
 
 export function formatDelta(delta: number, unit: string): string {
   const sign = delta >= 0 ? "+" : "";
-  if (unit === "$") return `${sign}$${delta.toFixed(2)}`;
+  if (unit === "$")
+    return `${sign}$${Math.abs(delta).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (unit === "%") return `${sign}${delta.toFixed(2)}pp`;
   if (unit === "x") return `${sign}${delta.toFixed(2)}x`;
   if (unit === "#") return `${sign}${delta.toLocaleString()}`;
   return `${sign}${delta}`;
+}
+
+/** Format a dollar amount with thousand separators */
+export function formatDollar(value: number): string {
+  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** Format a percentage value */
+export function formatPercent(value: number): string {
+  return `${value.toFixed(2)}%`;
+}
+
+/** Get color class for a metric value based on whether higher is better */
+export function getMetricColorClass(key: string, value: number): string {
+  const meta = METRIC_LABELS[key];
+  if (!meta) return "";
+
+  if (meta.higherIsBetter) {
+    if (value > 0) return "text-emerald-700";
+    if (value < 0) return "text-rose-700";
+    return "text-slate-500";
+  }
+  // Costs (fb_spend, fb_cpc) — neutral
+  return "text-foreground";
+}
+
+/** Get background tint class matching the metric color */
+export function getMetricBgClass(key: string, value: number): string {
+  const meta = METRIC_LABELS[key];
+  if (!meta) return "bg-muted/50";
+
+  if (meta.higherIsBetter) {
+    if (value > 0) return "bg-emerald-50/50";
+    if (value < 0) return "bg-rose-50/50";
+  }
+  return "bg-muted/50";
 }
