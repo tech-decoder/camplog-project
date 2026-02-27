@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id: goalId } = await params;
   const supabase = createAdminClient();
 
@@ -14,7 +17,7 @@ export async function GET(
     .from("revenue_goals")
     .select("month")
     .eq("id", goalId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .single();
 
   if (!goal) {
@@ -24,7 +27,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("site_monthly_revenue")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .eq("month", goal.month)
     .order("revenue", { ascending: false });
 
@@ -39,6 +42,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id: goalId } = await params;
   const supabase = createAdminClient();
   const body = await request.json();
@@ -48,7 +54,7 @@ export async function POST(
     .from("revenue_goals")
     .select("month")
     .eq("id", goalId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .single();
 
   if (!goal) {
@@ -86,7 +92,7 @@ export async function POST(
       .from("site_monthly_revenue")
       .upsert(
         {
-          user_id: DEFAULT_USER_ID,
+          user_id: userId,
           goal_id: goalId,
           site: siteData.site,
           month: goal.month,

@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractChangesFromMessage } from "@/lib/openai/extract-changes";
 import { getImpactReviewDueDate, todayString } from "@/lib/utils/dates";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { toNumericValue } from "@/lib/utils/metrics";
 
 export async function GET() {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
 
-  // For now, get all messages for default user (will add auth later)
   const { data: messages, error } = await supabase
     .from("chat_messages")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(100);
 
@@ -41,6 +43,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
 
   const formData = await request.formData();
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
   const { data: userMsg, error: userMsgError } = await supabase
     .from("chat_messages")
     .insert({
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       role: "user",
       content,
       image_urls: imageUrls,
@@ -88,22 +93,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: userMsgError.message }, { status: 500 });
   }
 
+  // Fetch user's sites for context
+  const { data: userSites } = await supabase
+    .from("user_sites")
+    .select("site_abbreviation, site_name, site_url")
+    .eq("user_id", userId);
+
+  const sitesContext = userSites?.length
+    ? "User's sites: " + userSites.map((s) => `${s.site_name || s.site_abbreviation} (${s.site_abbreviation})${s.site_url ? ` - ${s.site_url}` : ""}`).join(", ")
+    : undefined;
+
   // Fetch recent changes for conversational context
   const { data: recentChanges } = await supabase
     .from("changes")
     .select("campaign_name, site, action_type, geo, change_value, change_date, impact_verdict, pre_metrics")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const activityContext = recentChanges?.length
-    ? recentChanges
-        .map(
-          (c) =>
-            `${c.change_date}: ${c.action_type} on ${c.campaign_name}${c.site ? ` (${c.site})` : ""}${c.geo ? ` ${c.geo}` : ""} ${c.change_value || ""} - verdict: ${c.impact_verdict || "pending"}${c.pre_metrics?.margin_pct != null ? ` margin: ${c.pre_metrics.margin_pct}%` : ""}`
-        )
-        .join("\n")
-    : undefined;
+  const activityContext = [
+    sitesContext,
+    recentChanges?.length
+      ? recentChanges
+          .map(
+            (c) =>
+              `${c.change_date}: ${c.action_type} on ${c.campaign_name}${c.site ? ` (${c.site})` : ""}${c.geo ? ` ${c.geo}` : ""} ${c.change_value || ""} - verdict: ${c.impact_verdict || "pending"}${c.pre_metrics?.margin_pct != null ? ` margin: ${c.pre_metrics.margin_pct}%` : ""}`
+          )
+          .join("\n")
+      : undefined,
+  ].filter(Boolean).join("\n\n") || undefined;
 
   // Extract changes using OpenAI (with recent activity context for smarter conversations)
   const extraction = await extractChangesFromMessage(content, imageBase64List, activityContext);
@@ -127,7 +145,7 @@ export async function POST(request: NextRequest) {
       const { data: newCampaign } = await supabase
         .from("campaigns")
         .insert({
-          user_id: DEFAULT_USER_ID,
+          user_id: userId,
           name: change.campaign_name,
           site: change.site || null,
           platform: "facebook",
@@ -158,7 +176,7 @@ export async function POST(request: NextRequest) {
     const { data: savedChange, error: changeError } = await supabase
       .from("changes")
       .insert({
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         campaign_id: campaignId,
         chat_message_id: userMsg.id,
         action_type: change.action_type,
@@ -191,7 +209,7 @@ export async function POST(request: NextRequest) {
   const { data: assistantMsg, error: assistantMsgError } = await supabase
     .from("chat_messages")
     .insert({
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       role: "assistant",
       content: extraction.assistant_message,
       image_urls: [],

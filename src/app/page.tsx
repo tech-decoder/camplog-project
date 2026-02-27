@@ -61,7 +61,7 @@ function Navbar() {
     >
       <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/camplog.png" alt="CampLog" width={36} height={36} className="rounded-lg" />
+          <Image src="/camplog.svg" alt="CampLog" width={36} height={36} className="rounded-lg" />
           <span className="font-semibold text-lg text-slate-900">CampLog</span>
         </Link>
 
@@ -763,7 +763,7 @@ function Footer() {
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
-              <Image src="/camplog.png" alt="CampLog" width={36} height={36} className="rounded-lg" />
+              <Image src="/camplog.svg" alt="CampLog" width={36} height={36} className="rounded-lg" />
               <span className="font-semibold text-lg text-slate-900">CampLog</span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed max-w-sm">

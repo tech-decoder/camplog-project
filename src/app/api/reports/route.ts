@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { getOpenAIClient } from "@/lib/openai/client";
 import { REPORT_GENERATION_PROMPT } from "@/lib/openai/prompts";
 
 export async function GET() {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("reports")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -22,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
   const body = await request.json();
 
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
   const { data: changes } = await supabase
     .from("changes")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .gte("change_date", period_start)
     .lte("change_date", period_end)
     .order("change_date", { ascending: false });
@@ -52,7 +58,7 @@ export async function POST(request: NextRequest) {
   const { data: goals } = await supabase
     .from("revenue_goals")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .eq("month", monthStr)
     .limit(1);
 
@@ -115,7 +121,7 @@ ${changesSummary}${goalContext}`;
     const { data: report, error: saveError } = await supabase
       .from("reports")
       .insert({
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         report_type,
         period_start,
         period_end,

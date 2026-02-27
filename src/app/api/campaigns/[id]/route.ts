@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const supabase = createAdminClient();
 
@@ -13,7 +16,7 @@ export async function GET(
     .from("campaigns")
     .select("*")
     .eq("id", id)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data) {
@@ -27,6 +30,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const supabase = createAdminClient();
   const body = await request.json();
@@ -50,7 +56,7 @@ export async function PATCH(
     .from("campaigns")
     .update(updates)
     .eq("id", id)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .select()
     .single();
 
@@ -64,7 +70,7 @@ export async function PATCH(
       .from("changes")
       .update({ site: body.site, updated_at: new Date().toISOString() })
       .eq("campaign_id", id)
-      .eq("user_id", DEFAULT_USER_ID);
+      .eq("user_id", userId);
   }
 
   return NextResponse.json(data);

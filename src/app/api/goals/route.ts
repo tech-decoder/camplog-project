@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 
 export async function GET(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
   const { searchParams } = new URL(request.url);
   const month = searchParams.get("month");
@@ -10,7 +13,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("revenue_goals")
     .select("*")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("month", { ascending: false });
 
   if (month) {
@@ -27,6 +30,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
   const body = await request.json();
 
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
     .from("revenue_goals")
     .upsert(
       {
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         month: monthDate,
         target_revenue: target_revenue || null,
         target_profit: target_profit || null,
@@ -65,6 +71,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
   const body = await request.json();
 
@@ -84,7 +93,7 @@ export async function PATCH(request: NextRequest) {
     .from("revenue_goals")
     .update(updates)
     .eq("id", id)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .select()
     .single();
 

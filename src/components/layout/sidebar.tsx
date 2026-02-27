@@ -10,11 +10,13 @@ import {
   List,
   Target,
   BarChart3,
+  Globe,
   Settings,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useProfile } from "@/components/providers/profile-provider";
 
 const navItems = [
   {
@@ -47,6 +49,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { profile } = useProfile();
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -60,7 +63,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-200">
         <Image
-          src="/camplog.png"
+          src="/camplog.svg"
           alt="CampLog"
           width={32}
           height={32}
@@ -94,9 +97,34 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="px-3 py-4 border-t border-slate-200 space-y-1">
+        {profile && (
+          <div className="px-3 py-2 mb-2">
+            <p className="text-sm font-medium text-slate-900 truncate">
+              {profile.nickname || profile.full_name || "User"}
+            </p>
+            <p className="text-xs text-slate-400 truncate">{profile.email}</p>
+          </div>
+        )}
+        <Link
+          href="/my-sites"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+            pathname === "/my-sites"
+              ? "bg-[#366ae8] text-white"
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          )}
+        >
+          <Globe className="h-5 w-5" />
+          My Sites
+        </Link>
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+            pathname === "/settings"
+              ? "bg-[#366ae8] text-white"
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          )}
         >
           <Settings className="h-5 w-5" />
           Settings

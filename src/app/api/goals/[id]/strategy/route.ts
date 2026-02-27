@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEFAULT_USER_ID } from "@/lib/constants";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { generateGoalStrategy } from "@/lib/openai/generate-strategy";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id: goalId } = await params;
   const supabase = createAdminClient();
 
@@ -15,7 +18,7 @@ export async function POST(
     .from("revenue_goals")
     .select("*")
     .eq("id", goalId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .single();
 
   if (goalError || !goal) {
@@ -33,7 +36,7 @@ export async function POST(
   const { data: recentChanges } = await supabase
     .from("changes")
     .select("campaign_name, site, action_type, geo, change_value, change_date, impact_verdict")
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(20);
 

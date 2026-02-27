@@ -7,7 +7,7 @@ export default function PrivacyPage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/camplog.png" alt="CampLog" width={28} height={28} className="rounded-lg" />
+            <Image src="/camplog.svg" alt="CampLog" width={28} height={28} className="rounded-lg" />
             <span className="font-semibold text-slate-900">CampLog</span>
           </Link>
         </div>

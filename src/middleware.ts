@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protected routes: everything under (app) group
-  const protectedPaths = ["/dashboard", "/chat", "/changes", "/reports", "/campaigns", "/settings"];
+  const protectedPaths = ["/dashboard", "/chat", "/changes", "/reports", "/campaigns", "/settings", "/my-sites", "/goals"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
 
   // Auth pages

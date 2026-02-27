@@ -79,7 +79,7 @@ function LoginForm() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <Image src="/camplog.png" alt="CampLog" width={48} height={48} className="rounded-xl" />
+            <Image src="/camplog.svg" alt="CampLog" width={48} height={48} className="rounded-xl" />
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-slate-900">
             Welcome back

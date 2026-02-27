@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
 
 export async function GET(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
   const { searchParams } = new URL(request.url);
 
@@ -17,6 +21,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("changes")
     .select("*", { count: "exact" })
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .range((page - 1) * limit, page * limit - 1);
 
