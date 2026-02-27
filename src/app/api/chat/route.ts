@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
     .eq("user_id", userId);
 
   const sitesContext = userSites?.length
-    ? "User's sites: " + userSites.map((s) => `${s.site_name || s.site_abbreviation} (${s.site_abbreviation})${s.site_url ? ` - ${s.site_url}` : ""}`).join(", ")
-    : undefined;
+    ? "User's managed sites (use these abbreviations for the 'site' field):\n" + userSites.map((s) => `- ${s.site_name || s.site_abbreviation} (${s.site_abbreviation})${s.site_url ? ` — ${s.site_url}` : ""}`).join("\n")
+    : "User has no sites configured yet. If they mention sites, suggest going to My Sites in the sidebar to add them.";
 
   // Fetch recent changes for conversational context
   const { data: recentChanges } = await supabase
@@ -114,14 +114,14 @@ export async function POST(request: NextRequest) {
   const activityContext = [
     sitesContext,
     recentChanges?.length
-      ? recentChanges
+      ? "Recent change history:\n" + recentChanges
           .map(
             (c) =>
               `${c.change_date}: ${c.action_type} on ${c.campaign_name}${c.site ? ` (${c.site})` : ""}${c.geo ? ` ${c.geo}` : ""} ${c.change_value || ""} - verdict: ${c.impact_verdict || "pending"}${c.pre_metrics?.margin_pct != null ? ` margin: ${c.pre_metrics.margin_pct}%` : ""}`
           )
           .join("\n")
-      : undefined,
-  ].filter(Boolean).join("\n\n") || undefined;
+      : "This user is new and has no change history yet. Be welcoming and guide them on how to use CampLog.",
+  ].join("\n\n");
 
   // Extract changes using OpenAI (with recent activity context for smarter conversations)
   const extraction = await extractChangesFromMessage(content, imageBase64List, activityContext);

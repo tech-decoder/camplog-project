@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, addMonths, subMonths } from "date-fns";
 import { RevenueGoal, SiteMonthlyRevenue, GoalStrategy } from "@/lib/types/goals";
-import { KNOWN_SITES } from "@/lib/constants/sites";
+import { useProfile } from "@/components/providers/profile-provider";
 import { formatDollar, formatPercent } from "@/lib/utils/metrics";
 import {
   Table,
@@ -49,6 +49,7 @@ import {
 } from "recharts";
 
 export default function GoalsPage() {
+  const { profile } = useProfile();
   const [currentMonth, setCurrentMonth] = useState(() =>
     format(startOfMonth(new Date()), "yyyy-MM")
   );
@@ -95,6 +96,13 @@ export default function GoalsPage() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [extractedCount, setExtractedCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Build site list from user's own sites instead of hardcoded mySites
+  const mySites = (profile?.sites || []).map((s) => ({
+    abbreviation: s.abbreviation,
+    shortName: s.name,
+    domain: s.url || "",
+  }));
 
   const fetchGoal = useCallback(async () => {
     setLoading(true);
@@ -167,7 +175,7 @@ export default function GoalsPage() {
           for (const extracted of data.sites) {
             // Match by abbreviation directly — the API returns our exact abbreviations
             const abbr = extracted.abbreviation?.toUpperCase();
-            const knownSite = KNOWN_SITES.find(
+            const knownSite = mySites.find(
               (s) => s.abbreviation === abbr
             );
 
@@ -255,7 +263,7 @@ export default function GoalsPage() {
     if (!goal) return;
     setSavingSites(true);
     try {
-      const sitesPayload = KNOWN_SITES.map((s) => {
+      const sitesPayload = mySites.map((s) => {
         const edit = siteEdits[s.abbreviation];
         const existing = sites.find((sr) => sr.site === s.abbreviation);
         return {
@@ -347,8 +355,8 @@ export default function GoalsPage() {
         ? "close"
         : "behind";
 
-  // Site rows: computed from KNOWN_SITES + current edits (used by chart + table)
-  const siteRows = KNOWN_SITES.map((s) => {
+  // Site rows: computed from mySites + current edits (used by chart + table)
+  const siteRows = mySites.map((s) => {
     const siteData = sites.find((sr) => sr.site === s.abbreviation);
     const edit = siteEdits[s.abbreviation];
     const rev = edit?.revenue ? parseFloat(edit.revenue) : Number(siteData?.revenue || 0);
@@ -832,6 +840,12 @@ export default function GoalsPage() {
               />
             </CardContent>
             <CardContent>
+              {mySites.length === 0 ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  <p className="mb-2">No sites added yet.</p>
+                  <p>Go to <a href="/my-sites" className="text-[#366ae8] hover:underline font-medium">My Sites</a> to add the sites you manage.</p>
+                </div>
+              ) : (<>
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -911,11 +925,12 @@ export default function GoalsPage() {
                     {extractedTotal && (
                       <div className="mt-3 px-2 py-2 rounded-lg bg-slate-50/80 border border-border/30">
                         <p className="text-[11px] text-muted-foreground">
-                          <span className="font-medium">All 45 sites:</span>{" "}
+                          <span className="font-medium">All sites:</span>{" "}
                           Rev {formatDollar(extractedTotal.revenue)} · Spend {formatDollar(extractedTotal.fb_spend)} · Gross {formatDollar(extractedTotal.gross)} · Margin {extractedTotal.margin_pct}% · FBM {extractedTotal.fbm_pct}%
                         </p>
                       </div>
                     )}
+              </>)}
             </CardContent>
           </Card>
 
