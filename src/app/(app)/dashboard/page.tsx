@@ -78,7 +78,7 @@ export default function DashboardPage() {
       bgColor: "bg-amber-50",
     },
     {
-      label: "Avg Margin",
+      label: "Avg Reviewed Margin",
       value: avgMargin !== null ? `${avgMargin.toFixed(1)}%` : "--",
       icon: TrendingUp,
       color: "text-[#366ae8]",

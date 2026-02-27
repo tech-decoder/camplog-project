@@ -169,8 +169,8 @@ export default function SettingsPage() {
       <Card className="border-slate-200">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-slate-100">
-              <Shield className="h-5 w-5 text-slate-600" />
+            <div className="p-2 rounded-xl bg-[#366ae8]/10">
+              <Shield className="h-5 w-5 text-[#366ae8]" />
             </div>
             <CardTitle className="text-base font-semibold">Change Password</CardTitle>
           </div>

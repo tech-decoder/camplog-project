@@ -121,9 +121,9 @@ export function ChatContainer() {
   }
 
   const starters = [
-    "Decreased Walmart PR by 25%",
-    "Paused Wendy's campaign in PR",
-    "Increasing Coca Cola spend by 30% in CA",
+    "Decreased MBM US spend by 25%",
+    "Paused GKB campaign in PR",
+    "Increasing NASI budget by 30% in CA",
   ];
 
   return (
@@ -137,8 +137,8 @@ export function ChatContainer() {
             </div>
             <h2 className="text-xl font-semibold mb-2">Welcome to CampLog</h2>
             <p className="text-muted-foreground mb-6 max-w-md">
-              Log campaign changes by typing or pasting screenshots — just like
-              WhatsApp. I&apos;ll extract the data and track everything for you.
+              Log campaign changes by typing or pasting screenshots.
+              I&apos;ll extract the data and track everything for you.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {starters.map((text) => (

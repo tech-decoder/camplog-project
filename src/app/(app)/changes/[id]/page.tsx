@@ -474,10 +474,10 @@ export default function ChangeDetailPage() {
                         <span
                           className={`inline-flex items-center gap-1 font-medium ${
                             d.isImprovement
-                              ? "text-green-600"
+                              ? "text-emerald-700"
                               : d.direction === "flat"
-                                ? "text-gray-500"
-                                : "text-red-600"
+                                ? "text-slate-500"
+                                : "text-rose-700"
                           }`}
                         >
                           {d.direction === "up" ? (
@@ -505,9 +505,9 @@ export default function ChangeDetailPage() {
       {change.impact_summary && (
         <Card className={
           change.impact_verdict === "positive"
-            ? "border-green-200 bg-green-50/30"
+            ? "border-emerald-200 bg-emerald-50/30"
             : change.impact_verdict === "negative"
-              ? "border-red-200 bg-red-50/30"
+              ? "border-rose-200 bg-rose-50/30"
               : ""
         }>
           <CardHeader className="pb-3">
