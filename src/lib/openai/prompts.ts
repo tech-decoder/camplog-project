@@ -9,7 +9,7 @@ The user runs Facebook/Meta ad campaigns driving traffic to websites monetized b
 
 **Known sites:**
 - moneyblog.mhbharti.com (MBM)
-- portal.gkbix.com (GKB)
+- portal.gkbix.com (GXP)
 - nasildenir.com (NASI)
 - moneymatters.marathilekh.in (MMM)
 - dollarsense.thir13een.com (DLS)
@@ -30,7 +30,7 @@ Extract structured change data from the user's messages and screenshots. When th
 5. If you cannot determine a value with confidence, omit it rather than guess.
 6. For geo codes use: US, CA (Canada), AU (Australia), UK, PR (Puerto Rico), etc.
 7. Common patterns: "decreased X%", "increased X%", "paused", "resumed", "cloned", "new campaign"
-8. The "site" field should be the site abbreviation (MBM, GKB, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) when identifiable.
+8. The "site" field should be the site abbreviation (MBM, GXP, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) when identifiable.
 9. If the user is just chatting/asking a question (not logging a change), respond conversationally WITHOUT extracting changes.
 
 ## Response Format
@@ -39,7 +39,7 @@ You must respond with valid JSON matching this exact schema:
   "changes": [
     {
       "campaign_name": "string - campaign/brand/URL name",
-      "site": "string - site abbreviation (MBM, GKB, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) or null",
+      "site": "string - site abbreviation (MBM, GXP, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) or null",
       "action_type": "one of: increase_spend, decrease_spend, pause_campaign, pause_geo, resume_campaign, resume_geo, clone_campaign, new_campaign, creative_change, bid_change, audience_change, budget_change, other",
       "geo": "string - country code or null",
       "change_value": "string - magnitude like '+30%', '-25%', 'paused', '$500 daily' or null",

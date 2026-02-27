@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  ImageIcon,
+  X,
+  Check,
 } from "lucide-react";
 import { format, startOfMonth, addMonths, subMonths } from "date-fns";
 import {
@@ -59,6 +62,12 @@ export default function GoalsPage() {
     Record<string, { revenue: string; fb_spend: string }>
   >({});
   const [savingSites, setSavingSites] = useState(false);
+
+  // Screenshot upload
+  const [extracting, setExtracting] = useState(false);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [extractedCount, setExtractedCount] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGoal = useCallback(async () => {
     setLoading(true);
@@ -108,6 +117,74 @@ export default function GoalsPage() {
   useEffect(() => {
     fetchGoal();
   }, [fetchGoal]);
+
+  async function handleScreenshotUpload(file: File) {
+    setExtracting(true);
+    const reader = new FileReader();
+    reader.onload = (e) => setScreenshotPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/extract-sites", {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.sites && Array.isArray(data.sites)) {
+          const newEdits: Record<string, { revenue: string; fb_spend: string }> = {};
+          let matched = 0;
+
+          for (const extracted of data.sites) {
+            // Match by abbreviation first, then by domain substring
+            const abbr = extracted.abbreviation?.toUpperCase();
+            const knownSite = KNOWN_SITES.find(
+              (s) =>
+                s.abbreviation === abbr ||
+                extracted.site_name?.includes(s.domain) ||
+                s.domain.includes(extracted.site_name?.split(".")[0] || "___")
+            );
+
+            if (knownSite) {
+              newEdits[knownSite.abbreviation] = {
+                revenue: extracted.revenue?.toString() || "0",
+                fb_spend: extracted.fb_spend?.toString() || "0",
+              };
+              matched++;
+            }
+          }
+
+          setSiteEdits((prev) => ({ ...prev, ...newEdits }));
+          setExtractedCount(matched);
+        }
+      }
+    } catch (err) {
+      console.error("Screenshot extraction failed:", err);
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  function handleScreenshotDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      handleScreenshotUpload(file);
+    }
+  }
+
+  function handleScreenshotPaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData.items;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) handleScreenshotUpload(file);
+        break;
+      }
+    }
+  }
 
   async function handleSaveGoal(e: React.FormEvent) {
     e.preventDefault();
@@ -586,7 +663,7 @@ export default function GoalsPage() {
           )}
 
           {/* Site Data Table */}
-          <Card>
+          <Card onPaste={handleScreenshotPaste}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Site Performance</CardTitle>
@@ -609,6 +686,67 @@ export default function GoalsPage() {
                 </div>
               </div>
             </CardHeader>
+
+            {/* Screenshot Upload Zone */}
+            <CardContent className="pt-0 pb-4">
+              {screenshotPreview && extractedCount > 0 ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 mb-4">
+                  <Check className="h-4 w-4 text-emerald-700 flex-shrink-0" />
+                  <p className="text-sm text-emerald-700 flex-1">
+                    Extracted data for {extractedCount} sites from screenshot. Review values below and click Save.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setScreenshotPreview(null);
+                      setExtractedCount(0);
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : extracting ? (
+                <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/20 mb-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#366ae8]" />
+                  <p className="text-sm text-[#366ae8]">
+                    Extracting site data from screenshot...
+                  </p>
+                </div>
+              ) : (
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleScreenshotDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-4 text-center cursor-pointer hover:border-[#366ae8]/40 hover:bg-[#366ae8]/5 transition-colors mb-4"
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="p-2 rounded-lg bg-[#366ae8]/10">
+                      <ImageIcon className="h-4 w-4 text-[#366ae8]" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-medium">
+                        Import from dash.ltv.so screenshot
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Drop, click, or paste (Ctrl+V) a screenshot to auto-fill all site data
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleScreenshotUpload(file);
+                }}
+              />
+            </CardContent>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

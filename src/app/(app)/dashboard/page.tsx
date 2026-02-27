@@ -13,6 +13,7 @@ import {
   BarChart3,
   ChevronRight,
   Target,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { Change } from "@/lib/types/changes";
@@ -20,7 +21,7 @@ import { ACTION_TYPE_CONFIG, VERDICT_CONFIG } from "@/lib/constants";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatRelative } from "@/lib/utils/dates";
 import { RevenueGoal } from "@/lib/types/goals";
-import { format, startOfMonth } from "date-fns";
+import { format, startOfMonth, startOfWeek, endOfWeek } from "date-fns";
 
 export default function DashboardPage() {
   const [changes, setChanges] = useState<Change[]>([]);
@@ -59,8 +60,21 @@ export default function DashboardPage() {
     }
   }
 
-  const todayChanges = changes.filter(
-    (c) => c.change_date === new Date().toISOString().split("T")[0]
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const todayChanges = changes.filter((c) => c.change_date === todayStr);
+
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const weekStartStr = format(weekStart, "yyyy-MM-dd");
+  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
+  const weekChanges = changes.filter(
+    (c) => c.change_date >= weekStartStr && c.change_date <= weekEndStr && c.status !== "voided"
+  );
+
+  const monthStartStr = format(startOfMonth(today), "yyyy-MM-dd");
+  const monthChanges = changes.filter(
+    (c) => c.change_date >= monthStartStr && c.status !== "voided"
   );
 
   const pendingReviews = changes.filter(
@@ -68,7 +82,8 @@ export default function DashboardPage() {
       c.impact_review_due &&
       !c.impact_reviewed_at &&
       c.action_type !== "pause_campaign" &&
-      c.action_type !== "pause_geo"
+      c.action_type !== "pause_geo" &&
+      c.status !== "voided"
   );
 
   const reviewedChanges = changes.filter((c) => c.impact_reviewed_at);
@@ -182,6 +197,71 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* This Week / This Month Summary */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link href="/changes">
+          <Card className="border-slate-200/60 hover:border-[#366ae8]/30 transition-colors cursor-pointer">
+            <CardContent className="pt-5 pb-4 px-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    This Week
+                  </p>
+                  <p className="text-2xl font-bold mt-1">{weekChanges.length}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {weekChanges.filter((c) => c.impact_verdict === "positive").length > 0 && (
+                      <span className="text-xs text-emerald-700">
+                        {weekChanges.filter((c) => c.impact_verdict === "positive").length} positive
+                      </span>
+                    )}
+                    {weekChanges.filter((c) => c.impact_verdict === "negative").length > 0 && (
+                      <span className="text-xs text-rose-700">
+                        {weekChanges.filter((c) => c.impact_verdict === "negative").length} negative
+                      </span>
+                    )}
+                    {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length > 0 && (
+                      <span className="text-xs text-amber-700">
+                        {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length} pending
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#366ae8]/8">
+                  <CalendarDays className="h-5 w-5 text-[#366ae8]" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/changes">
+          <Card className="border-slate-200/60 hover:border-[#366ae8]/30 transition-colors cursor-pointer">
+            <CardContent className="pt-5 pb-4 px-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    This Month
+                  </p>
+                  <p className="text-2xl font-bold mt-1">{monthChanges.length}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {new Set(monthChanges.map((c) => c.site).filter(Boolean)).size} sites
+                    </span>
+                    {monthChanges.filter((c) => c.impact_reviewed_at).length > 0 && (
+                      <span className="text-xs text-[#366ae8]">
+                        {monthChanges.filter((c) => c.impact_reviewed_at).length} reviewed
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-100">
+                  <BarChart3 className="h-5 w-5 text-slate-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Recent Changes */}

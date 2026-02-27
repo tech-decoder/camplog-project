@@ -122,7 +122,7 @@ export function ChatContainer() {
 
   const starters = [
     "Decreased MBM US spend by 25%",
-    "Paused GKB campaign in PR",
+    "Paused GXP campaign in PR",
     "Increasing NASI budget by 30% in CA",
   ];
 

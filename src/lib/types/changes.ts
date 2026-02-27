@@ -52,6 +52,8 @@ export interface CampaignMetrics {
   source_date?: string;
 }
 
+export type ChangeStatus = "active" | "voided";
+
 export interface Change {
   id: string;
   user_id: string;
@@ -72,6 +74,8 @@ export interface Change {
   impact_reviewed_at: string | null;
   impact_summary: string | null;
   impact_verdict: ImpactVerdict | null;
+  status: ChangeStatus;
+  void_reason: string | null;
   tags: string[];
   created_at: string;
   updated_at: string;

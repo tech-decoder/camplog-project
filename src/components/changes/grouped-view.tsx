@@ -179,11 +179,17 @@ export function GroupedView({ changes }: GroupedViewProps) {
                           change.impact_review_due &&
                           !change.impact_reviewed_at;
 
+                        const isVoided = change.status === "voided";
+
                         return (
                           <Link
                             key={change.id}
                             href={`/changes/${change.id}`}
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-accent transition-colors"
+                            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                              isVoided
+                                ? "opacity-60 bg-slate-50/50"
+                                : "hover:bg-accent"
+                            }`}
                           >
                             <Badge
                               variant="secondary"
@@ -199,14 +205,26 @@ export function GroupedView({ changes }: GroupedViewProps) {
                             </Badge>
 
                             <div className="flex-1 min-w-0">
-                              <span className="text-sm text-muted-foreground">
+                              <span className={`text-sm text-muted-foreground ${isVoided ? "line-through" : ""}`}>
                                 {change.geo ? `${change.geo} ` : ""}
                                 {change.change_value || ""}
                               </span>
+                              {isVoided && change.void_reason && (
+                                <p className="text-xs text-slate-400 italic truncate">
+                                  {change.void_reason}
+                                </p>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {change.impact_verdict ? (
+                              {isVoided ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-slate-100 text-slate-500 text-xs"
+                                >
+                                  Voided
+                                </Badge>
+                              ) : change.impact_verdict ? (
                                 <Badge
                                   variant="secondary"
                                   className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-xs`}

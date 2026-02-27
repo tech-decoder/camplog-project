@@ -19,6 +19,8 @@ import {
   List,
   CalendarDays,
   LayoutGrid,
+  Clock,
+  CalendarRange,
 } from "lucide-react";
 import Link from "next/link";
 import { Change } from "@/lib/types/changes";
@@ -27,8 +29,10 @@ import { ActionIcon } from "@/components/ui/action-icon";
 import { formatDate } from "@/lib/utils/dates";
 import { CalendarView } from "@/components/changes/calendar-view";
 import { GroupedView } from "@/components/changes/grouped-view";
+import { WeeklyView } from "@/components/changes/weekly-view";
+import { MonthlyView } from "@/components/changes/monthly-view";
 
-type ViewMode = "list" | "calendar" | "grouped";
+type ViewMode = "list" | "calendar" | "grouped" | "weekly" | "monthly";
 
 export default function ChangesPage() {
   const [changes, setChanges] = useState<Change[]>([]);
@@ -123,30 +127,24 @@ export default function ChangesPage() {
             Campaign Changes ({changes.length})
           </h2>
           <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant={viewMode === "calendar" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode("calendar")}
-            >
-              <CalendarDays className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant={viewMode === "grouped" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode("grouped")}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </Button>
+            {([
+              { mode: "list" as const, icon: List, label: "List" },
+              { mode: "weekly" as const, icon: Clock, label: "Weekly" },
+              { mode: "monthly" as const, icon: CalendarRange, label: "Monthly" },
+              { mode: "calendar" as const, icon: CalendarDays, label: "Calendar" },
+              { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
+            ] as const).map(({ mode, icon: Icon, label }) => (
+              <Button
+                key={mode}
+                variant={viewMode === mode ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 px-2 gap-1 text-xs"
+                onClick={() => setViewMode(mode)}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </Button>
+            ))}
           </div>
         </div>
         <Link href="/chat">
@@ -184,6 +182,10 @@ export default function ChangesPage() {
         <CalendarView changes={changes} />
       ) : viewMode === "grouped" ? (
         <GroupedView changes={changes} />
+      ) : viewMode === "weekly" ? (
+        <WeeklyView changes={changes} />
+      ) : viewMode === "monthly" ? (
+        <MonthlyView changes={changes} />
       ) : (
         /* List view */
         <Card>
@@ -200,12 +202,17 @@ export default function ChangesPage() {
                   !isPause &&
                   change.impact_review_due &&
                   !change.impact_reviewed_at;
+                const isVoided = change.status === "voided";
 
                 return (
                   <Link
                     key={change.id}
                     href={`/changes/${change.id}`}
-                    className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${
+                      isVoided
+                        ? "border-slate-200 bg-slate-50/50 opacity-60"
+                        : "border-border hover:bg-accent"
+                    }`}
                   >
                     <Badge
                       variant="secondary"
@@ -221,7 +228,7 @@ export default function ChangesPage() {
                     </Badge>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
+                      <p className={`text-sm font-medium ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                         {change.campaign_name}
                         {change.site ? ` (${change.site})` : ""}
                         {change.geo ? ` — ${change.geo}` : ""}
@@ -229,15 +236,19 @@ export default function ChangesPage() {
                           ? ` ${change.change_value}`
                           : ""}
                       </p>
-                      {change.description && (
+                      {isVoided && change.void_reason ? (
+                        <p className="text-xs text-slate-500 truncate mt-0.5 italic">
+                          {change.void_reason}
+                        </p>
+                      ) : change.description ? (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {change.description}
                         </p>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {hasPreMetrics &&
+                      {!isVoided && hasPreMetrics &&
                         change.pre_metrics.margin_pct != null && (
                           <span className="text-xs text-muted-foreground">
                             {Number(
@@ -249,7 +260,14 @@ export default function ChangesPage() {
                           </span>
                         )}
 
-                      {change.impact_verdict ? (
+                      {isVoided ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-slate-100 text-slate-500 text-xs"
+                        >
+                          Voided
+                        </Badge>
+                      ) : change.impact_verdict ? (
                         <Badge
                           variant="secondary"
                           className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-xs`}

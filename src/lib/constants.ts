@@ -149,3 +149,19 @@ export const METRIC_LABELS: Record<
 };
 
 export const IMPACT_REVIEW_DAYS = 3;
+
+export const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bgColor: string }
+> = {
+  active: {
+    label: "Active",
+    color: "text-emerald-700",
+    bgColor: "bg-emerald-50",
+  },
+  voided: {
+    label: "Voided",
+    color: "text-slate-500",
+    bgColor: "bg-slate-100",
+  },
+};

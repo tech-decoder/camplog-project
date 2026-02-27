@@ -6,7 +6,7 @@ export interface SiteDefinition {
 
 export const KNOWN_SITES: SiteDefinition[] = [
   { domain: "moneyblog.mhbharti.com", abbreviation: "MBM", shortName: "MoneyBlog" },
-  { domain: "portal.gkbix.com", abbreviation: "GKB", shortName: "GKBix" },
+  { domain: "portal.gkbix.com", abbreviation: "GXP", shortName: "GKBix" },
   { domain: "nasildenir.com", abbreviation: "NASI", shortName: "NasilDenir" },
   { domain: "moneymatters.marathilekh.in", abbreviation: "MMM", shortName: "MoneyMatters" },
   { domain: "dollarsense.thir13een.com", abbreviation: "DLS", shortName: "DollarSense" },

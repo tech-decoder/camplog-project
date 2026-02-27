@@ -21,6 +21,10 @@ import {
   MapPin,
   Target,
   Loader2,
+  Ban,
+  Pencil,
+  Globe,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 import { Change, CampaignMetrics } from "@/lib/types/changes";
@@ -29,6 +33,7 @@ import {
   VERDICT_CONFIG,
   METRIC_LABELS,
 } from "@/lib/constants";
+import { SITE_ABBREVIATION_MAP } from "@/lib/constants/sites";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatDate } from "@/lib/utils/dates";
 import {
@@ -56,19 +61,29 @@ export default function ChangeDetailPage() {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Void modal
+  const [showVoidDialog, setShowVoidDialog] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [voiding, setVoiding] = useState(false);
+
+  // Edit mode
+  const [editing, setEditing] = useState(false);
+  const [editSite, setEditSite] = useState("");
+  const [editCampaignName, setEditCampaignName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
   useEffect(() => {
     fetchChange();
   }, [params.id]);
 
   async function fetchChange() {
     try {
-      const res = await fetch(`/api/changes?limit=200`);
+      const res = await fetch(`/api/changes/${params.id}`);
       if (res.ok) {
         const data = await res.json();
-        const found = (data.changes as Change[]).find(
-          (c) => c.id === params.id
-        );
-        if (found) setChange(found);
+        setChange(data);
+        setEditSite(data.site || "");
+        setEditCampaignName(data.campaign_name || "");
       }
     } catch (err) {
       console.error("Failed to fetch change:", err);
@@ -83,7 +98,6 @@ export default function ChangeDetailPage() {
     reader.onload = (e) => setScreenshotPreview(e.target?.result as string);
     reader.readAsDataURL(file);
 
-    // Extract metrics from screenshot via OpenAI
     setExtracting(true);
     try {
       const formData = new FormData();
@@ -178,6 +192,60 @@ export default function ChangeDetailPage() {
     }
   }
 
+  async function handleVoid() {
+    if (!change) return;
+    setVoiding(true);
+    try {
+      const res = await fetch(`/api/changes/${change.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "voided",
+          void_reason: voidReason || "Change did not happen",
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setChange(updated);
+        setShowVoidDialog(false);
+        toast.success("Change marked as voided");
+      } else {
+        toast.error("Failed to void change");
+      }
+    } catch {
+      toast.error("Failed to void change");
+    } finally {
+      setVoiding(false);
+    }
+  }
+
+  async function handleSaveEdit() {
+    if (!change) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/changes/${change.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campaign_name: editCampaignName,
+          site: editSite || null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setChange(updated);
+        setEditing(false);
+        toast.success("Change updated");
+      } else {
+        toast.error("Failed to update change");
+      }
+    } catch {
+      toast.error("Failed to update change");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[50vh]">
@@ -215,13 +283,12 @@ export default function ChangeDetailPage() {
   const reviewDaysAfter = change.impact_reviewed_at
     ? daysBetween(change.change_date, change.impact_reviewed_at)
     : null;
+  const isVoided = change.status === "voided";
 
-  // Get pre-metrics keys for the review form
   const preMetricKeys = Object.keys(change.pre_metrics || {}).filter(
     (k) => k !== "time_range" && k !== "source_date" && k in METRIC_LABELS
   );
 
-  // Group pre-metrics into categories for better readability
   const fbCostKeys = ["fb_spend", "fb_cpc", "fb_ctr", "fb_clicks", "fb_leads", "fb_margin_pct", "fb_daily_budget"];
   const adRevenueKeys = ["ad_revenue", "ad_clicks", "ad_ctr", "ad_cpc", "ad_rpm"];
   const profitKeys = ["gross_profit", "margin_pct", "roi", "roas"];
@@ -238,25 +305,105 @@ export default function ChangeDetailPage() {
   }
 
   const grouped = groupMetrics(preMetricEntries);
+  const siteInfo = change.site ? SITE_ABBREVIATION_MAP[change.site] : null;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl" onPaste={handlePaste}>
+    <div className="p-6 space-y-6 max-w-5xl mx-auto" onPaste={handlePaste}>
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        {change.impact_reviewed_at && reviewDaysAfter !== null && (
-          <Badge variant="outline" className="text-xs gap-1">
-            <Clock className="h-3 w-3" />
-            Reviewed {reviewDaysAfter} day{reviewDaysAfter !== 1 ? "s" : ""} after change
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {!isVoided && !editing && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1" />
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-rose-600"
+                onClick={() => setShowVoidDialog(true)}
+              >
+                <Ban className="h-3.5 w-3.5 mr-1" />
+                Void
+              </Button>
+            </>
+          )}
+          {change.impact_reviewed_at && reviewDaysAfter !== null && (
+            <Badge variant="outline" className="text-xs gap-1">
+              <Clock className="h-3 w-3" />
+              Reviewed {reviewDaysAfter}d after
+            </Badge>
+          )}
+        </div>
       </div>
 
+      {/* Voided Banner */}
+      {isVoided && (
+        <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 flex items-start gap-3">
+          <Ban className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-slate-700">
+              This change has been voided
+            </p>
+            {change.void_reason && (
+              <p className="text-sm text-slate-500 mt-0.5">
+                {change.void_reason}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Void Dialog */}
+      {showVoidDialog && (
+        <Card className="border-rose-200 bg-rose-50/30">
+          <CardContent className="pt-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Ban className="h-4 w-4 text-rose-600" />
+              <p className="text-sm font-medium">Mark as Voided</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This change will be crossed out and marked as not happened. You can still see it in your history.
+            </p>
+            <Input
+              placeholder="Reason (e.g. ad account restricted, didn't publish)"
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleVoid}
+                disabled={voiding}
+              >
+                {voiding && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+                Void Change
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowVoidDialog(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Change Summary Card */}
-      <Card>
+      <Card className={isVoided ? "opacity-70" : ""}>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
             {/* Top row: badges */}
@@ -268,7 +415,12 @@ export default function ChangeDetailPage() {
                 {config && <ActionIcon iconName={config.icon} className="h-3.5 w-3.5" />}
                 {config?.label}
               </Badge>
-              {change.impact_verdict && (
+              {isVoided && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-sm px-3 py-1">
+                  Voided
+                </Badge>
+              )}
+              {change.impact_verdict && !isVoided && (
                 <Badge
                   variant="secondary"
                   className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-sm px-3 py-1`}
@@ -276,12 +428,12 @@ export default function ChangeDetailPage() {
                   {VERDICT_CONFIG[change.impact_verdict]?.label} Impact
                 </Badge>
               )}
-              {isPause && (
-                <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-sm px-3 py-1">
+              {isPause && !isVoided && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-sm px-3 py-1">
                   No Review Needed
                 </Badge>
               )}
-              {needsReview && (
+              {needsReview && !isVoided && (
                 <Badge
                   variant="secondary"
                   className="bg-amber-100 text-amber-700 text-sm px-3 py-1"
@@ -292,19 +444,65 @@ export default function ChangeDetailPage() {
             </div>
 
             {/* Campaign name + value */}
-            <h1 className="text-2xl font-bold tracking-tight">
-              {change.campaign_name}
-              {change.change_value ? (
-                <span className="text-primary ml-2">{change.change_value}</span>
-              ) : null}
-            </h1>
+            {editing ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Campaign Name</Label>
+                    <Input
+                      value={editCampaignName}
+                      onChange={(e) => setEditCampaignName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Site</Label>
+                    <Input
+                      value={editSite}
+                      onChange={(e) => setEditSite(e.target.value)}
+                      placeholder="e.g. MBM, GXP, MMM"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    disabled={savingEdit}
+                    className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+                  >
+                    {savingEdit && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+                    <Check className="h-3.5 w-3.5 mr-1" />
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <h1 className={`text-2xl font-bold tracking-tight ${isVoided ? "line-through text-muted-foreground" : ""}`}>
+                {change.campaign_name}
+                {change.change_value ? (
+                  <span className={isVoided ? "text-muted-foreground" : "text-primary"}>
+                    {" "}{change.change_value}
+                  </span>
+                ) : null}
+              </h1>
+            )}
 
             {/* Meta row */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {change.site && (
                 <div className="flex items-center gap-1.5">
-                  <Target className="h-3.5 w-3.5" />
-                  <span>{change.site}</span>
+                  <Globe className="h-3.5 w-3.5" />
+                  <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-xs font-semibold">
+                    {change.site}
+                  </Badge>
+                  {siteInfo && (
+                    <span className="text-xs">{siteInfo.domain}</span>
+                  )}
                 </div>
               )}
               {change.geo && (
@@ -335,202 +533,188 @@ export default function ChangeDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Pre-Change Metrics — Grouped */}
-      {hasPreMetrics && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              Metrics at Time of Change
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {grouped.fb.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Facebook / Cost
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {grouped.fb.map(([key, value]) => {
-                    const meta = METRIC_LABELS[key];
-                    return (
+      {/* Two column layout for metrics and impact */}
+      {!isVoided && (hasPreMetrics || deltas.length > 0 || change.impact_summary) && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Left: Pre-Change Metrics */}
+          {hasPreMetrics && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  Metrics at Time of Change
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {grouped.fb.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Facebook / Cost
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {grouped.fb.map(([key, value]) => {
+                        const meta = METRIC_LABELS[key];
+                        return (
+                          <div
+                            key={key}
+                            className="text-center p-3 rounded-lg bg-muted/50"
+                          >
+                            <p className="text-xs text-muted-foreground">
+                              {meta?.label || key}
+                            </p>
+                            <p className="text-lg font-semibold mt-0.5">
+                              {formatMetricValue(value, meta?.unit || "")}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {grouped.ad.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      AdSense / Revenue
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {grouped.ad.map(([key, value]) => {
+                        const meta = METRIC_LABELS[key];
+                        return (
+                          <div
+                            key={key}
+                            className="text-center p-3 rounded-lg bg-muted/50"
+                          >
+                            <p className="text-xs text-muted-foreground">
+                              {meta?.label || key}
+                            </p>
+                            <p className="text-lg font-semibold mt-0.5">
+                              {formatMetricValue(value, meta?.unit || "")}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {grouped.profit.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Profitability
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {grouped.profit.map(([key, value]) => {
+                        const meta = METRIC_LABELS[key];
+                        return (
+                          <div
+                            key={key}
+                            className="text-center p-3 rounded-lg bg-muted/50"
+                          >
+                            <p className="text-xs text-muted-foreground">
+                              {meta?.label || key}
+                            </p>
+                            <p className="text-lg font-semibold mt-0.5">
+                              {formatMetricValue(value, meta?.unit || "")}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Right: Impact Assessment or Before vs After */}
+          <div className="space-y-6">
+            {/* Before vs After Comparison */}
+            {deltas.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Before vs After</CardTitle>
+                    {reviewDaysAfter !== null && (
+                      <span className="text-xs text-muted-foreground">
+                        {reviewDaysAfter}d after change
+                      </span>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {deltas.map((d) => (
                       <div
-                        key={key}
-                        className="text-center p-3 rounded-lg bg-muted/50"
+                        key={d.key}
+                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
                       >
-                        <p className="text-xs text-muted-foreground">
-                          {meta?.label || key}
-                        </p>
-                        <p className="text-lg font-semibold mt-0.5">
-                          {formatMetricValue(value, meta?.unit || "")}
-                        </p>
+                        <span className="text-sm font-medium">{d.label}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground">
+                            {formatMetricValue(d.before, d.unit)}
+                          </span>
+                          <span className="text-muted-foreground">&rarr;</span>
+                          <span className="text-sm font-medium">
+                            {formatMetricValue(d.after, d.unit)}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-0.5 text-xs font-medium min-w-[60px] justify-end ${
+                              d.isImprovement
+                                ? "text-emerald-700"
+                                : d.direction === "flat"
+                                  ? "text-slate-500"
+                                  : "text-rose-700"
+                            }`}
+                          >
+                            {d.direction === "up" ? (
+                              <TrendingUp className="h-3 w-3" />
+                            ) : d.direction === "down" ? (
+                              <TrendingDown className="h-3 w-3" />
+                            ) : (
+                              <Minus className="h-3 w-3" />
+                            )}
+                            {d.percentChange >= 0 ? "+" : ""}
+                            {d.percentChange.toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
-            {grouped.ad.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  AdSense / Revenue
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {grouped.ad.map(([key, value]) => {
-                    const meta = METRIC_LABELS[key];
-                    return (
-                      <div
-                        key={key}
-                        className="text-center p-3 rounded-lg bg-muted/50"
+
+            {/* AI Impact Assessment */}
+            {change.impact_summary && (
+              <Card className={
+                change.impact_verdict === "positive"
+                  ? "border-emerald-200 bg-emerald-50/30"
+                  : change.impact_verdict === "negative"
+                    ? "border-rose-200 bg-rose-50/30"
+                    : ""
+              }>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">AI Impact Assessment</CardTitle>
+                    {change.impact_verdict && (
+                      <Badge
+                        variant="secondary"
+                        className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
                       >
-                        <p className="text-xs text-muted-foreground">
-                          {meta?.label || key}
-                        </p>
-                        <p className="text-lg font-semibold mt-0.5">
-                          {formatMetricValue(value, meta?.unit || "")}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                        {VERDICT_CONFIG[change.impact_verdict]?.label}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm leading-relaxed">{change.impact_summary}</p>
+                </CardContent>
+              </Card>
             )}
-            {grouped.profit.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Profitability
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {grouped.profit.map(([key, value]) => {
-                    const meta = METRIC_LABELS[key];
-                    return (
-                      <div
-                        key={key}
-                        className="text-center p-3 rounded-lg bg-muted/50"
-                      >
-                        <p className="text-xs text-muted-foreground">
-                          {meta?.label || key}
-                        </p>
-                        <p className="text-lg font-semibold mt-0.5">
-                          {formatMetricValue(value, meta?.unit || "")}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Before vs After Comparison */}
-      {deltas.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">
-                Before vs After
-              </CardTitle>
-              {reviewDaysAfter !== null && (
-                <span className="text-xs text-muted-foreground">
-                  {reviewDaysAfter} day{reviewDaysAfter !== 1 ? "s" : ""} after change
-                </span>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2.5 pr-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Metric
-                    </th>
-                    <th className="text-right py-2.5 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Before
-                    </th>
-                    <th className="text-right py-2.5 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      After
-                    </th>
-                    <th className="text-right py-2.5 pl-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Change
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deltas.map((d) => (
-                    <tr
-                      key={d.key}
-                      className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="py-2.5 pr-4 font-medium">{d.label}</td>
-                      <td className="text-right py-2.5 px-4 text-muted-foreground">
-                        {formatMetricValue(d.before, d.unit)}
-                      </td>
-                      <td className="text-right py-2.5 px-4 font-medium">
-                        {formatMetricValue(d.after, d.unit)}
-                      </td>
-                      <td className="text-right py-2.5 pl-4">
-                        <span
-                          className={`inline-flex items-center gap-1 font-medium ${
-                            d.isImprovement
-                              ? "text-emerald-700"
-                              : d.direction === "flat"
-                                ? "text-slate-500"
-                                : "text-rose-700"
-                          }`}
-                        >
-                          {d.direction === "up" ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : d.direction === "down" ? (
-                            <TrendingDown className="h-3 w-3" />
-                          ) : (
-                            <Minus className="h-3 w-3" />
-                          )}
-                          {formatDelta(d.absoluteChange, d.unit)} (
-                          {d.percentChange >= 0 ? "+" : ""}
-                          {d.percentChange.toFixed(1)}%)
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Impact Summary */}
-      {change.impact_summary && (
-        <Card className={
-          change.impact_verdict === "positive"
-            ? "border-emerald-200 bg-emerald-50/30"
-            : change.impact_verdict === "negative"
-              ? "border-rose-200 bg-rose-50/30"
-              : ""
-        }>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">AI Impact Assessment</CardTitle>
-              {change.impact_verdict && (
-                <Badge
-                  variant="secondary"
-                  className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
-                >
-                  {VERDICT_CONFIG[change.impact_verdict]?.label}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm leading-relaxed">{change.impact_summary}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Impact Review Form — only for non-pause, non-reviewed changes */}
-      {needsReview && (
+      {/* Impact Review Form — only for non-pause, non-reviewed, non-voided changes */}
+      {needsReview && !isVoided && (
         <Card className="border-amber-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Submit Impact Review</CardTitle>
@@ -572,11 +756,11 @@ export default function ChangeDetailPage() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/30 transition-colors"
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-[#366ae8]/50 hover:bg-[#366ae8]/5 transition-colors"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className="bg-muted rounded-full p-3">
-                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    <div className="bg-[#366ae8]/10 rounded-full p-3">
+                      <ImageIcon className="h-5 w-5 text-[#366ae8]" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">
@@ -642,7 +826,7 @@ export default function ChangeDetailPage() {
                           [key]: e.target.value,
                         }))
                       }
-                      className={hasValue ? "border-green-300 bg-green-50/50" : ""}
+                      className={hasValue ? "border-emerald-300 bg-emerald-50/50" : ""}
                     />
                   </div>
                 );
@@ -656,7 +840,7 @@ export default function ChangeDetailPage() {
                 extracting ||
                 Object.values(postMetrics).every((v) => !v.trim())
               }
-              className="w-full"
+              className="w-full bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
               size="lg"
             >
               {submitting ? (
