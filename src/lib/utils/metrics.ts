@@ -108,9 +108,9 @@ export function getMetricColorClass(key: string, value: number): string {
   if (!meta) return "";
 
   if (meta.higherIsBetter) {
-    if (value > 0) return "text-emerald-700";
-    if (value < 0) return "text-rose-700";
-    return "text-slate-500";
+    if (value > 0) return "text-emerald-700 dark:text-emerald-400";
+    if (value < 0) return "text-rose-700 dark:text-rose-400";
+    return "text-muted-foreground";
   }
   // Costs (fb_spend, fb_cpc) — neutral
   return "text-foreground";
@@ -122,8 +122,8 @@ export function getMetricBgClass(key: string, value: number): string {
   if (!meta) return "bg-muted/50";
 
   if (meta.higherIsBetter) {
-    if (value > 0) return "bg-emerald-50/50";
-    if (value < 0) return "bg-rose-50/50";
+    if (value > 0) return "bg-emerald-500/8";
+    if (value < 0) return "bg-rose-500/8";
   }
   return "bg-muted/50";
 }

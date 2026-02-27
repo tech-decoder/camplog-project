@@ -375,14 +375,14 @@ export default function ChangeDetailPage() {
 
       {/* Voided Banner */}
       {isVoided && (
-        <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 flex items-start gap-3">
-          <Ban className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+        <div className="bg-muted border border-border rounded-lg p-4 flex items-start gap-3">
+          <Ban className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-foreground/80">
               This change has been voided
             </p>
             {change.void_reason && (
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {change.void_reason}
               </p>
             )}
@@ -392,7 +392,7 @@ export default function ChangeDetailPage() {
 
       {/* Void Dialog */}
       {showVoidDialog && (
-        <Card className="border-rose-200 bg-rose-50/30">
+        <Card className="border-rose-500/20 bg-rose-500/5">
           <CardContent className="pt-5 space-y-3">
             <div className="flex items-center gap-2">
               <Ban className="h-4 w-4 text-rose-600" />
@@ -442,7 +442,7 @@ export default function ChangeDetailPage() {
                 {config?.label}
               </Badge>
               {isVoided && (
-                <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-sm px-3 py-1">
+                <Badge variant="secondary" className="bg-muted text-muted-foreground text-sm px-3 py-1">
                   Voided
                 </Badge>
               )}
@@ -455,14 +455,14 @@ export default function ChangeDetailPage() {
                 </Badge>
               )}
               {isPause && !isVoided && (
-                <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-sm px-3 py-1">
+                <Badge variant="secondary" className="bg-muted text-muted-foreground text-sm px-3 py-1">
                   No Review Needed
                 </Badge>
               )}
               {needsReview && !isVoided && (
                 <Badge
                   variant="secondary"
-                  className="bg-amber-100 text-amber-700 text-sm px-3 py-1"
+                  className="bg-amber-500/15 text-amber-700 dark:text-amber-400 text-sm px-3 py-1"
                 >
                   Review Due
                 </Badge>
@@ -470,7 +470,7 @@ export default function ChangeDetailPage() {
               {change.test_category && (
                 <Badge
                   variant="secondary"
-                  className="bg-purple-50 text-purple-700 text-sm px-3 py-1 gap-1.5"
+                  className="bg-purple-500/10 text-purple-700 dark:text-purple-400 text-sm px-3 py-1 gap-1.5"
                 >
                   <FlaskConical className="h-3.5 w-3.5" />
                   {TEST_CATEGORIES[change.test_category]?.label || change.test_category}
@@ -512,7 +512,6 @@ export default function ChangeDetailPage() {
                     size="sm"
                     onClick={handleSaveEdit}
                     disabled={savingEdit}
-                    className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
                   >
                     {savingEdit && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
                     <Check className="h-3.5 w-3.5 mr-1" />
@@ -539,7 +538,7 @@ export default function ChangeDetailPage() {
               {change.site && (
                 <div className="flex items-center gap-1.5">
                   <Globe className="h-3.5 w-3.5" />
-                  <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-xs font-semibold">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs font-semibold">
                     {change.site}
                   </Badge>
                   {siteInfo && (
@@ -574,10 +573,10 @@ export default function ChangeDetailPage() {
 
             {/* Hypothesis */}
             {change.hypothesis && (
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50/50 border border-purple-100">
-                <Lightbulb className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-500/8 border border-purple-500/15">
+                <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-purple-700 uppercase tracking-wider">Hypothesis</p>
+                  <p className="text-xs font-medium text-purple-700 dark:text-purple-400 uppercase tracking-wider">Hypothesis</p>
                   <p className="text-sm text-foreground mt-0.5">{change.hypothesis}</p>
                 </div>
               </div>
@@ -593,7 +592,7 @@ export default function ChangeDetailPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Before vs After</CardTitle>
               {reviewDaysAfter !== null && (
-                <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-xs">
+                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
                   {reviewDaysAfter}d after change
                 </Badge>
               )}
@@ -619,10 +618,10 @@ export default function ChangeDetailPage() {
                       variant="secondary"
                       className={`text-xs font-medium px-2 py-0.5 min-w-[70px] justify-center gap-1 ${
                         d.isImprovement
-                          ? "bg-emerald-100 text-emerald-700"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                           : d.direction === "flat"
-                            ? "bg-slate-100 text-slate-500"
-                            : "bg-rose-100 text-rose-700"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
                       }`}
                     >
                       {d.direction === "up" ? (
@@ -723,9 +722,9 @@ export default function ChangeDetailPage() {
       {!isVoided && change.impact_summary && (
         <Card className={
           change.impact_verdict === "positive"
-            ? "border-emerald-200 bg-emerald-50/30"
+            ? "border-emerald-500/20 bg-emerald-500/5"
             : change.impact_verdict === "negative"
-              ? "border-rose-200 bg-rose-50/30"
+              ? "border-rose-500/20 bg-rose-500/5"
               : ""
         }>
           <CardHeader className="pb-3">
@@ -749,7 +748,7 @@ export default function ChangeDetailPage() {
 
       {/* Impact Review Form — only for non-pause, non-reviewed, non-voided changes */}
       {needsReview && !isVoided && (
-        <Card className="border-amber-200">
+        <Card className="border-amber-500/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Submit Impact Review</CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -790,11 +789,11 @@ export default function ChangeDetailPage() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-[#366ae8]/50 hover:bg-[#366ae8]/5 transition-colors"
+                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className="bg-[#366ae8]/10 rounded-full p-3">
-                      <ImageIcon className="h-5 w-5 text-[#366ae8]" />
+                    <div className="bg-primary/10 rounded-full p-3">
+                      <ImageIcon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">
@@ -860,7 +859,7 @@ export default function ChangeDetailPage() {
                           [key]: e.target.value,
                         }))
                       }
-                      className={hasValue ? "border-emerald-300 bg-emerald-50/50" : ""}
+                      className={hasValue ? "border-emerald-500/30 bg-emerald-500/8" : ""}
                     />
                   </div>
                 );
@@ -874,7 +873,7 @@ export default function ChangeDetailPage() {
                 extracting ||
                 Object.values(postMetrics).every((v) => !v.trim())
               }
-              className="w-full bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+              className="w-full"
               size="lg"
             >
               {submitting ? (

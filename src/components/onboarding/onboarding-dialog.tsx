@@ -201,7 +201,7 @@ export function OnboardingDialog() {
           <Button
             onClick={handleSubmit}
             disabled={saving || !nickname.trim() || sites.length === 0}
-            className="w-full bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+            className="w-full"
             size="lg"
           >
             {saving ? (

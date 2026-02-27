@@ -133,9 +133,9 @@ export function CalendarView({ changes }: CalendarViewProps) {
                     !isCurrentMonth
                       ? "text-muted-foreground/40"
                       : isSelected
-                        ? "bg-[#366ae8] text-white"
+                        ? "bg-primary text-primary-foreground"
                         : today
-                          ? "bg-[#366ae8]/10 text-[#366ae8] font-semibold"
+                          ? "bg-primary/10 text-primary font-semibold"
                           : "hover:bg-muted/50"
                   }`}
                 >
@@ -144,7 +144,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                     <div className="flex items-center gap-0.5 mt-1">
                       <div
                         className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected ? "bg-white" : "bg-[#366ae8]"
+                          isSelected ? "bg-primary-foreground" : "bg-primary"
                         }`}
                       />
                       {count > 1 && (
@@ -203,7 +203,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                     href={`/changes/${change.id}`}
                     className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
                       isVoided
-                        ? "border-slate-200 bg-slate-50/50 opacity-60"
+                        ? "border-border bg-muted/30 opacity-60"
                         : "border-border hover:bg-accent"
                     }`}
                   >
@@ -225,7 +225,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                         {isVoided ? (
                           <Badge
                             variant="secondary"
-                            className="bg-slate-100 text-slate-500 text-xs"
+                            className="bg-muted text-muted-foreground text-xs"
                           >
                             Voided
                           </Badge>
@@ -239,7 +239,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                         ) : isPendingReview ? (
                           <Badge
                             variant="secondary"
-                            className="bg-amber-50 text-amber-700 text-xs"
+                            className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
                           >
                             Review Due
                           </Badge>
@@ -257,7 +257,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                     </p>
 
                     {isVoided && change.void_reason && (
-                      <p className="text-xs text-slate-500 italic">
+                      <p className="text-xs text-muted-foreground italic">
                         {change.void_reason}
                       </p>
                     )}

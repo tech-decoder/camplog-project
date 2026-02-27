@@ -215,7 +215,7 @@ export default function ChangesPage() {
                     href={`/changes/${change.id}`}
                     className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${
                       isVoided
-                        ? "border-slate-200 bg-slate-50/50 opacity-60"
+                        ? "border-border bg-muted/30 opacity-60"
                         : "border-border hover:bg-accent"
                     }`}
                   >
@@ -242,7 +242,7 @@ export default function ChangesPage() {
                           : ""}
                       </p>
                       {isVoided && change.void_reason ? (
-                        <p className="text-xs text-slate-500 truncate mt-0.5 italic">
+                        <p className="text-xs text-muted-foreground truncate mt-0.5 italic">
                           {change.void_reason}
                         </p>
                       ) : change.description ? (
@@ -268,7 +268,7 @@ export default function ChangesPage() {
                       {isVoided ? (
                         <Badge
                           variant="secondary"
-                          className="bg-slate-100 text-slate-500 text-xs"
+                          className="bg-muted text-muted-foreground text-xs"
                         >
                           Voided
                         </Badge>
@@ -282,7 +282,7 @@ export default function ChangesPage() {
                       ) : isPendingReview ? (
                         <Badge
                           variant="secondary"
-                          className="bg-amber-50 text-amber-700 text-xs"
+                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
                         >
                           Review Due
                         </Badge>

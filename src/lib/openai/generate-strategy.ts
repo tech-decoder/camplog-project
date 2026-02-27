@@ -36,7 +36,6 @@ Month: ${goal.month}
 Target Revenue: $${goal.target_revenue || "not set"}
 Target Profit: $${goal.target_profit || "not set"}
 Target Margin: ${goal.target_margin_pct || "not set"}%
-Max FB Spend: $${goal.target_fb_spend || "not set"}
 
 Current Progress (Day ${progress.daysElapsed} of ${progress.daysInMonth}):
 - Revenue: $${goal.actual_revenue} (${typeof progress.revenueProgress === "number" ? (progress.revenueProgress as number).toFixed(1) : 0}% of target)

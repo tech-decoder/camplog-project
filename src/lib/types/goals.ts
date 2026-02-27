@@ -6,7 +6,6 @@ export interface RevenueGoal {
   target_revenue: number | null;
   target_profit: number | null;
   target_margin_pct: number | null;
-  target_fb_spend: number | null;
 
   actual_revenue: number;
   actual_fb_spend: number;

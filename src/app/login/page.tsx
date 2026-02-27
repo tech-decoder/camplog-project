@@ -75,30 +75,30 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5">
             <Image src="/camplog.svg" alt="CampLog" width={48} height={48} className="rounded-xl" />
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">
+          <h1 className="mt-4 text-2xl font-bold text-foreground">
             Welcome back
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Sign in to your CampLog account
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/15 text-sm text-[#366ae8]">
+            <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/15 text-sm text-primary">
               {error}
             </div>
           )}
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-sm text-slate-700">
+              <Label htmlFor="email" className="text-sm text-foreground/80">
                 Email
               </Label>
               <Input
@@ -112,7 +112,7 @@ function LoginForm() {
               />
             </div>
             <div>
-              <Label htmlFor="password" className="text-sm text-slate-700">
+              <Label htmlFor="password" className="text-sm text-foreground/80">
                 Password
               </Label>
               <div className="relative mt-1">
@@ -128,7 +128,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={togglePassword}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -141,7 +141,7 @@ function LoginForm() {
             </div>
             <Button
               type="submit"
-              className="w-full h-11 bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+              className="w-full h-11"
               disabled={loading}
             >
               {loading ? (
@@ -152,11 +152,11 @@ function LoginForm() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="text-[#366ae8] hover:text-[#2d5bcf] font-medium"
+            className="text-primary hover:text-primary/80 font-medium"
           >
             Sign up
           </Link>

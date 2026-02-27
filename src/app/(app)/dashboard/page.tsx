@@ -100,29 +100,29 @@ export default function DashboardPage() {
       label: "Changes Today",
       value: todayChanges.length,
       icon: Activity,
-      color: "text-[#366ae8]",
-      bgColor: "bg-[#366ae8]/8",
+      color: "text-primary",
+      bgColor: "bg-primary/8",
     },
     {
       label: "Pending Reviews",
       value: pendingReviews.length,
       icon: Clock,
-      color: "text-amber-700",
-      bgColor: "bg-amber-50",
+      color: "text-amber-700 dark:text-amber-400",
+      bgColor: "bg-amber-500/10",
     },
     {
       label: "Avg Reviewed Margin",
       value: avgMargin !== null ? `${avgMargin.toFixed(1)}%` : "--",
       icon: TrendingUp,
-      color: "text-[#366ae8]",
-      bgColor: "bg-[#366ae8]/8",
+      color: "text-primary",
+      bgColor: "bg-primary/8",
     },
     {
       label: "Total Changes",
       value: changes.length,
       icon: BarChart3,
-      color: "text-slate-600",
-      bgColor: "bg-slate-100",
+      color: "text-muted-foreground",
+      bgColor: "bg-muted",
     },
   ];
 
@@ -131,7 +131,7 @@ export default function DashboardPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border-slate-200/60">
+          <Card key={stat.label} className="border-border/60">
             <CardContent className="pt-5 pb-4 px-5">
               <div className="flex items-start justify-between">
                 <div>
@@ -153,11 +153,11 @@ export default function DashboardPage() {
 
       {/* Monthly Goal Progress */}
       {goal && goal.target_revenue && (
-        <Card className="border-slate-200/60">
+        <Card className="border-border/60">
           <CardContent className="pt-5 pb-4 px-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#366ae8]" />
+                <Target className="h-4 w-4 text-primary" />
                 <p className="text-sm font-semibold">
                   {format(new Date(goal.month), "MMMM")} Revenue Goal
                 </p>
@@ -179,9 +179,9 @@ export default function DashboardPage() {
                     / ${Number(goal.target_revenue).toLocaleString()}
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                <div className="w-full bg-muted rounded-full h-2.5">
                   <div
-                    className="h-2.5 rounded-full bg-[#366ae8] transition-all"
+                    className="h-2.5 rounded-full bg-primary transition-all"
                     style={{
                       width: `${Math.min((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100, 100)}%`,
                     }}
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-[#366ae8]">
+                <p className="text-lg font-bold text-primary">
                   {((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100).toFixed(0)}%
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
       {/* This Week / This Month Summary */}
       <div className="grid grid-cols-2 gap-4">
         <Link href="/changes">
-          <Card className="border-slate-200/60 hover:border-[#366ae8]/30 transition-colors cursor-pointer">
+          <Card className="border-border/60 hover:border-primary/30 transition-colors cursor-pointer">
             <CardContent className="pt-5 pb-4 px-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -211,31 +211,31 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold mt-1">{weekChanges.length}</p>
                   <div className="flex items-center gap-2 mt-1">
                     {weekChanges.filter((c) => c.impact_verdict === "positive").length > 0 && (
-                      <span className="text-xs text-emerald-700">
+                      <span className="text-xs text-emerald-700 dark:text-emerald-400">
                         {weekChanges.filter((c) => c.impact_verdict === "positive").length} improved
                       </span>
                     )}
                     {weekChanges.filter((c) => c.impact_verdict === "negative").length > 0 && (
-                      <span className="text-xs text-rose-700">
+                      <span className="text-xs text-rose-700 dark:text-rose-400">
                         {weekChanges.filter((c) => c.impact_verdict === "negative").length} hurt performance
                       </span>
                     )}
                     {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length > 0 && (
-                      <span className="text-xs text-amber-700">
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
                         {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length} need review
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-[#366ae8]/8">
-                  <CalendarDays className="h-5 w-5 text-[#366ae8]" />
+                <div className="p-2.5 rounded-xl bg-primary/8">
+                  <CalendarDays className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </Link>
         <Link href="/changes">
-          <Card className="border-slate-200/60 hover:border-[#366ae8]/30 transition-colors cursor-pointer">
+          <Card className="border-border/60 hover:border-primary/30 transition-colors cursor-pointer">
             <CardContent className="pt-5 pb-4 px-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -248,14 +248,14 @@ export default function DashboardPage() {
                       {new Set(monthChanges.map((c) => c.site).filter(Boolean)).size} sites
                     </span>
                     {monthChanges.filter((c) => c.impact_reviewed_at).length > 0 && (
-                      <span className="text-xs text-[#366ae8]">
+                      <span className="text-xs text-primary">
                         {monthChanges.filter((c) => c.impact_reviewed_at).length} reviewed
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-100">
-                  <BarChart3 className="h-5 w-5 text-slate-600" />
+                <div className="p-2.5 rounded-xl bg-muted">
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Recent Changes */}
-        <Card className="lg:col-span-3 border-slate-200/60">
+        <Card className="lg:col-span-3 border-border/60">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-base font-semibold">Recent Changes</CardTitle>
             <Link href="/changes">
@@ -279,14 +279,14 @@ export default function DashboardPage() {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-pulse flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-[#366ae8] animate-spin" />
+                  <div className="h-8 w-8 rounded-full border-2 border-border border-t-primary animate-spin" />
                   <p className="text-sm text-muted-foreground">Loading changes...</p>
                 </div>
               </div>
             ) : changes.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-12 h-12 rounded-xl bg-[#366ae8]/8 flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="h-6 w-6 text-[#366ae8]" />
+                <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="h-6 w-6 text-primary" />
                 </div>
                 <p className="text-sm font-medium text-foreground mb-1">
                   No changes logged yet
@@ -295,14 +295,14 @@ export default function DashboardPage() {
                   Start logging campaign changes through chat
                 </p>
                 <Link href="/chat">
-                  <Button size="sm" className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white">
+                  <Button size="sm">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Log your first change
                   </Button>
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-border/50">
                 {changes.slice(0, 8).map((change) => {
                   const config = ACTION_TYPE_CONFIG[change.action_type];
                   return (
@@ -344,7 +344,7 @@ export default function DashboardPage() {
                             {VERDICT_CONFIG[change.impact_verdict]?.label}
                           </Badge>
                         )}
-                        <ChevronRight className="h-4 w-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </Link>
                   );
@@ -355,12 +355,12 @@ export default function DashboardPage() {
         </Card>
 
         {/* Pending Reviews */}
-        <Card className="lg:col-span-2 border-slate-200/60">
+        <Card className="lg:col-span-2 border-border/60">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Pending Reviews</CardTitle>
               {pendingReviews.length > 0 && (
-                <Badge variant="secondary" className="bg-amber-50 text-amber-700 text-xs">
+                <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
                   {pendingReviews.length}
                 </Badge>
               )}
@@ -369,8 +369,8 @@ export default function DashboardPage() {
           <CardContent>
             {pendingReviews.length === 0 ? (
               <div className="text-center py-8">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-5 w-5 text-amber-700" />
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="h-5 w-5 text-amber-700 dark:text-amber-400" />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   All caught up
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                     <Link
                       key={change.id}
                       href={`/changes/${change.id}`}
-                      className="block p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors"
+                      className="block p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/8 hover:bg-amber-500/12 transition-colors"
                     >
                       <div className="flex items-start gap-2.5">
                         {config && (
@@ -405,7 +405,7 @@ export default function DashboardPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="mt-2.5 w-full text-xs h-8 border-amber-200 text-amber-700 hover:bg-amber-50"
+                        className="mt-2.5 w-full text-xs h-8 border-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
                       >
                         Review Now
                       </Button>

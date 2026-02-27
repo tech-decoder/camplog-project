@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient();
   const body = await request.json();
 
-  const { month, target_revenue, target_profit, target_margin_pct, target_fb_spend, notes } = body;
+  const { month, target_revenue, target_profit, target_margin_pct, notes } = body;
 
   if (!month) {
     return NextResponse.json({ error: "Month is required" }, { status: 400 });
@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
         target_revenue: target_revenue || null,
         target_profit: target_profit || null,
         target_margin_pct: target_margin_pct || null,
-        target_fb_spend: target_fb_spend || null,
         notes: notes || null,
         updated_at: new Date().toISOString(),
       },

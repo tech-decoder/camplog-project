@@ -83,16 +83,16 @@ export default function SignupPage() {
 
   const passwordStrength = (() => {
     if (password.length === 0) return null;
-    if (password.length < 6) return { label: "Too short", color: "bg-slate-300" };
+    if (password.length < 6) return { label: "Too short", color: "bg-muted-foreground/30" };
     let score = 0;
     if (password.length >= 8) score++;
     if (password.length >= 12) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    if (score <= 2) return { label: "Weak", color: "bg-[#366ae8]/30" };
-    if (score <= 3) return { label: "Medium", color: "bg-[#366ae8]/60" };
-    return { label: "Strong", color: "bg-[#366ae8]" };
+    if (score <= 2) return { label: "Weak", color: "bg-primary/30" };
+    if (score <= 3) return { label: "Medium", color: "bg-primary/60" };
+    return { label: "Strong", color: "bg-primary" };
   })();
 
   async function handleEmailSignup(e: React.FormEvent) {
@@ -121,7 +121,7 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-md text-center">
           <Image
             src="/camplog.svg"
@@ -130,12 +130,12 @@ export default function SignupPage() {
             height={56}
             className="rounded-2xl mx-auto mb-6"
           />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Check your email
           </h1>
-          <p className="text-slate-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             We&apos;ve sent a confirmation link to{" "}
-            <span className="font-medium text-slate-900">{email}</span>. Click
+            <span className="font-medium text-foreground">{email}</span>. Click
             the link to activate your account.
           </p>
           <Link href="/login">
@@ -147,30 +147,30 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5">
             <Image src="/camplog.svg" alt="CampLog" width={48} height={48} className="rounded-xl" />
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">
+          <h1 className="mt-4 text-2xl font-bold text-foreground">
             Create your account
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Start tracking campaign changes today
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/15 text-sm text-[#366ae8]">
+            <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/15 text-sm text-primary">
               {error}
             </div>
           )}
 
           <form onSubmit={handleEmailSignup} className="space-y-4">
             <div>
-              <Label htmlFor="name" className="text-sm text-slate-700">
+              <Label htmlFor="name" className="text-sm text-foreground/80">
                 Full Name
               </Label>
               <Input
@@ -184,7 +184,7 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <Label htmlFor="email" className="text-sm text-slate-700">
+              <Label htmlFor="email" className="text-sm text-foreground/80">
                 Email
               </Label>
               <Input
@@ -199,13 +199,13 @@ export default function SignupPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm text-slate-700">
+                <Label htmlFor="password" className="text-sm text-foreground/80">
                   Password
                 </Label>
                 <button
                   type="button"
                   onClick={handleGeneratePassword}
-                  className="inline-flex items-center gap-1 text-xs text-[#366ae8] hover:text-[#2d5bcf] font-medium transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                 >
                   <RefreshCw className="h-3 w-3" />
                   Generate
@@ -227,12 +227,12 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={handleCopyPassword}
-                      className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="p-1 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                       tabIndex={-1}
                       title="Copy password"
                     >
                       {copied ? (
-                        <Check className="h-3.5 w-3.5 text-[#366ae8]" />
+                        <Check className="h-3.5 w-3.5 text-primary" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
@@ -241,7 +241,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={togglePassword}
-                    className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="p-1 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -254,7 +254,7 @@ export default function SignupPage() {
               </div>
               {passwordStrength && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${passwordStrength.color}`}
                       style={{
@@ -269,13 +269,13 @@ export default function SignupPage() {
                       }}
                     />
                   </div>
-                  <span className="text-xs text-slate-500">{passwordStrength.label}</span>
+                  <span className="text-xs text-muted-foreground">{passwordStrength.label}</span>
                 </div>
               )}
             </div>
             <Button
               type="submit"
-              className="w-full h-11 bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+              className="w-full h-11"
               disabled={loading}
             >
               {loading ? (
@@ -286,11 +286,11 @@ export default function SignupPage() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-[#366ae8] hover:text-[#2d5bcf] font-medium"
+            className="text-primary hover:text-primary/80 font-medium"
           >
             Sign in
           </Link>

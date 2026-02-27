@@ -61,8 +61,8 @@ export function TestsView({ changes }: TestsViewProps) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
-            <FlaskConical className="h-6 w-6 text-purple-700" />
+          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
+            <FlaskConical className="h-6 w-6 text-purple-700 dark:text-purple-400" />
           </div>
           <p className="text-sm font-medium text-foreground mb-1">
             No tests tracked yet
@@ -79,28 +79,28 @@ export function TestsView({ changes }: TestsViewProps) {
     <div className="space-y-4">
       {/* Test stats bar */}
       <div className="grid grid-cols-4 gap-3">
-        <Card className="border-slate-200/60">
+        <Card className="border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Total Tests</p>
             <p className="text-xl font-bold mt-0.5">{testChanges.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/60">
+        <Card className="border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Reviewed</p>
             <p className="text-xl font-bold mt-0.5">{reviewed.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/60">
+        <Card className="border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-medium">Confirmed</p>
-            <p className="text-xl font-bold mt-0.5 text-emerald-700">{confirmed.length}</p>
+            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase tracking-wider font-medium">Confirmed</p>
+            <p className="text-xl font-bold mt-0.5 text-emerald-700 dark:text-emerald-400">{confirmed.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-slate-200/60">
+        <Card className="border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
-            <p className="text-[10px] text-rose-700 uppercase tracking-wider font-medium">Rejected</p>
-            <p className="text-xl font-bold mt-0.5 text-rose-700">{rejected.length}</p>
+            <p className="text-[10px] text-rose-700 dark:text-rose-400 uppercase tracking-wider font-medium">Rejected</p>
+            <p className="text-xl font-bold mt-0.5 text-rose-700 dark:text-rose-400">{rejected.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -112,7 +112,7 @@ export function TestsView({ changes }: TestsViewProps) {
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
-                className="bg-purple-50 text-purple-700 text-sm px-3 py-1 gap-1.5"
+                className="bg-purple-500/10 text-purple-700 dark:text-purple-400 text-sm px-3 py-1 gap-1.5"
               >
                 <FlaskConical className="h-3.5 w-3.5" />
                 {group.label}
@@ -151,7 +151,7 @@ export function TestsView({ changes }: TestsViewProps) {
                         </p>
                         {change.hypothesis && (
                           <div className="flex items-start gap-1.5 mt-1.5">
-                            <Lightbulb className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                             <p className="text-xs text-muted-foreground italic">
                               {change.hypothesis}
                             </p>
@@ -171,7 +171,7 @@ export function TestsView({ changes }: TestsViewProps) {
                              VERDICT_CONFIG[change.impact_verdict]?.label}
                           </Badge>
                         ) : change.impact_review_due && !change.impact_reviewed_at ? (
-                          <Badge variant="secondary" className="bg-amber-50 text-amber-700 text-xs">
+                          <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
                             Awaiting Results
                           </Badge>
                         ) : (

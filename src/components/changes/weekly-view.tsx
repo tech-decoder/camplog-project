@@ -94,17 +94,17 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                 {weekStats.total} changes
               </Badge>
               {weekStats.positive > 0 && (
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs">
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs">
                   {weekStats.positive} positive
                 </Badge>
               )}
               {weekStats.negative > 0 && (
-                <Badge variant="secondary" className="bg-rose-50 text-rose-700 text-xs">
+                <Badge variant="secondary" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs">
                   {weekStats.negative} negative
                 </Badge>
               )}
               {weekStats.pending > 0 && (
-                <Badge variant="secondary" className="bg-amber-50 text-amber-700 text-xs">
+                <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
                   {weekStats.pending} pending
                 </Badge>
               )}
@@ -122,19 +122,19 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
           return (
             <Card
               key={dateStr}
-              className={!hasChanges ? "opacity-50" : today ? "border-[#366ae8]/30" : ""}
+              className={!hasChanges ? "opacity-50" : today ? "border-primary/30" : ""}
             >
               <CardHeader className="pb-2 pt-4 px-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold ${today ? "text-[#366ae8]" : ""}`}>
+                    <span className={`text-sm font-semibold ${today ? "text-primary" : ""}`}>
                       {format(date, "EEEE")}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {format(date, "MMM d")}
                     </span>
                     {today && (
-                      <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-[10px] px-1.5 py-0">
+                      <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px] px-1.5 py-0">
                         Today
                       </Badge>
                     )}
@@ -170,7 +170,7 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                           href={`/changes/${change.id}`}
                           className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
                             isVoided
-                              ? "opacity-60 bg-slate-50/50"
+                              ? "opacity-60 bg-muted/30"
                               : "hover:bg-accent"
                           }`}
                         >
@@ -196,7 +196,7 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                           </div>
                           <div className="flex-shrink-0">
                             {isVoided ? (
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-xs">
+                              <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs">
                                 Voided
                               </Badge>
                             ) : change.impact_verdict ? (
@@ -207,7 +207,7 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                                 {VERDICT_CONFIG[change.impact_verdict]?.label}
                               </Badge>
                             ) : isPendingReview ? (
-                              <Badge variant="secondary" className="bg-amber-50 text-amber-700 text-xs">
+                              <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
                                 Review Due
                               </Badge>
                             ) : null}

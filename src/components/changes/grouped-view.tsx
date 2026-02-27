@@ -127,7 +127,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
 
                 <Badge
                   variant="secondary"
-                  className="bg-[#366ae8]/10 text-[#366ae8] text-sm font-semibold px-3 py-1"
+                  className="bg-primary/10 text-primary text-sm font-semibold px-3 py-1"
                 >
                   {group.site}
                 </Badge>
@@ -167,7 +167,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                       </span>
                     </div>
 
-                    <div className="space-y-1.5 ml-4 border-l-2 border-slate-100 pl-3">
+                    <div className="space-y-1.5 ml-4 border-l-2 border-border/50 pl-3">
                       {campaign.changes.map((change) => {
                         const config =
                           ACTION_TYPE_CONFIG[change.action_type];
@@ -187,7 +187,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                             href={`/changes/${change.id}`}
                             className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
                               isVoided
-                                ? "opacity-60 bg-slate-50/50"
+                                ? "opacity-60 bg-muted/30"
                                 : "hover:bg-accent"
                             }`}
                           >
@@ -210,7 +210,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                                 {change.change_value || ""}
                               </span>
                               {isVoided && change.void_reason && (
-                                <p className="text-xs text-slate-400 italic truncate">
+                                <p className="text-xs text-muted-foreground/60 italic truncate">
                                   {change.void_reason}
                                 </p>
                               )}
@@ -220,7 +220,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                               {isVoided ? (
                                 <Badge
                                   variant="secondary"
-                                  className="bg-slate-100 text-slate-500 text-xs"
+                                  className="bg-muted text-muted-foreground text-xs"
                                 >
                                   Voided
                                 </Badge>
@@ -237,7 +237,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                               ) : isPendingReview ? (
                                 <Badge
                                   variant="secondary"
-                                  className="bg-amber-50 text-amber-700 text-xs"
+                                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
                                 >
                                   Review Due
                                 </Badge>

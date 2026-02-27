@@ -113,16 +113,16 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                 {monthStats.sites} sites
               </Badge>
               {monthStats.positive > 0 && (
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs">
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs">
                   {monthStats.positive} positive
                 </Badge>
               )}
               {monthStats.negative > 0 && (
-                <Badge variant="secondary" className="bg-rose-50 text-rose-700 text-xs">
+                <Badge variant="secondary" className="bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs">
                   {monthStats.negative} negative
                 </Badge>
               )}
-              <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-xs">
+              <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
                 {monthStats.reviewed} reviewed
               </Badge>
             </div>
@@ -153,7 +153,7 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                     <div className="flex items-center gap-2 mb-1.5">
                       <Badge
                         variant="secondary"
-                        className="bg-[#366ae8]/10 text-[#366ae8] text-xs font-semibold"
+                        className="bg-primary/10 text-primary text-xs font-semibold"
                       >
                         {site}
                       </Badge>
@@ -161,7 +161,7 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                         {siteChanges.length} change{siteChanges.length !== 1 ? "s" : ""}
                       </span>
                     </div>
-                    <div className="space-y-1 ml-3 border-l-2 border-slate-100 pl-3">
+                    <div className="space-y-1 ml-3 border-l-2 border-border/50 pl-3">
                       {siteChanges.map((change) => {
                         const config = ACTION_TYPE_CONFIG[change.action_type];
                         const isVoided = change.status === "voided";
@@ -195,7 +195,7 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                               {format(new Date(change.change_date), "MMM d")}
                             </span>
                             {isVoided ? (
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-xs flex-shrink-0">
+                              <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs flex-shrink-0">
                                 Voided
                               </Badge>
                             ) : change.impact_verdict ? (

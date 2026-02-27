@@ -96,7 +96,7 @@ export function ChatMessage({ message }: MessageProps) {
                     {change.confidence < 0.8 && (
                       <Badge
                         variant="secondary"
-                        className="bg-amber-100 text-amber-700 text-xs"
+                        className="bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs"
                       >
                         Low confidence
                       </Badge>

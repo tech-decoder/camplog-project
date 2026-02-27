@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, User, Mail, Shield, Eye, EyeOff } from "lucide-react";
+import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette } from "lucide-react";
+import { ThemeSelector } from "@/components/ui/theme-toggle";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);
@@ -94,19 +95,35 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#366ae8]" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      {/* Profile */}
-      <Card className="border-slate-200">
+      {/* Appearance */}
+      <Card className="border-border">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#366ae8]/10">
-              <User className="h-5 w-5 text-[#366ae8]" />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Palette className="h-5 w-5 text-primary" />
+            </div>
+            <CardTitle className="text-base font-semibold">Appearance</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">Choose your preferred theme.</p>
+          <ThemeSelector />
+        </CardContent>
+      </Card>
+
+      {/* Profile */}
+      <Card className="border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
             </div>
             <CardTitle className="text-base font-semibold">Profile</CardTitle>
           </div>
@@ -114,23 +131,23 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
-              <Label htmlFor="settings-email" className="text-sm text-slate-700">
+              <Label htmlFor="settings-email" className="text-sm text-foreground/80">
                 Email
               </Label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
                   id="settings-email"
                   type="email"
                   value={user?.email || ""}
                   disabled
-                  className="h-11 pl-10 bg-slate-50 text-slate-500"
+                  className="h-11 pl-10 bg-muted text-muted-foreground"
                 />
               </div>
-              <p className="text-xs text-slate-400 mt-1">Email cannot be changed.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Email cannot be changed.</p>
             </div>
             <div>
-              <Label htmlFor="settings-name" className="text-sm text-slate-700">
+              <Label htmlFor="settings-name" className="text-sm text-foreground/80">
                 Full Name
               </Label>
               <Input
@@ -146,8 +163,8 @@ export default function SettingsPage() {
             {profileMsg && (
               <div className={`p-3 rounded-lg text-sm ${
                 profileMsg.type === "success"
-                  ? "bg-[#366ae8]/5 border border-[#366ae8]/15 text-[#366ae8]"
-                  : "bg-slate-100 border border-slate-200 text-slate-700"
+                  ? "bg-primary/5 border border-primary/15 text-primary"
+                  : "bg-muted border border-border text-foreground"
               }`}>
                 {profileMsg.text}
               </div>
@@ -155,7 +172,6 @@ export default function SettingsPage() {
 
             <Button
               type="submit"
-              className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
               disabled={saving}
             >
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
@@ -166,11 +182,11 @@ export default function SettingsPage() {
       </Card>
 
       {/* Change Password */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#366ae8]/10">
-              <Shield className="h-5 w-5 text-[#366ae8]" />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Shield className="h-5 w-5 text-primary" />
             </div>
             <CardTitle className="text-base font-semibold">Change Password</CardTitle>
           </div>
@@ -178,7 +194,7 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <Label htmlFor="new-password" className="text-sm text-slate-700">
+              <Label htmlFor="new-password" className="text-sm text-foreground/80">
                 New Password
               </Label>
               <div className="relative mt-1">
@@ -195,7 +211,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword((p) => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -203,7 +219,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="confirm-password" className="text-sm text-slate-700">
+              <Label htmlFor="confirm-password" className="text-sm text-foreground/80">
                 Confirm Password
               </Label>
               <Input
@@ -221,8 +237,8 @@ export default function SettingsPage() {
             {passwordMsg && (
               <div className={`p-3 rounded-lg text-sm ${
                 passwordMsg.type === "success"
-                  ? "bg-[#366ae8]/5 border border-[#366ae8]/15 text-[#366ae8]"
-                  : "bg-slate-100 border border-slate-200 text-slate-700"
+                  ? "bg-primary/5 border border-primary/15 text-primary"
+                  : "bg-muted border border-border text-foreground"
               }`}>
                 {passwordMsg.text}
               </div>
@@ -231,7 +247,6 @@ export default function SettingsPage() {
             <Button
               type="submit"
               variant="outline"
-              className="border-slate-200"
               disabled={changingPassword}
             >
               {changingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
@@ -242,12 +257,12 @@ export default function SettingsPage() {
       </Card>
 
       {/* Account Info */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-900">Account ID</p>
-              <p className="text-xs text-slate-400 mt-0.5 font-mono">{user?.id}</p>
+              <p className="text-sm font-medium text-foreground">Account ID</p>
+              <p className="text-xs text-muted-foreground/60 mt-0.5 font-mono">{user?.id}</p>
             </div>
           </div>
         </CardContent>

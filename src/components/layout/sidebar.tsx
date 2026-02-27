@@ -17,6 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useProfile } from "@/components/providers/profile-provider";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navItems = [
   {
@@ -59,9 +60,9 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-sidebar border-r border-sidebar-border">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-200">
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
         <Image
           src="/camplog.svg"
           alt="CampLog"
@@ -69,7 +70,7 @@ export function Sidebar() {
           height={32}
           className="rounded-lg"
         />
-        <span className="text-lg font-semibold text-slate-900">CampLog</span>
+        <span className="text-lg font-semibold text-sidebar-foreground">CampLog</span>
       </div>
 
       {/* Nav */}
@@ -84,8 +85,8 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-[#366ae8] text-white"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -96,13 +97,16 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-4 border-t border-slate-200 space-y-1">
+      <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
         {profile && (
-          <div className="px-3 py-2 mb-2">
-            <p className="text-sm font-medium text-slate-900 truncate">
-              {profile.nickname || profile.full_name || "User"}
-            </p>
-            <p className="text-xs text-slate-400 truncate">{profile.email}</p>
+          <div className="flex items-center justify-between px-3 py-2 mb-2">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {profile.nickname || profile.full_name || "User"}
+              </p>
+              <p className="text-xs text-sidebar-foreground/40 truncate">{profile.email}</p>
+            </div>
+            <ThemeToggle />
           </div>
         )}
         <Link
@@ -110,8 +114,8 @@ export function Sidebar() {
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
             pathname === "/my-sites"
-              ? "bg-[#366ae8] text-white"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <Globe className="h-5 w-5" />
@@ -122,8 +126,8 @@ export function Sidebar() {
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
             pathname === "/settings"
-              ? "bg-[#366ae8] text-white"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <Settings className="h-5 w-5" />
@@ -131,7 +135,7 @@ export function Sidebar() {
         </Link>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
         >
           <LogOut className="h-5 w-5" />
           Sign Out

@@ -119,7 +119,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#366ae8]" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function ReportsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-[#366ae8]" />
+              <BarChart3 className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold">Generate Report</span>
             </div>
             <Select value={reportType} onValueChange={setReportType}>
@@ -147,7 +147,6 @@ export default function ReportsPage() {
             <Button
               onClick={handleGenerate}
               disabled={generating}
-              className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
             >
               {generating ? (
                 <>
@@ -184,7 +183,7 @@ export default function ReportsPage() {
                     onClick={() => setSelectedReport(report)}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedReport?.id === report.id
-                        ? "bg-[#366ae8]/10 border border-[#366ae8]/20"
+                        ? "bg-primary/10 border border-primary/20"
                         : "hover:bg-muted/50"
                     }`}
                   >
@@ -215,7 +214,7 @@ export default function ReportsPage() {
           <CardContent className="pt-6">
             {generating ? (
               <div className="flex flex-col items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-[#366ae8] mb-3" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
                 <p className="text-sm text-muted-foreground">
                   Analyzing changes and generating report...
                 </p>
@@ -242,7 +241,7 @@ export default function ReportsPage() {
                         selectedReport.metadata.positive > 0 && (
                           <Badge
                             variant="secondary"
-                            className="bg-emerald-50 text-emerald-700 text-xs"
+                            className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs"
                           >
                             {selectedReport.metadata.positive} positive
                           </Badge>
@@ -251,7 +250,7 @@ export default function ReportsPage() {
                         selectedReport.metadata.negative > 0 && (
                           <Badge
                             variant="secondary"
-                            className="bg-rose-50 text-rose-700 text-xs"
+                            className="bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs"
                           >
                             {selectedReport.metadata.negative} negative
                           </Badge>
@@ -345,7 +344,7 @@ export default function ReportsPage() {
                       if (numberedMatch) {
                         elements.push(
                           <div key={idx} className="flex items-start gap-3 p-3 my-1 rounded-lg border border-border/50 bg-muted/20">
-                            <span className="text-xs font-bold text-[#366ae8] bg-[#366ae8]/10 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
                               {numberedMatch[1]}
                             </span>
                             <div>
@@ -424,8 +423,8 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-[#366ae8]/10 flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="h-8 w-8 text-[#366ae8]" />
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">
                   AI-Generated Reports

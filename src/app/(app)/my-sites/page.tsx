@@ -156,8 +156,7 @@ export default function MySitesPage() {
           <Button
             onClick={handleSaveProfile}
             disabled={savingProfile}
-            className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
-          >
+                      >
             {savingProfile ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -187,8 +186,8 @@ export default function MySitesPage() {
                   key={i}
                   className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-[#366ae8]/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-[#366ae8]">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">
                       {site.abbreviation || generateAbbr(site.name)}
                     </span>
                   </div>
@@ -259,8 +258,7 @@ export default function MySitesPage() {
           <Button
             onClick={handleSaveSites}
             disabled={savingSites}
-            className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
-          >
+                      >
             {savingSites ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

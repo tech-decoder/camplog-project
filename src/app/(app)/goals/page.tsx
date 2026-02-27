@@ -65,7 +65,6 @@ export default function GoalsPage() {
   const [targetRevenue, setTargetRevenue] = useState("");
   const [targetProfit, setTargetProfit] = useState("");
   const [targetMargin, setTargetMargin] = useState("");
-  const [targetSpend, setTargetSpend] = useState("");
 
   // Site editing
   const [siteEdits, setSiteEdits] = useState<
@@ -116,7 +115,6 @@ export default function GoalsPage() {
           setTargetRevenue(found.target_revenue?.toString() || "");
           setTargetProfit(found.target_profit?.toString() || "");
           setTargetMargin(found.target_margin_pct?.toString() || "");
-          setTargetSpend(found.target_fb_spend?.toString() || "");
           setShowSetup(false);
 
           // Fetch site data
@@ -246,7 +244,6 @@ export default function GoalsPage() {
           target_revenue: targetRevenue ? parseFloat(targetRevenue) : null,
           target_profit: targetProfit ? parseFloat(targetProfit) : null,
           target_margin_pct: targetMargin ? parseFloat(targetMargin) : null,
-          target_fb_spend: targetSpend ? parseFloat(targetSpend) : null,
         }),
       });
       if (res.ok) {
@@ -389,9 +386,9 @@ export default function GoalsPage() {
   }
 
   const marginColor = (v: number) =>
-    v > 10 ? "text-emerald-700" : v > 0 ? "text-amber-700" : v < 0 ? "text-rose-700" : "text-slate-400";
+    v > 10 ? "text-emerald-700 dark:text-emerald-400" : v > 0 ? "text-amber-700 dark:text-amber-400" : v < 0 ? "text-rose-700 dark:text-rose-400" : "text-muted-foreground/60";
   const grossColor = (v: number) =>
-    v > 0 ? "text-emerald-700" : v < 0 ? "text-rose-700" : "text-slate-400";
+    v > 0 ? "text-emerald-700 dark:text-emerald-400" : v < 0 ? "text-rose-700 dark:text-rose-400" : "text-muted-foreground/60";
 
   // Chart data: only sites with revenue
   const chartRows = siteRows
@@ -403,7 +400,7 @@ export default function GoalsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#366ae8]" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -448,10 +445,10 @@ export default function GoalsPage() {
 
       {/* Goal Setup */}
       {(showSetup || !goal) && (
-        <Card className="border-[#366ae8]/20">
+        <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-[#366ae8]" />
+              <Target className="h-5 w-5 text-primary" />
               <CardTitle className="text-base">
                 {goal ? "Edit" : "Set"} Monthly Targets
               </CardTitle>
@@ -459,7 +456,7 @@ export default function GoalsPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveGoal} className="space-y-4">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">
                     Target Revenue ($)
@@ -499,24 +496,11 @@ export default function GoalsPage() {
                     className="mt-1"
                   />
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">
-                    Max FB Spend ($)
-                  </Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="e.g. 18000"
-                    value={targetSpend}
-                    onChange={(e) => setTargetSpend(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
               </div>
               <div className="flex gap-2">
                 <Button
                   type="submit"
-                  className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={saving}
                 >
                   {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -541,7 +525,7 @@ export default function GoalsPage() {
       {goal && !showSetup && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-slate-200/60">
+            <Card className="border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -560,26 +544,26 @@ export default function GoalsPage() {
                   <div
                     className={`p-2.5 rounded-xl ${
                       revenuePaceStatus === "ahead"
-                        ? "bg-emerald-50"
+                        ? "bg-emerald-500/10"
                         : revenuePaceStatus === "close"
-                          ? "bg-amber-50"
-                          : "bg-rose-50"
+                          ? "bg-amber-500/10"
+                          : "bg-rose-500/10"
                     }`}
                   >
                     <DollarSign
                       className={`h-5 w-5 ${
                         revenuePaceStatus === "ahead"
-                          ? "text-emerald-700"
+                          ? "text-emerald-700 dark:text-emerald-400"
                           : revenuePaceStatus === "close"
-                            ? "text-amber-700"
-                            : "text-rose-700"
+                            ? "text-amber-700 dark:text-amber-400"
+                            : "text-rose-700 dark:text-rose-400"
                       }`}
                     />
                   </div>
                 </div>
                 {goal.target_revenue && (
                   <div className="mt-3">
-                    <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all ${
                           revenuePaceStatus === "ahead"
@@ -601,7 +585,7 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200/60">
+            <Card className="border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -620,24 +604,24 @@ export default function GoalsPage() {
                   <div
                     className={`p-2.5 rounded-xl ${
                       Number(goal.actual_profit) >= 0
-                        ? "bg-emerald-50"
-                        : "bg-rose-50"
+                        ? "bg-emerald-500/10"
+                        : "bg-rose-500/10"
                     }`}
                   >
                     <TrendingUp
                       className={`h-5 w-5 ${
                         Number(goal.actual_profit) >= 0
-                          ? "text-emerald-700"
-                          : "text-rose-700"
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : "text-rose-700 dark:text-rose-400"
                       }`}
                     />
                   </div>
                 </div>
                 {goal.target_profit && (
                   <div className="mt-3">
-                    <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div
-                        className="h-2 rounded-full bg-[#366ae8] transition-all"
+                        className="h-2 rounded-full bg-primary transition-all"
                         style={{
                           width: `${Math.min(profitProgress, 100)}%`,
                         }}
@@ -651,7 +635,7 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200/60">
+            <Card className="border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -665,14 +649,14 @@ export default function GoalsPage() {
                       per day to hit target
                     </p>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#366ae8]/8">
-                    <Target className="h-5 w-5 text-[#366ae8]" />
+                  <div className="p-2.5 rounded-xl bg-primary/8">
+                    <Target className="h-5 w-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200/60">
+            <Card className="border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -685,8 +669,8 @@ export default function GoalsPage() {
                       {Number(goal.actual_margin_pct).toFixed(1)}%
                     </p>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-slate-100">
-                    <Calendar className="h-5 w-5 text-slate-600" />
+                  <div className="p-2.5 rounded-xl bg-muted">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>
@@ -695,7 +679,7 @@ export default function GoalsPage() {
 
           {/* Site Health Chart */}
           {chartRows.length > 0 && (
-            <Card className="border-slate-200/60">
+            <Card className="border-border/60">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Site Health</CardTitle>
@@ -765,7 +749,7 @@ export default function GoalsPage() {
                       size="sm"
                       onClick={handleSaveSites}
                       disabled={savingSites}
-                      className="bg-[#366ae8] hover:bg-[#2d5bcf] text-white"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       {savingSites ? (
                         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -782,9 +766,9 @@ export default function GoalsPage() {
             {/* Screenshot Upload Zone */}
             <CardContent className="pt-0 pb-4">
               {screenshotPreview && extractedCount > 0 ? (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 mb-4">
-                  <Check className="h-4 w-4 text-emerald-700 flex-shrink-0" />
-                  <p className="text-sm text-emerald-700 flex-1">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-200 mb-4">
+                  <Check className="h-4 w-4 text-emerald-700 dark:text-emerald-400 flex-shrink-0" />
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400 flex-1">
                     Extracted data for {extractedCount} sites from screenshot. Review values below and click Save.
                   </p>
                   <Button
@@ -800,9 +784,9 @@ export default function GoalsPage() {
                   </Button>
                 </div>
               ) : extracting ? (
-                <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-[#366ae8]/5 border border-[#366ae8]/20 mb-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#366ae8]" />
-                  <p className="text-sm text-[#366ae8]">
+                <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <p className="text-sm text-primary">
                     Extracting site data from screenshot...
                   </p>
                 </div>
@@ -811,11 +795,11 @@ export default function GoalsPage() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleScreenshotDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-4 text-center cursor-pointer hover:border-[#366ae8]/40 hover:bg-[#366ae8]/5 transition-colors mb-4"
+                  className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-4 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors mb-4"
                 >
                   <div className="flex items-center justify-center gap-3">
-                    <div className="p-2 rounded-lg bg-[#366ae8]/10">
-                      <ImageIcon className="h-4 w-4 text-[#366ae8]" />
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <ImageIcon className="h-4 w-4 text-primary" />
                     </div>
                     <div className="text-left">
                       <p className="text-sm font-medium">
@@ -843,7 +827,7 @@ export default function GoalsPage() {
               {mySites.length === 0 ? (
                 <div className="text-center py-12 text-sm text-muted-foreground">
                   <p className="mb-2">No sites added yet.</p>
-                  <p>Go to <a href="/my-sites" className="text-[#366ae8] hover:underline font-medium">My Sites</a> to add the sites you manage.</p>
+                  <p>Go to <a href="/my-sites" className="text-primary hover:underline font-medium">My Sites</a> to add the sites you manage.</p>
                 </div>
               ) : (<>
                     <Table>
@@ -862,11 +846,11 @@ export default function GoalsPage() {
                         {siteRows.map((row) => (
                           <TableRow
                             key={row.abbreviation}
-                            className={`${row.rev === 0 && row.spend === 0 ? "opacity-40" : ""} ${row.isEdited ? "bg-amber-50/40" : ""}`}
+                            className={`${row.rev === 0 && row.spend === 0 ? "opacity-40" : ""} ${row.isEdited ? "bg-amber-500/10" : ""}`}
                           >
                             <TableCell className="py-2">
                               <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="bg-[#366ae8]/10 text-[#366ae8] text-[11px] font-bold px-1.5 py-0">
+                                <Badge variant="secondary" className="bg-primary/10 text-primary text-[11px] font-bold px-1.5 py-0">
                                   {row.abbreviation}
                                 </Badge>
                                 <span className="text-xs font-medium">{row.shortName}</span>
@@ -923,7 +907,7 @@ export default function GoalsPage() {
 
                     {/* Extracted dashboard totals reference */}
                     {extractedTotal && (
-                      <div className="mt-3 px-2 py-2 rounded-lg bg-slate-50/80 border border-border/30">
+                      <div className="mt-3 px-2 py-2 rounded-lg bg-muted/50 border border-border/30">
                         <p className="text-[11px] text-muted-foreground">
                           <span className="font-medium">All sites:</span>{" "}
                           Rev {formatDollar(extractedTotal.revenue)} · Spend {formatDollar(extractedTotal.fb_spend)} · Gross {formatDollar(extractedTotal.gross)} · Margin {extractedTotal.margin_pct}% · FBM {extractedTotal.fbm_pct}%
@@ -939,7 +923,7 @@ export default function GoalsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[#366ae8]" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base">AI Strategy</CardTitle>
                 </div>
                 <Button
@@ -961,7 +945,7 @@ export default function GoalsPage() {
               {generatingStrategy ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#366ae8]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">
                       Analyzing your data and generating strategy...
                     </p>
@@ -975,12 +959,12 @@ export default function GoalsPage() {
                       variant="secondary"
                       className={`text-xs flex-shrink-0 ${
                         strategy.pace_status === "ahead"
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                           : strategy.pace_status === "on_track"
-                            ? "bg-[#366ae8]/10 text-[#366ae8]"
+                            ? "bg-primary/10 text-primary"
                             : strategy.pace_status === "behind"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-rose-50 text-rose-700"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              : "bg-rose-500/10 text-rose-700 dark:text-rose-400"
                       }`}
                     >
                       {strategy.pace_status === "ahead"
@@ -1012,10 +996,10 @@ export default function GoalsPage() {
                               variant="secondary"
                               className={`text-xs flex-shrink-0 mt-0.5 ${
                                 action.priority === "high"
-                                  ? "bg-rose-50 text-rose-700"
+                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
                                   : action.priority === "medium"
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-slate-100 text-slate-600"
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                    : "bg-muted text-muted-foreground"
                               }`}
                             >
                               {action.priority}
@@ -1024,7 +1008,7 @@ export default function GoalsPage() {
                               <div className="flex items-center gap-2">
                                 <Badge
                                   variant="secondary"
-                                  className="bg-[#366ae8]/10 text-[#366ae8] text-xs"
+                                  className="bg-primary/10 text-primary text-xs"
                                 >
                                   {action.site}
                                 </Badge>
@@ -1052,9 +1036,9 @@ export default function GoalsPage() {
                         {strategy.risk_flags.map((flag, i) => (
                           <div
                             key={i}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50/40"
+                            className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-500/10"
                           >
-                            <AlertTriangle className="h-4 w-4 text-amber-700 flex-shrink-0" />
+                            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
                             <div className="flex-1">
                               <span className="text-sm font-medium">
                                 {flag.site}
@@ -1068,10 +1052,10 @@ export default function GoalsPage() {
                               variant="secondary"
                               className={`text-xs ${
                                 flag.severity === "high"
-                                  ? "bg-rose-50 text-rose-700"
+                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
                                   : flag.severity === "medium"
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-slate-100 text-slate-600"
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                    : "bg-muted text-muted-foreground"
                               }`}
                             >
                               {flag.severity}
@@ -1084,7 +1068,7 @@ export default function GoalsPage() {
 
                   {/* Projection */}
                   {strategy.weekly_projection && (
-                    <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border">
                       <h4 className="text-sm font-semibold mb-2">
                         Monthly Projection
                       </h4>
