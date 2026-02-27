@@ -16,8 +16,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CampLog",
-  description: "Campaign change tracker for ad arbitrage performance marketers",
+  title: "CampLog — Campaign Change Tracking for Ad Arbitrage Teams",
+  description:
+    "Stop tracking campaign changes in spreadsheets. CampLog captures changes in a chat interface and tracks impact with AI. Built for performance marketing teams.",
+  metadataBase: new URL("https://camplog-ltv.vercel.app"),
+  openGraph: {
+    title: "CampLog — Campaign Change Tracking for Ad Arbitrage Teams",
+    description:
+      "Stop tracking campaign changes in spreadsheets. CampLog captures changes in a chat interface and tracks impact with AI.",
+    siteName: "CampLog",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CampLog — Campaign Change Tracking for Ad Arbitrage Teams",
+    description:
+      "Stop tracking campaign changes in spreadsheets. CampLog captures changes in a chat interface and tracks impact with AI.",
+  },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },

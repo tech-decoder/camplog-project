@@ -195,7 +195,7 @@ function HeroSection() {
 
           {/* Product Mockup */}
           <FadeIn direction="right" delay={0.2}>
-            <div className="relative">
+            <div className="relative overflow-visible px-2">
               <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/80 overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/60">
                   <div className="flex gap-1.5">
@@ -235,7 +235,7 @@ function HeroSection() {
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -right-2 top-28 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-[#366ae8] flex items-center gap-1.5"
+                    className="hidden sm:flex absolute right-2 lg:-right-2 top-28 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-[#366ae8] items-center gap-1.5"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     AI Extraction
@@ -243,7 +243,7 @@ function HeroSection() {
                   <motion.div
                     animate={{ y: [0, -4, 0] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="absolute -left-2 bottom-16 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 flex items-center gap-1.5"
+                    className="hidden sm:flex absolute left-2 lg:-left-2 bottom-16 bg-white shadow-lg shadow-slate-200/50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 items-center gap-1.5"
                   >
                     <ImageIcon className="h-3.5 w-3.5" />
                     Screenshot Support
@@ -264,18 +264,18 @@ function PainSection() {
   const pains = [
     {
       icon: MessageCircle,
-      title: "Scattered Conversations",
-      description: "Changes logged in group chats, Slack threads, and personal notes. Good luck finding that bid change from last Tuesday.",
+      title: "Scattered Across Channels",
+      description: "Your team makes 30+ changes a day across multiple sites. Those changes live in WhatsApp groups, Slack threads, and DMs nobody checks twice.",
     },
     {
       icon: TableProperties,
-      title: "Manual Spreadsheets",
-      description: "Copy-pasting into shared sheets that nobody updates consistently. Metrics entered wrong. Rows missing.",
+      title: "Spreadsheets Nobody Updates",
+      description: "Shared sheets with missing rows, wrong metrics, and last updated by \u201Csomeone\u201D three weeks ago. One typo and your margin data is useless.",
     },
     {
       icon: EyeOff,
-      title: "No Impact Visibility",
-      description: "You changed the bid 3 days ago \u2014 did it help? Without before/after tracking, you\u2019re flying blind.",
+      title: "No Idea What Actually Worked",
+      description: "You bumped spend 30% on Tuesday \u2014 revenue went up, but was it the bid change or seasonal traffic? Without before/after tracking, you\u2019ll never know.",
     },
   ];
 
@@ -284,10 +284,10 @@ function PainSection() {
       <div className="max-w-6xl mx-auto px-6">
         <FadeIn className="text-center mb-14">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-            The Campaign Change Chaos
+            Sound Familiar?
           </h2>
           <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
-            You make changes all day. Tracking them is where things break down.
+            Your team optimizes campaigns all day. But tracking what changed, when, and whether it worked? That&apos;s where things fall apart.
           </p>
         </FadeIn>
 
@@ -736,7 +736,7 @@ function WaitlistSection() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-slate-700">Your Role</Label>
+                  <Label className="text-sm text-slate-700">Your Role <span className="text-slate-400 font-normal">(optional)</span></Label>
                   <Select value={form.profession} onValueChange={(v) => setForm((p) => ({ ...p, profession: v }))}>
                     <SelectTrigger className="mt-1.5 h-11">
                       <SelectValue placeholder="Select your role" />
@@ -752,7 +752,7 @@ function WaitlistSection() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-sm text-slate-700">Years of Experience</Label>
+                  <Label className="text-sm text-slate-700">Experience <span className="text-slate-400 font-normal">(optional)</span></Label>
                   <Select value={form.years_experience} onValueChange={(v) => setForm((p) => ({ ...p, years_experience: v }))}>
                     <SelectTrigger className="mt-1.5 h-11">
                       <SelectValue placeholder="Select experience" />
@@ -772,7 +772,7 @@ function WaitlistSection() {
                 type="submit"
                 size="lg"
                 className="w-full bg-[#366ae8] text-white hover:bg-[#2b5bc9] rounded-lg text-base h-12"
-                disabled={formState === "loading" || !form.profession || !form.years_experience}
+                disabled={formState === "loading"}
               >
                 {formState === "loading" ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Joining...</>
