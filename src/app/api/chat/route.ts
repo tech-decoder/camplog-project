@@ -88,8 +88,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: userMsgError.message }, { status: 500 });
   }
 
-  // Extract changes using OpenAI
-  const extraction = await extractChangesFromMessage(content, imageBase64List);
+  // Fetch recent changes for conversational context
+  const { data: recentChanges } = await supabase
+    .from("changes")
+    .select("campaign_name, site, action_type, geo, change_value, change_date, impact_verdict, pre_metrics")
+    .eq("user_id", DEFAULT_USER_ID)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const activityContext = recentChanges?.length
+    ? recentChanges
+        .map(
+          (c) =>
+            `${c.change_date}: ${c.action_type} on ${c.campaign_name}${c.site ? ` (${c.site})` : ""}${c.geo ? ` ${c.geo}` : ""} ${c.change_value || ""} - verdict: ${c.impact_verdict || "pending"}${c.pre_metrics?.margin_pct != null ? ` margin: ${c.pre_metrics.margin_pct}%` : ""}`
+        )
+        .join("\n")
+    : undefined;
+
+  // Extract changes using OpenAI (with recent activity context for smarter conversations)
+  const extraction = await extractChangesFromMessage(content, imageBase64List, activityContext);
 
   // Save extracted changes to database
   const extractedChangeIds: string[] = [];

@@ -4,7 +4,8 @@ import { ExtractionResult } from "../types/chat";
 
 export async function extractChangesFromMessage(
   text: string,
-  imageBase64List: string[]
+  imageBase64List: string[],
+  recentActivityContext?: string
 ): Promise<ExtractionResult> {
   const openai = getOpenAIClient();
 
@@ -36,10 +37,16 @@ export async function extractChangesFromMessage(
     });
   }
 
+  // Enhance system prompt with recent activity context for smarter conversations
+  let systemPrompt = CHANGE_EXTRACTION_SYSTEM_PROMPT;
+  if (recentActivityContext) {
+    systemPrompt += `\n\n## Recent Activity (for context when answering questions)\n${recentActivityContext}`;
+  }
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: CHANGE_EXTRACTION_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: userContent },
     ],
     response_format: { type: "json_object" },
