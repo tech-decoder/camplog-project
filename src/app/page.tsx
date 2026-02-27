@@ -794,7 +794,7 @@ function Footer() {
           <p className="text-sm text-slate-400">&copy; 2026 CampLog. All rights reserved.</p>
           <p className="text-sm text-slate-400">
             Built at{" "}
-            <a href="https://ltv.co" target="_blank" rel="noopener noreferrer" className="text-[#366ae8] hover:text-[#2b5bc9]">
+            <a href="https://ltv.so" target="_blank" rel="noopener noreferrer" className="text-[#366ae8] hover:text-[#2b5bc9]">
               LTV
             </a>
           </p>
