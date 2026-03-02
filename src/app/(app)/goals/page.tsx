@@ -74,8 +74,7 @@ export default function GoalsPage() {
         revenue: string;
         fb_spend: string;
         fb_revenue: string;
-        gross: string;
-        margin_pct: string;
+        fb_profit: string;
         fbm_pct: string;
       }
     >
@@ -85,8 +84,7 @@ export default function GoalsPage() {
     revenue: number;
     fb_spend: number;
     fb_revenue: number;
-    gross: number;
-    margin_pct: number;
+    fb_profit: number;
     fbm_pct: number;
   } | null>(null);
 
@@ -94,6 +92,7 @@ export default function GoalsPage() {
   const [extracting, setExtracting] = useState(false);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [extractedCount, setExtractedCount] = useState(0);
+  const [extractError, setExtractError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Build site list from user's own sites instead of hardcoded mySites
@@ -153,6 +152,7 @@ export default function GoalsPage() {
 
   async function handleScreenshotUpload(file: File) {
     setExtracting(true);
+    setExtractError(null);
     const reader = new FileReader();
     reader.onload = (e) => setScreenshotPreview(e.target?.result as string);
     reader.readAsDataURL(file);
@@ -182,8 +182,7 @@ export default function GoalsPage() {
                 revenue: extracted.revenue?.toString() || "0",
                 fb_spend: extracted.fb_spend?.toString() || "0",
                 fb_revenue: extracted.fb_revenue?.toString() || "0",
-                gross: extracted.gross?.toString() || "0",
-                margin_pct: extracted.margin_pct?.toString() || "0",
+                fb_profit: extracted.fb_profit?.toString() || "0",
                 fbm_pct: extracted.fbm_pct?.toString() || "0",
               };
               matched++;
@@ -196,8 +195,7 @@ export default function GoalsPage() {
               revenue: data.total.revenue || 0,
               fb_spend: data.total.fb_spend || 0,
               fb_revenue: data.total.fb_revenue || 0,
-              gross: data.total.gross || 0,
-              margin_pct: data.total.margin_pct || 0,
+              fb_profit: data.total.fb_profit || 0,
               fbm_pct: data.total.fbm_pct || 0,
             });
           }
@@ -205,6 +203,10 @@ export default function GoalsPage() {
           setSiteEdits((prev) => ({ ...prev, ...newEdits }));
           setExtractedCount(matched);
         }
+      } else {
+        const errData = await res.json().catch(() => null);
+        console.error("Extract-sites failed:", res.status, errData);
+        setExtractError(errData?.error || `Extraction failed (${res.status})`);
       }
     } catch (err) {
       console.error("Screenshot extraction failed:", err);
@@ -263,17 +265,25 @@ export default function GoalsPage() {
       const sitesPayload = mySites.map((s) => {
         const edit = siteEdits[s.abbreviation];
         const existing = sites.find((sr) => sr.site === s.abbreviation);
+        const rev = edit?.revenue
+          ? parseFloat(edit.revenue)
+          : Number(existing?.revenue || 0);
+        const spend = edit?.fb_spend
+          ? parseFloat(edit.fb_spend)
+          : Number(existing?.fb_spend || 0);
+        const fbRev = edit?.fb_revenue
+          ? parseFloat(edit.fb_revenue)
+          : Number(existing?.fb_revenue || 0);
+        // Use extracted fb_profit/fbm_pct when available (from screenshot)
+        const fbProfit = edit?.fb_profit ? parseFloat(edit.fb_profit) : undefined;
+        const fbmPct = edit?.fbm_pct ? parseFloat(edit.fbm_pct) : undefined;
         return {
           site: s.abbreviation,
-          revenue: edit?.revenue
-            ? parseFloat(edit.revenue)
-            : Number(existing?.revenue || 0),
-          fb_spend: edit?.fb_spend
-            ? parseFloat(edit.fb_spend)
-            : Number(existing?.fb_spend || 0),
-          fb_revenue: edit?.fb_revenue
-            ? parseFloat(edit.fb_revenue)
-            : Number(existing?.fb_revenue || 0),
+          revenue: rev,
+          fb_spend: spend,
+          fb_revenue: fbRev,
+          profit: fbProfit,
+          margin_pct: fbmPct,
           source: (edit ? "screenshot" : "manual") as "screenshot" | "manual",
         };
       }).filter((s) => s.revenue > 0 || s.fb_spend > 0);
@@ -352,25 +362,28 @@ export default function GoalsPage() {
         ? "close"
         : "behind";
 
-  // Site rows: computed from mySites + current edits (used by chart + table)
+  // Site rows: use extracted fb_profit/fbm when available, else compute from FBR/FBS
   const siteRows = mySites.map((s) => {
     const siteData = sites.find((sr) => sr.site === s.abbreviation);
     const edit = siteEdits[s.abbreviation];
     const rev = edit?.revenue ? parseFloat(edit.revenue) : Number(siteData?.revenue || 0);
     const spend = edit?.fb_spend ? parseFloat(edit.fb_spend) : Number(siteData?.fb_spend || 0);
     const fbRev = edit?.fb_revenue ? parseFloat(edit.fb_revenue) : Number(siteData?.fb_revenue || 0);
-    const gross = rev - spend;
-    const margin = rev > 0 ? ((rev - spend) / rev) * 100 : 0;
-    const fbm = fbRev > 0 ? ((fbRev - spend) / fbRev) * 100 : 0;
-    return { ...s, siteData, edit, rev, spend, fbRev, gross, margin, fbm, isEdited: !!edit };
+    // Use extracted values (from screenshot edit) → DB values → calculated fallback
+    const fbProfit = edit?.fb_profit ? parseFloat(edit.fb_profit)
+      : siteData?.profit != null ? Number(siteData.profit)
+      : (fbRev - spend);
+    const fbm = edit?.fbm_pct ? parseFloat(edit.fbm_pct)
+      : siteData?.margin_pct != null ? Number(siteData.margin_pct)
+      : (fbRev > 0 ? ((fbRev - spend) / fbRev) * 100 : 0);
+    return { ...s, siteData, edit, rev, spend, fbRev, fbProfit, fbm, isEdited: !!edit };
   }).sort((a, b) => b.rev - a.rev);
 
   const totalRev = siteRows.reduce((s, r) => s + r.rev, 0);
   const totalSpend = siteRows.reduce((s, r) => s + r.spend, 0);
   const totalFbRev = siteRows.reduce((s, r) => s + r.fbRev, 0);
-  const totalGross = siteRows.reduce((s, r) => s + r.gross, 0);
-  const totalMargin = totalRev > 0 ? ((totalRev - totalSpend) / totalRev) * 100 : 0;
-  const totalFbm = totalFbRev > 0 ? ((totalFbRev - totalSpend) / totalFbRev) * 100 : 0;
+  const totalFbProfit = siteRows.reduce((s, r) => s + r.fbProfit, 0);
+  const totalFbm = totalFbRev > 0 ? (totalFbProfit / totalFbRev) * 100 : 0;
 
   function updateSiteField(abbreviation: string, field: string, value: string) {
     setSiteEdits((prev) => {
@@ -379,9 +392,14 @@ export default function GoalsPage() {
         revenue: sData?.revenue ? Number(sData.revenue).toString() : "",
         fb_spend: sData?.fb_spend ? Number(sData.fb_spend).toString() : "",
         fb_revenue: sData?.fb_revenue ? Number(sData.fb_revenue).toString() : "",
-        gross: "", margin_pct: "", fbm_pct: "",
+        fb_profit: "",
+        fbm_pct: "",
       };
-      return { ...prev, [abbreviation]: { ...current, [field]: value } };
+      // When user manually edits revenue/spend/fbrev, clear extracted fb_profit/fbm so they get recalculated
+      const cleared = (field === "revenue" || field === "fb_spend" || field === "fb_revenue")
+        ? { ...current, fb_profit: "", fbm_pct: "", [field]: value }
+        : { ...current, [field]: value };
+      return { ...prev, [abbreviation]: cleared };
     });
   }
 
@@ -393,9 +411,9 @@ export default function GoalsPage() {
   // Chart data: only sites with revenue
   const chartRows = siteRows
     .filter((r) => r.rev > 0)
-    .map((r) => ({ name: r.abbreviation, revenue: r.rev, margin: r.margin }));
-  const barColor = (margin: number) =>
-    margin > 10 ? "#10b981" : margin > 0 ? "#f59e0b" : "#f43f5e";
+    .map((r) => ({ name: r.abbreviation, revenue: r.rev, fbm: r.fbm }));
+  const barColor = (fbm: number) =>
+    fbm > 10 ? "#10b981" : fbm > 0 ? "#f59e0b" : "#f43f5e";
 
   if (loading) {
     return (
@@ -665,7 +683,7 @@ export default function GoalsPage() {
                     </p>
                     <p className="text-2xl font-bold mt-1">{daysRemaining}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      of {daysInMonth} days &middot; Margin{" "}
+                      of {daysInMonth} days &middot; FBM{" "}
                       {Number(goal.actual_margin_pct).toFixed(1)}%
                     </p>
                   </div>
@@ -684,7 +702,7 @@ export default function GoalsPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Site Health</CardTitle>
                   <div className="flex items-center gap-4">
-                    <span className="text-[11px] font-medium text-muted-foreground">Margin</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">FBM</span>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                       <span className="text-[11px] text-muted-foreground">&gt;10%</span>
@@ -723,13 +741,13 @@ export default function GoalsPage() {
                       }}
                       labelFormatter={(label) => {
                         const row = chartRows.find((r) => r.name === label);
-                        return row ? `${label} · ${row.margin.toFixed(1)}% margin` : label;
+                        return row ? `${label} · ${row.fbm.toFixed(1)}% FBM` : label;
                       }}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
                     <Bar dataKey="revenue" radius={[0, 4, 4, 0]} maxBarSize={20}>
                       {chartRows.map((entry, index) => (
-                        <Cell key={index} fill={barColor(entry.margin)} />
+                        <Cell key={index} fill={barColor(entry.fbm)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -790,6 +808,21 @@ export default function GoalsPage() {
                     Extracting site data from screenshot...
                   </p>
                 </div>
+              ) : extractError ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-rose-500/10 border border-rose-200 mb-4">
+                  <AlertTriangle className="h-4 w-4 text-rose-700 dark:text-rose-400 flex-shrink-0" />
+                  <p className="text-sm text-rose-700 dark:text-rose-400 flex-1">
+                    {extractError}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setExtractError(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
               ) : (
                 <div
                   onDragOver={(e) => e.preventDefault()}
@@ -837,8 +870,7 @@ export default function GoalsPage() {
                           <TableHead className="text-xs font-medium text-right">Revenue</TableHead>
                           <TableHead className="text-xs font-medium text-right">FB Spend</TableHead>
                           <TableHead className="text-xs font-medium text-right">FB Rev</TableHead>
-                          <TableHead className="text-xs font-medium text-right">Gross</TableHead>
-                          <TableHead className="text-xs font-medium text-right">Margin</TableHead>
+                          <TableHead className="text-xs font-medium text-right">FB Profit</TableHead>
                           <TableHead className="text-xs font-medium text-right">FBM</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -880,11 +912,8 @@ export default function GoalsPage() {
                                 className="h-7 w-full text-right text-xs font-medium tabular-nums pr-2"
                               />
                             </TableCell>
-                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${grossColor(row.gross)}`}>
-                              {formatDollar(row.gross)}
-                            </TableCell>
-                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${marginColor(row.margin)}`}>
-                              {row.margin.toFixed(1)}%
+                            <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${grossColor(row.fbProfit)}`}>
+                              {formatDollar(row.fbProfit)}
                             </TableCell>
                             <TableCell className={`py-2 text-right text-xs font-semibold tabular-nums ${marginColor(row.fbm)}`}>
                               {row.fbm.toFixed(1)}%
@@ -898,8 +927,7 @@ export default function GoalsPage() {
                           <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalRev)}</TableCell>
                           <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalSpend)}</TableCell>
                           <TableCell className="text-right text-xs tabular-nums">{formatDollar(totalFbRev)}</TableCell>
-                          <TableCell className={`text-right text-xs tabular-nums ${grossColor(totalGross)}`}>{formatDollar(totalGross)}</TableCell>
-                          <TableCell className={`text-right text-xs tabular-nums ${marginColor(totalMargin)}`}>{totalMargin.toFixed(1)}%</TableCell>
+                          <TableCell className={`text-right text-xs tabular-nums ${grossColor(totalFbProfit)}`}>{formatDollar(totalFbProfit)}</TableCell>
                           <TableCell className={`text-right text-xs tabular-nums ${marginColor(totalFbm)}`}>{totalFbm.toFixed(1)}%</TableCell>
                         </TableRow>
                       </TableFooter>
@@ -909,8 +937,8 @@ export default function GoalsPage() {
                     {extractedTotal && (
                       <div className="mt-3 px-2 py-2 rounded-lg bg-muted/50 border border-border/30">
                         <p className="text-[11px] text-muted-foreground">
-                          <span className="font-medium">All sites:</span>{" "}
-                          Rev {formatDollar(extractedTotal.revenue)} · Spend {formatDollar(extractedTotal.fb_spend)} · Gross {formatDollar(extractedTotal.gross)} · Margin {extractedTotal.margin_pct}% · FBM {extractedTotal.fbm_pct}%
+                          <span className="font-medium">All sites (dashboard):</span>{" "}
+                          Rev {formatDollar(extractedTotal.revenue)} · FB Spend {formatDollar(extractedTotal.fb_spend)} · FB Profit {formatDollar(extractedTotal.fb_profit)} · FBM {extractedTotal.fbm_pct}%
                         </p>
                       </div>
                     )}

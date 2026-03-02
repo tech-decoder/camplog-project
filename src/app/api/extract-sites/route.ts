@@ -1,69 +1,98 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAIClient } from "@/lib/openai/client";
-import { KNOWN_SITES } from "@/lib/constants/sites";
+import { getAuthUserId } from "@/lib/supabase/auth-helper";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-// Build the prompt dynamically from our known sites config
-const siteList = KNOWN_SITES.map(
-  (s) => `  - "${s.domain}" → abbreviation: "${s.abbreviation}" (${s.shortName})`
-).join("\n");
+function buildExtractionPrompt(
+  sites: Array<{ abbreviation: string; name: string; url: string }>
+) {
+  const siteList = sites
+    .map((s) => `  - "${s.url}" → abbreviation: "${s.abbreviation}" (${s.name})`)
+    .join("\n");
+  const abbreviations = sites.map((s) => s.abbreviation).join(", ");
 
-const SITE_EXTRACTION_PROMPT = `You are a data extraction assistant for an ad arbitrage marketer. Extract per-site revenue data from this dash.ltv.so dashboard screenshot.
+  return `You are a data extraction assistant for an ad arbitrage marketer. Extract per-site revenue data from this dash.ltv.so dashboard screenshot.
 
 ## CRITICAL: Known Sites to Extract
-I ONLY care about these 10 specific sites. Match them by their EXACT domain name shown in the screenshot:
+I ONLY care about these specific sites. Match them by their EXACT domain name shown in the screenshot:
 ${siteList}
 
-IMPORTANT: The dashboard has ~45 sites. Many have similar names (e.g. "mhbharti.com" vs "moneyblog.mhbharti.com", "gkbix.com" vs "portal.gkbix.com"). You MUST match the EXACT full domain listed above. Do NOT confuse parent domains with subdomains.
+IMPORTANT: The dashboard may have many sites. Many have similar names (e.g. "mhbharti.com" vs "moneyblog.mhbharti.com", "gkbix.com" vs "portal.gkbix.com"). You MUST match the EXACT full domain listed above. Do NOT confuse parent domains with subdomains.
 
 ## Columns to Extract
 The table has columns: Site, Revenue, FBR (FB Revenue), FBS (FB Spend), FBM (FB Margin %), Gross, Margin.
 
-For each of our 10 sites found in the screenshot, extract:
-- abbreviation: MUST be one of: ${KNOWN_SITES.map((s) => s.abbreviation).join(", ")}
+For each of our sites found in the screenshot, extract:
+- abbreviation: MUST be one of: ${abbreviations}
 - revenue: the Revenue column value
 - fb_spend: the FBS column value (Facebook Spend)
 - fb_revenue: the FBR column value
-- gross: the Gross column value
-- margin_pct: the Margin % column value
-- fbm_pct: the FBM column value (Facebook Margin %)
+- fb_profit: the Gross column value (this is FB Revenue minus FB Spend, read it directly from the screenshot)
+- fbm_pct: the FBM column value (Facebook Margin %). Read it directly from the screenshot, do NOT calculate it.
 
-Also extract the totals row (first row, usually says "Total: 45" or similar).
+IMPORTANT: Extract fb_profit (Gross) and fbm_pct (FBM) directly from the screenshot values. Do NOT calculate them — read the exact numbers shown.
+
+Also extract the totals row (first row, usually says "Total: 44" or similar).
 
 ## Response Format
 Return valid JSON:
 {
-  "period": "string - date range shown, e.g. 'Feb 1, 2026 - Feb 28, 2026'",
+  "period": "string - date range shown, e.g. 'Mar 1, 2026 - Mar 1, 2026'",
   "total": {
-    "sites_count": 45,
-    "revenue": 16852.52,
-    "fb_spend": 14659.31,
-    "fb_revenue": 16802.48,
-    "gross": 1618.42,
-    "margin_pct": 9.16,
-    "fbm_pct": 12.76
+    "sites_count": 44,
+    "revenue": 816.05,
+    "fb_spend": 740.36,
+    "fb_revenue": 816.05,
+    "fb_profit": 54.18,
+    "fbm_pct": 9.28
   },
   "sites": [
     {
       "abbreviation": "MBM",
       "domain": "moneyblog.mhbharti.com",
-      "revenue": 6426.37,
-      "fb_spend": 5540.09,
-      "fb_revenue": 6426.37,
-      "gross": 731.53,
-      "margin_pct": 10.97,
-      "fbm_pct": 13.79
+      "revenue": 327.57,
+      "fb_spend": 284.37,
+      "fb_revenue": 327.57,
+      "fb_profit": 35.86,
+      "fbm_pct": 13.19
     }
   ]
 }
 
-Only include our 10 known sites. If a site is not visible in the screenshot or has 0 revenue AND 0 spend, omit it.`;
+Only include our known sites. If a site is not visible in the screenshot or has 0 revenue AND 0 spend, omit it.`;
+}
 
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const formData = await request.formData();
   const imageFile = formData.get("image") as File | null;
 
   if (!imageFile) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
+  }
+
+  // Fetch user's sites from user_sites table
+  const supabase = createAdminClient();
+  const { data: siteRows } = await supabase
+    .from("user_sites")
+    .select("site_abbreviation, site_name, site_url")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  const userSites = (siteRows || []).map((s) => ({
+    abbreviation: s.site_abbreviation,
+    name: s.site_name || s.site_abbreviation,
+    url: s.site_url || "",
+  }));
+
+  if (userSites.length === 0) {
+    return NextResponse.json(
+      { error: "No sites configured. Add sites in My Sites first." },
+      { status: 400 }
+    );
   }
 
   const bytes = await imageFile.arrayBuffer();
@@ -72,6 +101,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const openai = getOpenAIClient();
+    const prompt = buildExtractionPrompt(userSites);
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -79,7 +109,7 @@ export async function POST(request: NextRequest) {
           role: "user",
           content: [
             { type: "image_url", image_url: { url: base64, detail: "high" } },
-            { type: "text", text: SITE_EXTRACTION_PROMPT },
+            { type: "text", text: prompt },
           ],
         },
       ],

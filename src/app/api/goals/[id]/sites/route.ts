@@ -80,12 +80,14 @@ export async function POST(
   const results = [];
 
   for (const siteData of sites) {
+    const fbRev = siteData.fb_revenue ?? siteData.revenue;
     const profit =
-      siteData.profit ?? siteData.revenue - siteData.fb_spend;
-    const margin =
+      siteData.profit ?? fbRev - siteData.fb_spend;
+    // Use FBM (FB Margin): (FB Revenue - FB Spend) / FB Revenue
+    const fbm =
       siteData.margin_pct ??
-      (siteData.revenue > 0
-        ? ((siteData.revenue - siteData.fb_spend) / siteData.revenue) * 100
+      (fbRev > 0
+        ? ((fbRev - siteData.fb_spend) / fbRev) * 100
         : 0);
 
     const { data, error } = await supabase
@@ -100,7 +102,7 @@ export async function POST(
           fb_spend: siteData.fb_spend,
           fb_revenue: siteData.fb_revenue ?? siteData.fb_spend,
           profit,
-          margin_pct: Math.round(margin * 100) / 100,
+          margin_pct: Math.round(fbm * 100) / 100,
           source: siteData.source || "manual",
           updated_at: new Date().toISOString(),
         },
@@ -113,11 +115,20 @@ export async function POST(
     if (error) console.error("Failed to upsert site:", siteData.site, error.message);
   }
 
-  // Recalculate goal actuals from site data
-  const totalRevenue = results.reduce((s, r) => s + Number(r.revenue), 0);
-  const totalSpend = results.reduce((s, r) => s + Number(r.fb_spend), 0);
-  const totalProfit = results.reduce((s, r) => s + Number(r.profit), 0);
-  const totalMargin = totalRevenue > 0 ? ((totalRevenue - totalSpend) / totalRevenue) * 100 : 0;
+  // Recalculate goal actuals from ALL site data for this month (not just current request)
+  const { data: allSites } = await supabase
+    .from("site_monthly_revenue")
+    .select("revenue, fb_spend, fb_revenue, profit")
+    .eq("user_id", userId)
+    .eq("month", goal.month);
+
+  const allSiteRows = allSites || results;
+  const totalRevenue = allSiteRows.reduce((s, r) => s + Number(r.revenue), 0);
+  const totalSpend = allSiteRows.reduce((s, r) => s + Number(r.fb_spend), 0);
+  const totalFbRev = allSiteRows.reduce((s, r) => s + Number(r.fb_revenue || r.revenue), 0);
+  const totalProfit = allSiteRows.reduce((s, r) => s + Number(r.profit), 0);
+  // FBM = total profit / total FB revenue (uses stored extracted profit values)
+  const totalFbm = totalFbRev > 0 ? (totalProfit / totalFbRev) * 100 : 0;
 
   await supabase
     .from("revenue_goals")
@@ -125,7 +136,7 @@ export async function POST(
       actual_revenue: Math.round(totalRevenue * 100) / 100,
       actual_fb_spend: Math.round(totalSpend * 100) / 100,
       actual_profit: Math.round(totalProfit * 100) / 100,
-      actual_margin_pct: Math.round(totalMargin * 100) / 100,
+      actual_margin_pct: Math.round(totalFbm * 100) / 100,
       updated_at: new Date().toISOString(),
     })
     .eq("id", goalId);
