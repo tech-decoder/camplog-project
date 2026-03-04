@@ -72,15 +72,27 @@ If the message does NOT contain any campaign changes, return:
   "assistant_message": "your conversational response"
 }`;
 
-export const METRICS_EXTRACTION_PROMPT = `You are a data extraction assistant. Extract all visible metrics from this dashboard screenshot.
+export function buildMetricsExtractionPrompt(context?: {
+  campaignName?: string;
+  site?: string;
+}) {
+  const campaignHint = context?.campaignName
+    ? `\n\nIMPORTANT: This screenshot is for a SPECIFIC campaign called "${context.campaignName}"${context.site ? ` on site "${context.site}"` : ""}. The screenshot may show the campaign detail view with summary metrics at top and a URL breakdown table below.
+- Extract the CAMPAIGN-LEVEL summary metrics (the top-level numbers), NOT individual URL rows.
+- If the screenshot shows a table with multiple URLs/rows, the summary metrics at the top are the ones to extract.
+- Do NOT sum up the URL rows — use the campaign summary numbers shown above the table.`
+    : "";
 
-The screenshot is from dash.ltv.so, an ad arbitrage tracking dashboard. Extract:
+  return `You are a data extraction assistant. Extract metrics from this dash.ltv.so dashboard screenshot.${campaignHint}
+
+The dashboard shows ad arbitrage metrics. Extract these values by reading them DIRECTLY from the screenshot:
 - Revenue, AD Clicks, AD CTR, AD CPC, AD RPM
-- FB Lead, FB CPC, FBR (FB Revenue), FBS (FB Spend), FBM (FB Margin %)
+- FB Leads, FB CPC, FBS (FB Spend), FBM (FB Margin %)
 - Gross, Margin %
 - FB Budget (if visible)
 - The time range shown (Today, Last 3D, Last 7D, etc.)
-- Campaign/URL name if visible
+
+IMPORTANT: Read all values directly from the screenshot. Do NOT calculate or derive any values.
 
 Return valid JSON:
 {
@@ -102,28 +114,11 @@ Return valid JSON:
     "gross_profit": null,
     "margin_pct": null,
     "time_range": null
-  },
-  "urls": [
-    {
-      "url_path": "/path-name",
-      "fb_budget": null,
-      "revenue": null,
-      "ad_clicks": null,
-      "ad_ctr": null,
-      "ad_cpc": null,
-      "ad_rpm": null,
-      "fb_lead": null,
-      "fb_cpc": null,
-      "fb_revenue": null,
-      "fb_spend": null,
-      "fb_margin_pct": null,
-      "gross": null,
-      "margin_pct": null
-    }
-  ]
+  }
 }
 
 Only include values you can clearly read. Use null for anything unclear.`;
+}
 
 export const IMPACT_ASSESSMENT_PROMPT = `You are CampLog, analyzing the impact of a campaign change for an ad arbitrage marketer running Facebook ads to websites monetized by Google AdSense.
 

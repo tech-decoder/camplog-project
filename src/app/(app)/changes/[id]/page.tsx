@@ -115,6 +115,8 @@ export default function ChangeDetailPage() {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      if (change?.campaign_name) formData.append("campaign_name", change.campaign_name);
+      if (change?.site) formData.append("site", change.site);
       const res = await fetch("/api/extract-metrics", {
         method: "POST",
         body: formData,

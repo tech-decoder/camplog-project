@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAIClient } from "@/lib/openai/client";
-import { METRICS_EXTRACTION_PROMPT } from "@/lib/openai/prompts";
+import { buildMetricsExtractionPrompt } from "@/lib/openai/prompts";
 import { toNumericValue } from "@/lib/utils/metrics";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const imageFile = formData.get("image") as File | null;
+  const campaignName = formData.get("campaign_name") as string | null;
+  const site = formData.get("site") as string | null;
 
   if (!imageFile) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
@@ -16,6 +18,10 @@ export async function POST(request: NextRequest) {
   const base64 = `data:${imageFile.type};base64,${buffer.toString("base64")}`;
 
   const openai = getOpenAIClient();
+  const prompt = buildMetricsExtractionPrompt({
+    campaignName: campaignName || undefined,
+    site: site || undefined,
+  });
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -24,7 +30,7 @@ export async function POST(request: NextRequest) {
         role: "user",
         content: [
           { type: "image_url", image_url: { url: base64, detail: "high" } },
-          { type: "text", text: METRICS_EXTRACTION_PROMPT },
+          { type: "text", text: prompt },
         ],
       },
     ],
