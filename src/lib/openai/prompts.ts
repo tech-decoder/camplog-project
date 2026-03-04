@@ -77,40 +77,57 @@ export function buildMetricsExtractionPrompt(context?: {
   site?: string;
 }) {
   const campaignHint = context?.campaignName
-    ? `\n\nIMPORTANT: This screenshot is for a SPECIFIC campaign called "${context.campaignName}"${context.site ? ` on site "${context.site}"` : ""}. The screenshot may show the campaign detail view with summary metrics at top and a URL breakdown table below.
-- Extract the CAMPAIGN-LEVEL summary metrics (the top-level numbers), NOT individual URL rows.
-- If the screenshot shows a table with multiple URLs/rows, the summary metrics at the top are the ones to extract.
-- Do NOT sum up the URL rows — use the campaign summary numbers shown above the table.`
+    ? `\nThis screenshot is for campaign "${context.campaignName}"${context.site ? ` on site "${context.site}"` : ""}.`
     : "";
 
-  return `You are a data extraction assistant. Extract metrics from this dash.ltv.so dashboard screenshot.${campaignHint}
+  return `You are a data extraction assistant for dash.ltv.so, an ad arbitrage tracking dashboard.${campaignHint}
 
-The dashboard shows ad arbitrage metrics. Extract these values by reading them DIRECTLY from the screenshot:
-- Revenue, AD Clicks, AD CTR, AD CPC, AD RPM
-- FB Leads, FB CPC, FBS (FB Spend), FBM (FB Margin %)
-- Gross, Margin %
-- FB Budget (if visible)
-- The time range shown (Today, Last 3D, Last 7D, etc.)
+## Dashboard Layout
+The screenshot shows a DATA TABLE. The table has these columns (left to right):
+  Date | Revenue | AD Clicks | AD CTR | AD CPC | AD RPM | FB Lead | FB CPC | FBR | FBS | FBM | Gross | Margin | Cost
 
-IMPORTANT: Read all values directly from the screenshot. Do NOT calculate or derive any values.
+The table typically has:
+- A SUMMARY ROW at the top (the first data row). It shows a number in the Date column (e.g. "7" meaning 7 days of data). This row has the TOTALS/AVERAGES for the selected time period.
+- Below it: individual day rows with dates like "2026-02-25 Wed".
+
+## What to Extract
+Read ONLY the SUMMARY ROW (the first data row — the one with a number like "7" or "3" in the Date column, NOT a specific date). Map those values as follows:
+
+- Revenue column → ad_revenue
+- AD Clicks column → ad_clicks
+- AD CTR column → ad_ctr (number only, no % sign)
+- AD CPC column → ad_cpc
+- AD RPM column → ad_rpm
+- FB Lead column → fb_leads
+- FB CPC column → fb_cpc
+- FBR column → fb_revenue
+- FBS column → fb_spend
+- FBM column → fb_margin_pct (number only, no % sign)
+- Gross column → gross_profit
+- Margin column → margin_pct (number only, no % sign)
+- Cost column → fb_cost
+
+Also note the selected time range tab (e.g. "Today", "Last 3D", "Last 7D") — it will be highlighted/bold.
+
+## CRITICAL RULES
+- Read ALL values from the SUMMARY ROW only. Do NOT read from individual day rows.
+- Read values exactly as shown. Do NOT calculate or derive anything.
+- Do NOT confuse columns — read left to right carefully.
 
 Return valid JSON:
 {
   "campaign_name": "string or null",
   "site": "string or null",
   "metrics": {
-    "fb_spend": null,
-    "fb_cpc": null,
-    "fb_ctr": null,
-    "fb_clicks": null,
-    "fb_leads": null,
-    "fb_margin_pct": null,
-    "fb_daily_budget": null,
     "ad_revenue": null,
     "ad_clicks": null,
     "ad_ctr": null,
     "ad_cpc": null,
     "ad_rpm": null,
+    "fb_leads": null,
+    "fb_cpc": null,
+    "fb_spend": null,
+    "fb_margin_pct": null,
     "gross_profit": null,
     "margin_pct": null,
     "time_range": null
