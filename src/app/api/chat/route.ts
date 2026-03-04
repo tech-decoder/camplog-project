@@ -4,6 +4,7 @@ import { extractChangesFromMessage } from "@/lib/openai/extract-changes";
 import { getImpactReviewDueDate, todayString } from "@/lib/utils/dates";
 import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { toNumericValue } from "@/lib/utils/metrics";
+import { parseLtvUrlsFromMessage } from "@/lib/utils/parse-ltv-url";
 
 export async function GET() {
   const userId = await getAuthUserId();
@@ -103,6 +104,16 @@ export async function POST(request: NextRequest) {
     ? "User's managed sites (use these abbreviations for the 'site' field):\n" + userSites.map((s) => `- ${s.site_name || s.site_abbreviation} (${s.site_abbreviation})${s.site_url ? ` — ${s.site_url}` : ""}`).join("\n")
     : "User has no sites configured yet. If they mention sites, suggest going to My Sites in the sidebar to add them.";
 
+  // Parse dash.ltv.so URLs from the message to extract campaign URL and site
+  const parsedUrls = parseLtvUrlsFromMessage(content);
+  const parsedUrl = parsedUrls[0] || null; // use the first URL found
+  // Match the parsed domain to a user site abbreviation
+  const matchedSite = parsedUrl && userSites?.length
+    ? userSites.find((s) => s.site_url && parsedUrl.siteDomain.includes(
+        s.site_url.replace(/^https?:\/\//, "").replace(/\/$/, "")
+      ))
+    : null;
+
   // Fetch recent changes for conversational context
   const { data: recentChanges } = await supabase
     .from("changes")
@@ -130,7 +141,13 @@ export async function POST(request: NextRequest) {
   const extractedChangeIds: string[] = [];
   const extractedChangesWithIds: Array<Record<string, unknown>> = [];
 
-  for (const change of extraction.changes) {
+  for (const rawChange of extraction.changes) {
+    // Enrich with parsed dash.ltv.so URL data
+    const change = {
+      ...rawChange,
+      campaign_url: rawChange.campaign_url || parsedUrl?.campaignUrl || null,
+      site: rawChange.site || matchedSite?.site_abbreviation || rawChange.site,
+    };
     // Find or create campaign
     let campaignId: string | null = null;
     const { data: existingCampaign } = await supabase
