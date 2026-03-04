@@ -31,7 +31,7 @@ export async function GET() {
       ) {
         const { data: changes } = await supabase
           .from("changes")
-          .select("id, campaign_name, site, action_type, geo, change_value, description, confidence")
+          .select("id, campaign_name, campaign_url, site, action_type, geo, change_value, description, confidence")
           .in("id", msg.metadata.extracted_change_ids);
         return { ...msg, extracted_changes: changes || [] };
       }
@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
         chat_message_id: userMsg.id,
         action_type: change.action_type,
         campaign_name: change.campaign_name,
+        campaign_url: change.campaign_url || null,
         site: change.site || null,
         geo: change.geo,
         change_value: change.change_value,

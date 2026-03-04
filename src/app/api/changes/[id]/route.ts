@@ -40,6 +40,7 @@ export async function PATCH(
   // Only allow updating specific fields
   const allowedFields = [
     "campaign_name",
+    "campaign_url",
     "site",
     "geo",
     "action_type",

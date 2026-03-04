@@ -61,6 +61,7 @@ export interface Change {
   chat_message_id: string | null;
   action_type: ActionType;
   campaign_name: string;
+  campaign_url: string | null;
   site?: string;
   geo: string | null;
   change_value: string | null;

@@ -24,6 +24,7 @@ import {
   Ban,
   Pencil,
   Globe,
+  Link2,
   Check,
   FlaskConical,
   Lightbulb,
@@ -83,6 +84,7 @@ export default function ChangeDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editSite, setEditSite] = useState("");
   const [editCampaignName, setEditCampaignName] = useState("");
+  const [editCampaignUrl, setEditCampaignUrl] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function ChangeDetailPage() {
         setChange(data);
         setEditSite(data.site || "");
         setEditCampaignName(data.campaign_name || "");
+        setEditCampaignUrl(data.campaign_url || "");
       }
     } catch (err) {
       console.error("Failed to fetch change:", err);
@@ -246,6 +249,7 @@ export default function ChangeDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaign_name: editCampaignName,
+          campaign_url: editCampaignUrl.trim() || null,
           site: siteValue,
         }),
       });
@@ -508,6 +512,15 @@ export default function ChangeDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-xs text-muted-foreground">Campaign URL</Label>
+                    <Input
+                      value={editCampaignUrl}
+                      onChange={(e) => setEditCampaignUrl(e.target.value)}
+                      placeholder="/coca-cola-canada"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -546,6 +559,12 @@ export default function ChangeDetailPage() {
                   {siteInfo && (
                     <span className="text-xs">{siteInfo.domain}</span>
                   )}
+                </div>
+              )}
+              {change.campaign_url && (
+                <div className="flex items-center gap-1.5">
+                  <Link2 className="h-3.5 w-3.5" />
+                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{change.campaign_url}</code>
                 </div>
               )}
               {change.geo && (

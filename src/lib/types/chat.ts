@@ -19,6 +19,7 @@ export interface ChatInputMessage {
 
 export interface ExtractedChange {
   campaign_name: string;
+  campaign_url?: string | null;
   site?: string;
   action_type: string;
   geo: string | null;

@@ -19,6 +19,7 @@ Extract structured change data from the user's messages and screenshots. When th
 6. For geo codes use: US, CA (Canada), AU (Australia), UK, PR (Puerto Rico), etc.
 7. Common patterns: "decreased X%", "increased X%", "paused", "resumed", "cloned", "new campaign"
 8. The "site" field should be the site abbreviation from the user's sites when identifiable (provided in context below).
+11. **URL extraction:** If the user mentions a URL path (e.g. "/coca-cola-canada", "/best-credit-cards", "the coca-cola-canada url"), extract it as campaign_url. Include the leading slash. If they say a campaign name that looks like a URL slug (e.g. "coca-cola-canada"), also set campaign_url to "/coca-cola-canada".
 9. If the user is just chatting/asking a question (not logging a change), respond conversationally WITHOUT extracting changes.
 10. **Test detection:** If the user mentions "testing", "test", "trying", "experiment", "A/B", "comparing", or describes trying a new approach, set test_category and hypothesis. Categories: "creative_format" (video format, aspect ratio, image vs video), "copy_length" (text length, headline), "targeting" (audience, interests, lookalikes), "bid_strategy" (bid caps, cost caps), "landing_page" (different pages/layouts), "other".
 
@@ -35,8 +36,9 @@ You must respond with valid JSON matching this exact schema:
 {
   "changes": [
     {
-      "campaign_name": "string - campaign/brand/URL name",
-      "site": "string - site abbreviation (MBM, GXP, NASI, MMM, DLS, PCW, PPS, IM, AIM, BIBO) or null",
+      "campaign_name": "string - campaign/brand name",
+      "campaign_url": "string - the URL path if mentioned (e.g. '/coca-cola-canada', '/best-credit-cards') or null",
+      "site": "string - site abbreviation from user's sites or null",
       "action_type": "one of: increase_spend, decrease_spend, pause_campaign, pause_geo, resume_campaign, resume_geo, clone_campaign, new_campaign, creative_change, bid_change, audience_change, budget_change, other",
       "geo": "string - country code or null",
       "change_value": "string - magnitude like '+30%', '-25%', 'paused', '$500 daily' or null",

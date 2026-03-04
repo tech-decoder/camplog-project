@@ -235,6 +235,9 @@ export default function ChangesPage() {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                         {change.campaign_name}
+                        {change.campaign_url && (
+                          <code className="text-[11px] font-normal bg-muted px-1 py-0.5 rounded ml-1">{change.campaign_url}</code>
+                        )}
                         {change.site ? ` (${change.site})` : ""}
                         {change.geo ? ` — ${change.geo}` : ""}
                         {change.change_value

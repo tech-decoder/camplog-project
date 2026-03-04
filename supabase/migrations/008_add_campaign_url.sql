@@ -1,0 +1,1 @@
+ALTER TABLE changes ADD COLUMN IF NOT EXISTS campaign_url TEXT;
