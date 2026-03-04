@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false })
     .range((page - 1) * limit, page * limit - 1);
 
-  if (campaign) {
+  const campaignId = searchParams.get("campaign_id");
+  if (campaignId) {
+    query = query.eq("campaign_id", campaignId);
+  } else if (campaign) {
     query = query.ilike("campaign_name", `%${campaign}%`);
   }
   if (actionType) {

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette } from "lucide-react";
+import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { ApiKey } from "@/lib/types/ad-copies";
 import { ThemeSelector } from "@/components/ui/theme-toggle";
 
 export default function SettingsPage() {
@@ -25,8 +27,15 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [newKeyName, setNewKeyName] = useState("Default");
+  const [generatingKey, setGeneratingKey] = useState(false);
+  const [newPlaintextKey, setNewPlaintextKey] = useState<string | null>(null);
+
   useEffect(() => {
     loadUser();
+    loadApiKeys();
   }, []);
 
   async function loadUser() {
@@ -90,6 +99,47 @@ export default function SettingsPage() {
       setConfirmPassword("");
     }
     setChangingPassword(false);
+  }
+
+  async function loadApiKeys() {
+    try {
+      const res = await fetch("/api/api-keys");
+      if (res.ok) {
+        const data = await res.json();
+        setApiKeys(data.keys || []);
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleGenerateKey() {
+    setGeneratingKey(true);
+    setNewPlaintextKey(null);
+    try {
+      const res = await fetch("/api/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newKeyName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNewPlaintextKey(data.plaintext_key);
+        setNewKeyName("Default");
+        loadApiKeys();
+      }
+    } catch {
+      toast.error("Failed to generate key");
+    }
+    setGeneratingKey(false);
+  }
+
+  async function handleRevokeKey(keyId: string) {
+    const res = await fetch(`/api/api-keys?id=${keyId}`, { method: "DELETE" });
+    if (res.ok) {
+      loadApiKeys();
+      toast.success("Key revoked");
+    }
   }
 
   if (loading) {
@@ -253,6 +303,105 @@ export default function SettingsPage() {
               Update Password
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* API Keys */}
+      <Card className="border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Key className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">API Keys</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                For external tools (e.g., Claude copywriter) to access your campaigns.
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Existing keys */}
+          {apiKeys.filter((k) => !k.revoked_at).length > 0 && (
+            <div className="space-y-2">
+              {apiKeys
+                .filter((k) => !k.revoked_at)
+                .map((key) => (
+                  <div
+                    key={key.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{key.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{key.key_prefix}</p>
+                      {key.last_used_at && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Last used: {new Date(key.last_used_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => handleRevokeKey(key.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Revoke
+                    </Button>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* New plaintext key display */}
+          {newPlaintextKey && (
+            <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 space-y-2">
+              <p className="text-sm font-medium text-primary">New API Key Created</p>
+              <p className="text-xs text-muted-foreground">
+                Copy this key now — it won&apos;t be shown again.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs font-mono bg-card p-2 rounded border border-border break-all">
+                  {newPlaintextKey}
+                </code>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="flex-shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(newPlaintextKey);
+                    toast.success("Copied to clipboard");
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Generate new key */}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Key name"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              className="h-9 flex-1"
+            />
+            <Button
+              size="sm"
+              onClick={handleGenerateKey}
+              disabled={generatingKey}
+            >
+              {generatingKey ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-1" />
+              )}
+              Generate Key
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

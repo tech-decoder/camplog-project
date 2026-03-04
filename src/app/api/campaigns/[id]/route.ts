@@ -23,7 +23,14 @@ export async function GET(
     return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  // Get change count
+  const { count } = await supabase
+    .from("changes")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", id)
+    .eq("user_id", userId);
+
+  return NextResponse.json({ ...data, change_count: count || 0 });
 }
 
 export async function PATCH(

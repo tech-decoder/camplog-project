@@ -10,6 +10,7 @@ import {
   List,
   Target,
   BarChart3,
+  Megaphone,
   Globe,
   Settings,
   LogOut,
@@ -34,6 +35,11 @@ const navItems = [
     label: "Changes",
     href: "/changes",
     icon: List,
+  },
+  {
+    label: "Campaigns",
+    href: "/campaigns",
+    icon: Megaphone,
   },
   {
     label: "Goals",
