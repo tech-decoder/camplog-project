@@ -40,86 +40,14 @@ https://camplog-ltv.vercel.app
 
 ## Endpoints
 
-### List Campaigns
+### Add Variants by Campaign Name (Recommended)
 
 ```
-GET /api/campaigns
-```
-
-Returns all campaigns for the authenticated user.
-
-**Query parameters** (all optional):
-| Param    | Description                      |
-|----------|----------------------------------|
-| `search` | Filter by campaign name (partial match) |
-| `site`   | Filter by site abbreviation      |
-| `status` | Filter by status: `active`, `paused`, `archived` |
-
-**Response:**
-```json
-{
-  "campaigns": [
-    {
-      "id": "uuid",
-      "name": "Brand X — US",
-      "site": "MM",
-      "platform": "facebook",
-      "status": "active",
-      "change_count": 12,
-      "last_change_date": "2026-03-01",
-      "created_at": "2026-01-15T...",
-      "updated_at": "2026-03-01T..."
-    }
-  ]
-}
-```
-
----
-
-### Get Campaign
-
-```
-GET /api/campaigns/{id}
-```
-
-Returns a single campaign with its change count.
-
----
-
-### List Ad Copy Variants
-
-```
-GET /api/campaigns/{id}/variants
-```
-
-Returns all ad copy variants for a campaign, ordered by field type and sort order.
-
-**Response:**
-```json
-{
-  "variants": [
-    {
-      "id": "uuid",
-      "campaign_id": "uuid",
-      "field_type": "headline",
-      "content": "10 Remote Jobs That Pay $80K+",
-      "sort_order": 0,
-      "created_at": "2026-03-01T..."
-    }
-  ]
-}
-```
-
----
-
-### Add Ad Copy Variants
-
-```
-POST /api/campaigns/{id}/variants
+POST /api/campaigns/by-name?name=Campaign+Name
 Content-Type: application/json
 ```
 
-Add one or more variants to a campaign. All fields are optional — include whichever types you have.
+**This is the easiest endpoint for external tools.** It accepts a campaign name, auto-creates the campaign if it doesn't exist, and adds the variants. No need to look up campaign IDs first.
 
 **Request body:**
 ```json
@@ -133,13 +61,17 @@ Add one or more variants to a campaign. All fields are optional — include whic
   ],
   "descriptions": [
     "Browse 500+ verified remote positions"
-  ]
+  ],
+  "site": "MM"
 }
 ```
+
+All fields are optional — include whichever types you have. `site` is optional and only used when creating a new campaign.
 
 **Response:**
 ```json
 {
+  "campaign_id": "uuid",
   "variants": [
     {
       "id": "uuid",
@@ -151,6 +83,72 @@ Add one or more variants to a campaign. All fields are optional — include whic
   ]
 }
 ```
+
+---
+
+### List Campaigns
+
+```
+GET /api/campaigns
+```
+
+Returns all campaigns for the authenticated user, grouped by name.
+
+**Query parameters** (all optional):
+| Param    | Description                      |
+|----------|----------------------------------|
+| `search` | Filter by campaign name (partial match) |
+| `site`   | Filter by site abbreviation      |
+
+**Response:**
+```json
+{
+  "campaigns": [
+    {
+      "name": "Brand X — US",
+      "campaign_ids": ["uuid1", "uuid2"],
+      "sites": ["MM", "TH"],
+      "platform": "facebook",
+      "status": "active",
+      "change_count": 12,
+      "last_change_date": "2026-03-01",
+      "created_at": "2026-01-15T...",
+      "updated_at": "2026-03-01T..."
+    }
+  ]
+}
+```
+
+---
+
+### Get Campaign by Name
+
+```
+GET /api/campaigns/by-name?name=Campaign+Name
+```
+
+Returns aggregated campaign data across all entries matching the name, including all sites running it.
+
+---
+
+### List Ad Copy Variants by Campaign ID
+
+```
+GET /api/campaigns/{id}/variants
+```
+
+Returns all ad copy variants for a campaign, ordered by field type and sort order.
+
+---
+
+### Add Ad Copy Variants by Campaign ID
+
+```
+POST /api/campaigns/{id}/variants
+Content-Type: application/json
+```
+
+Same body format as the by-name endpoint (without `site`). Requires the campaign to already exist.
 
 ---
 
@@ -172,24 +170,25 @@ Content-Type: application/json
 
 ## Typical Workflow for an External AI Copywriter
 
-1. **List campaigns** to find the right campaign ID:
-   ```
-   GET /api/campaigns?search=Brand+X
-   ```
+**Simple approach (recommended):** Just POST by name — no need to list campaigns first:
 
-2. **Check existing variants** to avoid duplicates:
-   ```
-   GET /api/campaigns/{id}/variants
-   ```
+```
+POST /api/campaigns/by-name?name=KFC%20US%20Jobs
+Authorization: Bearer cl_your_key_here
+Content-Type: application/json
 
-3. **Post new variants:**
-   ```
-   POST /api/campaigns/{id}/variants
-   {
-     "headlines": ["...", "..."],
-     "primary_texts": ["..."],
-     "descriptions": ["..."]
-   }
-   ```
+{
+  "headlines": ["Now Hiring: KFC Team Members", "Join KFC — Apply Today"],
+  "primary_texts": ["KFC is hiring across the US..."],
+  "descriptions": ["Apply in 2 minutes"],
+  "site": "MM"
+}
+```
 
-The variants will appear immediately in the campaign's detail page in CampLog, ready to copy-paste into ad platforms.
+If "KFC US Jobs" doesn't exist yet, it gets created automatically. Variants appear immediately in the campaign's detail page in CampLog, ready to copy-paste into ad platforms.
+
+**Advanced approach:** If you need to check existing variants first:
+
+1. `GET /api/campaigns?search=KFC` — find campaigns
+2. `GET /api/campaigns/{id}/variants` — check existing variants
+3. `POST /api/campaigns/by-name?name=KFC+US+Jobs` — add new variants
