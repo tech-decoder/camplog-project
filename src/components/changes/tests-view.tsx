@@ -79,25 +79,25 @@ export function TestsView({ changes }: TestsViewProps) {
     <div className="space-y-4">
       {/* Test stats bar */}
       <div className="grid grid-cols-4 gap-3">
-        <Card className="border-border/60">
+        <Card className="hover-card-glow border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Total Tests</p>
             <p className="text-xl font-bold mt-0.5">{testChanges.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/60">
+        <Card className="hover-card-glow border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Reviewed</p>
             <p className="text-xl font-bold mt-0.5">{reviewed.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/60">
+        <Card className="hover-card-glow border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase tracking-wider font-medium">Confirmed</p>
             <p className="text-xl font-bold mt-0.5 text-emerald-700 dark:text-emerald-400">{confirmed.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/60">
+        <Card className="hover-card-glow border-border/60">
           <CardContent className="pt-4 pb-3 px-4">
             <p className="text-[10px] text-rose-700 dark:text-rose-400 uppercase tracking-wider font-medium">Rejected</p>
             <p className="text-xl font-bold mt-0.5 text-rose-700 dark:text-rose-400">{rejected.length}</p>

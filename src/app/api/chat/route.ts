@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractChangesFromMessage } from "@/lib/openai/extract-changes";
+import { getOpenAIErrorMessage } from "@/lib/openai/client";
 import { getImpactReviewDueDate, todayString } from "@/lib/utils/dates";
 import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { toNumericValue } from "@/lib/utils/metrics";
@@ -135,7 +136,14 @@ export async function POST(request: NextRequest) {
   ].join("\n\n");
 
   // Extract changes using OpenAI (with recent activity context for smarter conversations)
-  const extraction = await extractChangesFromMessage(content, imageBase64List, activityContext);
+  let extraction;
+  try {
+    extraction = await extractChangesFromMessage(content, imageBase64List, activityContext);
+  } catch (err) {
+    console.error("Chat extraction failed:", err);
+    const { message, status } = getOpenAIErrorMessage(err);
+    return NextResponse.json({ error: message }, { status });
+  }
 
   // Save extracted changes to database
   const extractedChangeIds: string[] = [];

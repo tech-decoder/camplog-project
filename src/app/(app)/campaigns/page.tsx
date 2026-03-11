@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,9 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Megaphone, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Megaphone, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/dates";
+import { toast } from "sonner";
 
 interface CampaignGroup {
   name: string;
@@ -32,6 +36,7 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [siteFilter, setSiteFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [sites, setSites] = useState<{ site_abbreviation: string; site_name: string }[]>([]);
 
   useEffect(() => {
@@ -50,13 +55,15 @@ export default function CampaignsPage() {
     }
   }
 
-  async function fetchCampaigns(overrideSite?: string) {
+  async function fetchCampaigns(overrideSite?: string, overrideStatus?: string) {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       const site = overrideSite ?? siteFilter;
       if (site !== "all") params.set("site", site);
+      const status = overrideStatus ?? statusFilter;
+      if (status !== "all") params.set("status", status);
 
       const res = await fetch(`/api/campaigns?${params}`);
       if (res.ok) {
@@ -75,17 +82,40 @@ export default function CampaignsPage() {
     fetchCampaigns();
   };
 
+  async function handleClearDrafts() {
+    const draftCount = campaigns.filter((c) => c.change_count === 0).length;
+    if (!window.confirm(`Delete ${draftCount} draft campaign${draftCount !== 1 ? "s" : ""} with no changes or variants?`)) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/campaigns?drafts=true", { method: "DELETE" });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`Cleared ${data.deleted} draft campaign${data.deleted !== 1 ? "s" : ""}`);
+        fetchCampaigns();
+      }
+    } catch {
+      toast.error("Failed to clear drafts");
+    }
+  }
+
+  const statusBadgeStyle = (status: string) => {
+    if (status === "active") return "";
+    if (status === "paused") return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20";
+    return "bg-muted text-muted-foreground";
+  };
+
   return (
-    <div className="p-6 space-y-5">
-      {/* Header + inline filters */}
+    <PageShell className="space-y-5">
+      <GradientPageHeader
+        icon={Megaphone}
+        title="Campaigns"
+        description={`${campaigns.length} campaigns tracked across your sites.`}
+      />
+
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <h1 className="text-lg font-semibold whitespace-nowrap">
-          Campaigns
-          <span className="text-muted-foreground font-normal ml-1.5 text-sm">
-            {campaigns.length}
-          </span>
-        </h1>
-        <form onSubmit={handleSearch} className="flex flex-1 gap-2 sm:justify-end">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-2 sm:justify-end flex-wrap">
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -116,6 +146,35 @@ export default function CampaignsPage() {
               </SelectContent>
             </Select>
           )}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              fetchCampaigns(undefined, v);
+            }}
+          >
+            <SelectTrigger className="w-36 h-9">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+          {campaigns.some((c) => c.change_count === 0) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+              onClick={handleClearDrafts}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear Drafts
+            </Button>
+          )}
         </form>
       </div>
 
@@ -136,47 +195,40 @@ export default function CampaignsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {campaigns.map((campaign) => (
-                <Link
-                  key={campaign.campaign_ids[0]}
-                  href={`/campaigns/${encodeURIComponent(campaign.name)}`}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{campaign.name}</span>
-                      {campaign.sites.map((s) => (
-                        <Badge key={s} variant="outline" className="text-[11px] px-1.5 py-0 h-5 font-normal">
-                          {s}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      <span>{campaign.change_count} change{campaign.change_count !== 1 ? "s" : ""}</span>
-                      {campaign.sites.length > 1 && (
-                        <>
-                          <span className="text-border">·</span>
-                          <span>{campaign.sites.length} sites</span>
-                        </>
-                      )}
-                      {campaign.last_change_date && (
-                        <>
-                          <span className="text-border">·</span>
-                          <span>{formatDate(campaign.last_change_date)}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {campaigns.map((campaign) => (
+            <Card key={campaign.campaign_ids[0]} className="hover-card-glow border-border/60">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-sm line-clamp-2">{campaign.name}</h3>
+                  <Badge
+                    variant={campaign.status === "active" ? "default" : "secondary"}
+                    className={`text-[10px] px-1.5 h-4 flex-shrink-0 capitalize ${statusBadgeStyle(campaign.status)}`}
+                  >
+                    {campaign.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  {campaign.sites.join(" · ") || "No site"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {campaign.change_count} change{campaign.change_count !== 1 ? "s" : ""}
+                </p>
+                <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                  {campaign.last_change_date
+                    ? `Updated ${formatDate(campaign.last_change_date)}`
+                    : `Created ${formatDate(campaign.created_at)}`}
+                </div>
+                <Link href={`/campaigns/${encodeURIComponent(campaign.name)}`}>
+                  <Button size="sm" className="w-full mt-3 text-xs h-8">
+                    Open
+                  </Button>
                 </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
-    </div>
+    </PageShell>
   );
 }

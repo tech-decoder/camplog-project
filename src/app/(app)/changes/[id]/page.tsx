@@ -280,7 +280,7 @@ export default function ChangeDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -288,7 +288,7 @@ export default function ChangeDetailPage() {
 
   if (!change) {
     return (
-      <div className="p-6">
+      <div>
         <p className="text-muted-foreground">Change not found</p>
         <Link href="/changes">
           <Button variant="ghost" className="mt-4">
@@ -340,7 +340,7 @@ export default function ChangeDetailPage() {
   const siteInfo = change.site ? SITE_ABBREVIATION_MAP[change.site] : null;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto" onPaste={handlePaste}>
+    <div className="space-y-6 max-w-5xl" onPaste={handlePaste}>
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>

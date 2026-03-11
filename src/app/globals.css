@@ -98,7 +98,7 @@
   --accent: #1E293B;
   --accent-foreground: #E2E8F0;
   --destructive: #EF4444;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.10);
   --input: rgba(255, 255, 255, 0.12);
   --ring: #5B8DEF;
   --chart-1: #5B8DEF;
@@ -122,5 +122,39 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Card hover: subtle border glow + lift shadow */
+  .hover-card-glow {
+    @apply transition-all duration-200;
+  }
+  .hover-card-glow:hover {
+    @apply border-primary/30 shadow-[0_0_15px_-3px] shadow-primary/10;
+  }
+
+  /* Link hover: underline with primary color */
+  .hover-link-underline {
+    @apply transition-all duration-150 decoration-primary/0 underline underline-offset-4;
+  }
+  .hover-link-underline:hover {
+    @apply decoration-primary/60;
+  }
+
+  /* Icon glow on hover */
+  .hover-icon-glow {
+    @apply transition-all duration-200;
+  }
+  .hover-icon-glow:hover {
+    @apply drop-shadow-[0_0_6px_var(--primary)];
+  }
+
+  /* Button soft glow */
+  .hover-btn-glow {
+    @apply transition-shadow duration-200;
+  }
+  .hover-btn-glow:hover {
+    @apply shadow-[0_0_20px_-5px] shadow-primary/25;
   }
 }

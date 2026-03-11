@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -417,14 +419,20 @@ export default function GoalsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <PageShell>
+      <GradientPageHeader
+        icon={Target}
+        title="Revenue Goals"
+        description="Set monthly revenue targets and track progress by site."
+      />
+
       {/* Month Selector */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -543,7 +551,7 @@ export default function GoalsPage() {
       {goal && !showSetup && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-border/60">
+            <Card className="hover-card-glow border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -603,7 +611,7 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
+            <Card className="hover-card-glow border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -653,7 +661,7 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
+            <Card className="hover-card-glow border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -674,7 +682,7 @@ export default function GoalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/60">
+            <Card className="hover-card-glow border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -697,7 +705,7 @@ export default function GoalsPage() {
 
           {/* Site Health Chart */}
           {chartRows.length > 0 && (
-            <Card className="border-border/60">
+            <Card className="hover-card-glow border-border/60">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Site Health</CardTitle>
@@ -863,7 +871,8 @@ export default function GoalsPage() {
                   <p>Go to <a href="/my-sites" className="text-primary hover:underline font-medium">My Sites</a> to add the sites you manage.</p>
                 </div>
               ) : (<>
-                    <Table>
+                    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <Table className="min-w-[600px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-xs font-medium">Site</TableHead>
@@ -932,6 +941,7 @@ export default function GoalsPage() {
                         </TableRow>
                       </TableFooter>
                     </Table>
+                    </div>
 
                     {/* Extracted dashboard totals reference */}
                     {extractedTotal && (
@@ -1147,6 +1157,6 @@ export default function GoalsPage() {
           </Card>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

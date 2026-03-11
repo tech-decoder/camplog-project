@@ -11,75 +11,43 @@ import {
   Target,
   BarChart3,
   Megaphone,
+  Sparkles,
+  HelpCircle,
   Globe,
   Settings,
-  LogOut,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { useProfile } from "@/components/providers/profile-provider";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navItems = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Chat",
-    href: "/chat",
-    icon: MessageSquare,
-  },
-  {
-    label: "Changes",
-    href: "/changes",
-    icon: List,
-  },
-  {
-    label: "Campaigns",
-    href: "/campaigns",
-    icon: Megaphone,
-  },
-  {
-    label: "Goals",
-    href: "/goals",
-    icon: Target,
-  },
-  {
-    label: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-  },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Chat", href: "/chat", icon: MessageSquare },
+  { label: "Generate", href: "/generate", icon: Sparkles },
+  { label: "Changes", href: "/changes", icon: List },
+  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { label: "Goals", href: "/goals", icon: Target },
+  { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "My Sites", href: "/my-sites", icon: Globe },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { profile } = useProfile();
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-sidebar border-r border-sidebar-border">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-sidebar-border">
+      {/* Logo Header — h-16 to match topbar */}
+      <div className="flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border">
         <Image
           src="/camplog.svg"
           alt="CampLog"
-          width={32}
-          height={32}
+          width={28}
+          height={28}
           className="rounded-lg"
         />
         <span className="text-lg font-semibold text-sidebar-foreground">CampLog</span>
       </div>
 
-      {/* Nav */}
+      {/* Nav Items */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const isActive =
@@ -89,10 +57,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/25"
+                  : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -102,50 +70,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom */}
+      {/* Footer — Theme toggle + Help */}
       <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
-        {profile && (
-          <div className="flex items-center justify-between px-3 py-2 mb-2">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {profile.nickname || profile.full_name || "User"}
-              </p>
-              <p className="text-xs text-sidebar-foreground/40 truncate">{profile.email}</p>
-            </div>
-            <ThemeToggle />
-          </div>
-        )}
-        <Link
-          href="/my-sites"
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-            pathname === "/my-sites"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-xs text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
+        <a
+          href="mailto:bill@ltv.so"
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-primary/5 hover:text-foreground transition-colors"
         >
-          <Globe className="h-5 w-5" />
-          My Sites
-        </Link>
-        <Link
-          href="/settings"
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-            pathname === "/settings"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-        >
-          <Settings className="h-5 w-5" />
-          Settings
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full"
-        >
-          <LogOut className="h-5 w-5" />
-          Sign Out
-        </button>
+          <HelpCircle className="h-5 w-5" />
+          Help
+        </a>
       </div>
     </aside>
   );

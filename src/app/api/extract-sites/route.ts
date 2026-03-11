@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOpenAIClient } from "@/lib/openai/client";
+import { getOpenAIClient, getOpenAIErrorMessage } from "@/lib/openai/client";
 import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -130,9 +130,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Site extraction failed:", err);
+    const { message, status } = getOpenAIErrorMessage(err);
     return NextResponse.json(
-      { error: "Failed to extract site data from screenshot" },
-      { status: 500 }
+      { error: status === 500 ? "Failed to extract site data from screenshot" : message },
+      { status }
     );
   }
 }

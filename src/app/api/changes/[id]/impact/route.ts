@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateImpactAssessment } from "@/lib/openai/generate-impact";
+import { getOpenAIErrorMessage } from "@/lib/openai/client";
 import { Change, CampaignMetrics } from "@/lib/types/changes";
 
 export async function POST(
@@ -24,10 +25,17 @@ export async function POST(
   }
 
   // Generate impact assessment using AI
-  const assessment = await generateImpactAssessment(
-    change as Change,
-    postMetrics
-  );
+  let assessment;
+  try {
+    assessment = await generateImpactAssessment(
+      change as Change,
+      postMetrics
+    );
+  } catch (err) {
+    console.error("Impact assessment failed:", err);
+    const { message, status } = getOpenAIErrorMessage(err);
+    return NextResponse.json({ error: message }, { status });
+  }
 
   // Update the change with post metrics and assessment
   const { data: updated, error: updateError } = await supabase

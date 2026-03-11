@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || "";
   const site = searchParams.get("site") || "";
+  const status = searchParams.get("status") || "";
 
   // Fetch all campaigns for the user
   let query = supabase
@@ -20,6 +21,10 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
+  }
+
+  if (status) {
+    query = query.eq("status", status);
   }
 
   const { data: campaigns, error } = await query;
@@ -120,4 +125,53 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({ campaigns: result });
+}
+
+export async function DELETE(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = createAdminClient();
+  const { searchParams } = new URL(request.url);
+
+  if (searchParams.get("drafts") === "true") {
+    // Find all campaigns for the user
+    const { data: campaigns } = await supabase
+      .from("campaigns")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (!campaigns?.length) return NextResponse.json({ deleted: 0 });
+
+    const ids = campaigns.map((c) => c.id);
+
+    // Find which have changes
+    const { data: withChanges } = await supabase
+      .from("changes")
+      .select("campaign_id")
+      .eq("user_id", userId)
+      .in("campaign_id", ids);
+
+    const idsWithChanges = new Set((withChanges || []).map((r) => r.campaign_id));
+
+    // Find which have variants
+    const { data: withVariants } = await supabase
+      .from("ad_copy_variants")
+      .select("campaign_id")
+      .eq("user_id", userId)
+      .in("campaign_id", ids);
+
+    const idsWithVariants = new Set((withVariants || []).map((r) => r.campaign_id));
+
+    // Delete campaigns with neither changes nor variants
+    const toDelete = ids.filter((id) => !idsWithChanges.has(id) && !idsWithVariants.has(id));
+
+    if (toDelete.length > 0) {
+      await supabase.from("campaigns").delete().in("id", toDelete).eq("user_id", userId);
+    }
+
+    return NextResponse.json({ deleted: toDelete.length });
+  }
+
+  return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 }

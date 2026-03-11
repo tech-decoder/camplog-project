@@ -248,3 +248,33 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ campaign_id: campaignId, variants: data });
 }
+
+/**
+ * DELETE /api/campaigns/by-name?name=KFC
+ * Delete all campaign rows matching a name, plus their variants.
+ */
+export async function DELETE(request: NextRequest) {
+  const userId = await resolveUserId(request);
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = createAdminClient();
+  const name = new URL(request.url).searchParams.get("name");
+  if (!name) return NextResponse.json({ error: "name parameter required" }, { status: 400 });
+
+  // Find all campaign rows matching this name
+  const { data: campaigns } = await supabase
+    .from("campaigns")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("name", name);
+
+  if (!campaigns?.length) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+
+  const ids = campaigns.map((c) => c.id);
+
+  // Delete variants first, then campaigns
+  await supabase.from("ad_copy_variants").delete().in("campaign_id", ids).eq("user_id", userId);
+  await supabase.from("campaigns").delete().in("id", ids).eq("user_id", userId);
+
+  return NextResponse.json({ success: true, deleted: ids.length });
+}

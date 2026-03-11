@@ -1,82 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  MessageSquare,
+  Sparkles,
+  Megaphone,
+  List,
+  DollarSign,
   TrendingUp,
-  Clock,
-  Activity,
-  ArrowRight,
-  BarChart3,
-  ChevronRight,
   Target,
-  CalendarDays,
+  Zap,
+  ArrowRight,
+  LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 import { Change } from "@/lib/types/changes";
-import { ACTION_TYPE_CONFIG, VERDICT_CONFIG } from "@/lib/constants";
-import { ActionIcon } from "@/components/ui/action-icon";
-import { formatRelative } from "@/lib/utils/dates";
-import { RevenueGoal } from "@/lib/types/goals";
-import { format, startOfMonth, startOfWeek, endOfWeek } from "date-fns";
+import { useProfile } from "@/components/providers/profile-provider";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
+
+const hubCards = [
+  {
+    title: "Generate",
+    description: "Create ad creatives and landing pages with AI",
+    icon: Sparkles,
+    href: "/generate",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-500/10",
+    borderHover: "hover:border-purple-500/30",
+  },
+  {
+    title: "Campaigns",
+    description: "View and manage your active campaigns",
+    icon: Megaphone,
+    href: "/campaigns",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    borderHover: "hover:border-primary/30",
+  },
+  {
+    title: "Changes",
+    description: "Track optimizations and measure impact",
+    icon: List,
+    href: "/changes",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-500/10",
+    borderHover: "hover:border-emerald-500/30",
+  },
+];
+
+interface GoalData {
+  actual_revenue: number | null;
+  actual_profit: number | null;
+  actual_margin_pct: number | null;
+  target_revenue: number | null;
+  target_profit: number | null;
+  target_margin_pct: number | null;
+}
 
 export default function DashboardPage() {
+  const { profile } = useProfile();
   const [changes, setChanges] = useState<Change[]>([]);
-  const [goal, setGoal] = useState<RevenueGoal | null>(null);
+  const [goal, setGoal] = useState<GoalData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchChanges();
-    fetchGoal();
+    Promise.all([fetchChanges(), fetchGoal()]).finally(() =>
+      setLoading(false)
+    );
   }, []);
 
   async function fetchChanges() {
     try {
-      const res = await fetch("/api/changes?limit=20");
+      const res = await fetch("/api/changes?limit=50");
       if (res.ok) {
         const data = await res.json();
         setChanges(data.changes || []);
       }
     } catch (err) {
       console.error("Failed to fetch changes:", err);
-    } finally {
-      setLoading(false);
     }
   }
 
   async function fetchGoal() {
     try {
-      const month = format(startOfMonth(new Date()), "yyyy-MM");
+      const month = format(new Date(), "yyyy-MM");
       const res = await fetch(`/api/goals?month=${month}`);
       if (res.ok) {
         const data = await res.json();
-        setGoal(data.goals?.[0] || null);
+        if (data.goals?.length > 0) setGoal(data.goals[0]);
       }
-    } catch {
-      // Goal fetch is non-critical
+    } catch (err) {
+      console.error("Failed to fetch goals:", err);
     }
   }
 
   const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const todayChanges = changes.filter((c) => c.change_date === todayStr);
+  const firstName =
+    profile?.nickname || profile?.full_name?.split(" ")[0] || "there";
 
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-  const weekStartStr = format(weekStart, "yyyy-MM-dd");
-  const weekEndStr = format(weekEnd, "yyyy-MM-dd");
-  const weekChanges = changes.filter(
-    (c) => c.change_date >= weekStartStr && c.change_date <= weekEndStr && c.status !== "voided"
-  );
-
-  const monthStartStr = format(startOfMonth(today), "yyyy-MM-dd");
-  const monthChanges = changes.filter(
-    (c) => c.change_date >= monthStartStr && c.status !== "voided"
-  );
-
+  // Pending reviews count (for Changes hub card badge)
   const pendingReviews = changes.filter(
     (c) =>
       c.impact_review_due &&
@@ -86,337 +111,239 @@ export default function DashboardPage() {
       c.status !== "voided"
   );
 
-  const reviewedChanges = changes.filter((c) => c.impact_reviewed_at);
-  const avgMargin =
-    reviewedChanges.length > 0
-      ? reviewedChanges.reduce(
-          (sum, c) => sum + (c.post_metrics?.margin_pct || 0),
-          0
-        ) / reviewedChanges.length
+  // Goal data extraction
+  const revenue = goal?.actual_revenue != null ? Number(goal.actual_revenue) : null;
+  const targetRevenue = goal?.target_revenue != null ? Number(goal.target_revenue) : null;
+  const marginPct = goal?.actual_margin_pct != null ? Number(goal.actual_margin_pct) : null;
+  const targetMarginPct = goal?.target_margin_pct != null ? Number(goal.target_margin_pct) : null;
+
+  // Time calculations
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dayOfMonth = today.getDate();
+  const daysLeft = daysInMonth - dayOfMonth;
+
+  // Goal progress
+  const goalProgress =
+    revenue !== null && targetRevenue && targetRevenue > 0
+      ? Math.min((revenue / targetRevenue) * 100, 999)
       : null;
 
-  const stats = [
-    {
-      label: "Changes Today",
-      value: todayChanges.length,
-      icon: Activity,
-      color: "text-primary",
-      bgColor: "bg-primary/8",
-    },
-    {
-      label: "Pending Reviews",
-      value: pendingReviews.length,
-      icon: Clock,
-      color: "text-amber-700 dark:text-amber-400",
-      bgColor: "bg-amber-500/10",
-    },
-    {
-      label: "Avg Reviewed Margin",
-      value: avgMargin !== null ? `${avgMargin.toFixed(1)}%` : "--",
-      icon: TrendingUp,
-      color: "text-primary",
-      bgColor: "bg-primary/8",
-    },
-    {
-      label: "Total Changes",
-      value: changes.length,
-      icon: BarChart3,
-      color: "text-muted-foreground",
-      bgColor: "bg-muted",
-    },
-  ];
+  // Pace status — compares actual vs expected progress through the month
+  const expectedProgress =
+    targetRevenue && targetRevenue > 0 ? (dayOfMonth / daysInMonth) * 100 : null;
+  const targetExceeded = revenue !== null && targetRevenue !== null && revenue >= targetRevenue;
+
+  type PaceStatus = "on_track" | "behind" | "at_risk" | "exceeded";
+  const paceStatus: PaceStatus | null = (() => {
+    if (goalProgress === null || expectedProgress === null) return null;
+    if (goalProgress >= 100) return "exceeded";
+    if (dayOfMonth <= 1) return "on_track";
+    if (goalProgress >= expectedProgress) return "on_track";
+    if (goalProgress >= expectedProgress * 0.85) return "behind";
+    return "at_risk";
+  })();
+
+  const paceConfig: Record<PaceStatus, { bar: string; bg: string; text: string; label: string }> = {
+    exceeded: { bar: "bg-emerald-500", bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", label: "Target exceeded" },
+    on_track: { bar: "bg-emerald-500", bg: "bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", label: "On track" },
+    behind:   { bar: "bg-amber-500",   bg: "bg-amber-500/10",   text: "text-amber-700 dark:text-amber-400",     label: "Behind pace" },
+    at_risk:  { bar: "bg-rose-500",    bg: "bg-rose-500/10",    text: "text-rose-700 dark:text-rose-400",       label: "Falling behind" },
+  };
+
+  // Goal progress subtitle with contextual copywriting
+  const goalSubtitle = (() => {
+    if (!paceStatus || goalProgress === null) return null;
+    switch (paceStatus) {
+      case "exceeded": return `Target exceeded · ${daysLeft} days left`;
+      case "on_track": return `On track · ${daysLeft} days remaining`;
+      case "behind":   return `Behind pace · ${daysLeft} days to catch up`;
+      case "at_risk":  return `Falling behind · need to accelerate`;
+    }
+  })();
+
+  // Daily revenue needed to hit target
+  const dailyNeeded =
+    daysLeft > 0 && revenue !== null && targetRevenue && targetRevenue > 0
+      ? Math.max((targetRevenue - revenue) / daysLeft, 0)
+      : null;
+
+  // Margin coloring helper (reuses goals page pattern)
+  const marginColor = (v: number) =>
+    v > 10 ? "text-emerald-700 dark:text-emerald-400"
+    : v > 0 ? "text-amber-700 dark:text-amber-400"
+    : v < 0 ? "text-rose-700 dark:text-rose-400"
+    : "text-muted-foreground/60";
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="border-border/60">
-            <CardContent className="pt-5 pb-4 px-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    {stat.label}
-                  </p>
-                  <p className="text-2xl font-bold mt-1 text-foreground">
-                    {stat.value}
-                  </p>
+    <PageShell>
+      <GradientPageHeader
+        icon={LayoutDashboard}
+        title={`Welcome back, ${firstName}.`}
+        description="Pick where you want to work."
+      />
+
+      {/* 3 Hub Cards */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {hubCards.map((card) => (
+          <Link key={card.href} href={card.href}>
+            <Card
+              className={`hover-card-glow border-border/60 ${card.borderHover} transition-all cursor-pointer h-full`}
+            >
+              <CardContent className="pt-6 pb-5 px-5">
+                <div
+                  className={`h-10 w-10 rounded-lg ${card.bgColor} flex items-center justify-center mb-4`}
+                >
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
                 </div>
-                <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg">{card.title}</h3>
+                  {card.href === "/changes" && pendingReviews.length > 0 && (
+                    <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[11px] px-1.5 h-5">
+                      {pendingReviews.length} to review
+                    </Badge>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {card.description}
+                </p>
+                <div className="flex items-center gap-1 mt-4 text-sm text-primary font-medium">
+                  Go to {card.title}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
-      {/* Monthly Goal Progress */}
-      {goal && goal.target_revenue && (
-        <Card className="border-border/60">
-          <CardContent className="pt-5 pb-4 px-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold">
-                  {format(new Date(goal.month), "MMMM")} Revenue Goal
-                </p>
-              </div>
-              <Link href="/goals">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1 h-7">
-                  Details
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </Link>
-            </div>
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-2xl font-bold">
-                    ${Number(goal.actual_revenue).toLocaleString()}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    / ${Number(goal.target_revenue).toLocaleString()}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2.5">
-                  <div
-                    className="h-2.5 rounded-full bg-primary transition-all"
-                    style={{
-                      width: `${Math.min((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100, 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-primary">
-                  {((Number(goal.actual_revenue) / Number(goal.target_revenue)) * 100).toFixed(0)}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* === Performance Section === */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Current Performance</h2>
+            <p className="text-sm text-muted-foreground">
+              Here&apos;s how your campaigns are performing this month.
+            </p>
+          </div>
+        </div>
 
-      {/* This Week / This Month Summary */}
-      <div className="grid grid-cols-2 gap-4">
-        <Link href="/changes">
-          <Card className="border-border/60 hover:border-primary/30 transition-colors cursor-pointer">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Card 1: Revenue */}
+          <Card className="hover-card-glow border-border/60">
             <CardContent className="pt-5 pb-4 px-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    This Week
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-muted-foreground font-medium">Revenue</p>
+                  <p className="text-2xl font-bold mt-1 text-foreground">
+                    {loading ? "--" : revenue !== null ? `$${revenue.toLocaleString()}` : "--"}
                   </p>
-                  <p className="text-2xl font-bold mt-1">{weekChanges.length}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {weekChanges.filter((c) => c.impact_verdict === "positive").length > 0 && (
-                      <span className="text-xs text-emerald-700 dark:text-emerald-400">
-                        {weekChanges.filter((c) => c.impact_verdict === "positive").length} improved
-                      </span>
-                    )}
-                    {weekChanges.filter((c) => c.impact_verdict === "negative").length > 0 && (
-                      <span className="text-xs text-rose-700 dark:text-rose-400">
-                        {weekChanges.filter((c) => c.impact_verdict === "negative").length} hurt performance
-                      </span>
-                    )}
-                    {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length > 0 && (
-                      <span className="text-xs text-amber-700 dark:text-amber-400">
-                        {weekChanges.filter((c) => !c.impact_reviewed_at && c.impact_review_due).length} need review
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-primary/8">
-                  <CalendarDays className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/changes">
-          <Card className="border-border/60 hover:border-primary/30 transition-colors cursor-pointer">
-            <CardContent className="pt-5 pb-4 px-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    This Month
-                  </p>
-                  <p className="text-2xl font-bold mt-1">{monthChanges.length}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {new Set(monthChanges.map((c) => c.site).filter(Boolean)).size} sites
-                    </span>
-                    {monthChanges.filter((c) => c.impact_reviewed_at).length > 0 && (
-                      <span className="text-xs text-primary">
-                        {monthChanges.filter((c) => c.impact_reviewed_at).length} reviewed
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted">
-                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Recent Changes */}
-        <Card className="lg:col-span-3 border-border/60">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <CardTitle className="text-base font-semibold">Recent Changes</CardTitle>
-            <Link href="/changes">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1">
-                View all
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-pulse flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 rounded-full border-2 border-border border-t-primary animate-spin" />
-                  <p className="text-sm text-muted-foreground">Loading changes...</p>
-                </div>
-              </div>
-            ) : changes.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="h-6 w-6 text-primary" />
-                </div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  No changes logged yet
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Start logging campaign changes through chat
-                </p>
-                <Link href="/chat">
-                  <Button size="sm">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Log your first change
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {changes.slice(0, 8).map((change) => {
-                  const config = ACTION_TYPE_CONFIG[change.action_type];
-                  return (
-                    <Link
-                      key={change.id}
-                      href={`/changes/${change.id}`}
-                      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 group"
-                    >
-                      <Badge
-                        variant="secondary"
-                        className={`${config?.bgColor} ${config?.color} text-xs gap-1 shrink-0`}
-                      >
-                        {config && <ActionIcon iconName={config.icon} className="h-3 w-3" />}
-                        {config?.label}
-                      </Badge>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate text-foreground">
-                          {change.campaign_name}
-                          {change.geo ? ` (${change.geo})` : ""}
-                          {change.change_value
-                            ? ` ${change.change_value}`
-                            : ""}
+                  {!loading && (
+                    <>
+                      {!goal ? (
+                        <Link href="/goals" className="text-xs text-primary hover:underline">
+                          Set a goal →
+                        </Link>
+                      ) : targetRevenue ? (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          of ${targetRevenue.toLocaleString()} target
                         </p>
-                        {change.description && (
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {change.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelative(change.created_at)}
-                        </span>
-                        {change.impact_verdict && (
-                          <Badge
-                            variant="secondary"
-                            className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-xs`}
-                          >
-                            {VERDICT_CONFIG[change.impact_verdict]?.label}
-                          </Badge>
-                        )}
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pending Reviews */}
-        <Card className="lg:col-span-2 border-border/60">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Pending Reviews</CardTitle>
-              {pendingReviews.length > 0 && (
-                <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
-                  {pendingReviews.length}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {pendingReviews.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+                      ) : null}
+                      {marginPct !== null && (
+                        <p className={`text-xs mt-1 ${marginColor(marginPct)}`}>
+                          Margin: {marginPct.toFixed(1)}%
+                          {targetMarginPct !== null && (
+                            <span className="text-muted-foreground"> of {targetMarginPct.toFixed(0)}% target</span>
+                          )}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  All caught up
-                </p>
+                <div className="p-2.5 rounded-xl bg-primary/10 flex-shrink-0">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2.5">
-                {pendingReviews.slice(0, 5).map((change) => {
-                  const config = ACTION_TYPE_CONFIG[change.action_type];
-                  return (
-                    <Link
-                      key={change.id}
-                      href={`/changes/${change.id}`}
-                      className="block p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/8 hover:bg-amber-500/12 transition-colors"
-                    >
-                      <div className="flex items-start gap-2.5">
-                        {config && (
-                          <div className={`p-1.5 rounded-lg ${config.bgColor} mt-0.5`}>
-                            <ActionIcon iconName={config.icon} className={`h-3.5 w-3.5 ${config.color}`} />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {change.campaign_name}
-                            {change.geo ? ` (${change.geo})` : ""}
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Revenue Goal */}
+          <Card className="hover-card-glow border-border/60">
+            <CardContent className="pt-5 pb-4 px-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-muted-foreground font-medium">Revenue Goal</p>
+                  <p className="text-2xl font-bold mt-1 text-foreground">
+                    {loading ? "--" : goalProgress !== null ? `${goalProgress.toFixed(0)}%` : "--"}
+                  </p>
+                  {!loading && goalSubtitle && paceStatus && (
+                    <p className={`text-xs mt-0.5 ${paceConfig[paceStatus].text}`}>
+                      {goalSubtitle}
+                    </p>
+                  )}
+                  {!loading && goalProgress != null && goalProgress >= 0 && paceStatus && (
+                    <div className="w-full bg-muted rounded-full h-1.5 mt-2">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${paceConfig[paceStatus].bar}`}
+                        style={{ width: `${Math.min(goalProgress, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className={`p-2.5 rounded-xl flex-shrink-0 ${paceStatus ? paceConfig[paceStatus].bg : "bg-primary/10"}`}>
+                  <Target className={`h-5 w-5 ${paceStatus ? paceConfig[paceStatus].text : "text-primary"}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Daily Needed (gradient border) */}
+          <div className={`rounded-xl p-[1px] ${targetExceeded ? "bg-gradient-to-br from-emerald-500/30 via-emerald-400/30 to-emerald-500/30" : "bg-gradient-to-br from-primary/30 via-purple-500/30 to-primary/30"}`}>
+            <Card className="hover-card-glow border-0 rounded-[11px] h-full">
+              <CardContent className="pt-5 pb-4 px-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-muted-foreground font-medium">Daily Needed</p>
+                    <p className="text-2xl font-bold mt-1 text-foreground">
+                      {loading ? "--" : targetExceeded ? (
+                        "Target hit!"
+                      ) : dailyNeeded !== null ? (
+                        `$${dailyNeeded.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                      ) : daysLeft === 0 && goalProgress !== null ? (
+                        "Last day!"
+                      ) : (
+                        "--"
+                      )}
+                    </p>
+                    {!loading && (
+                      <>
+                        {targetExceeded ? (
+                          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                            {daysLeft} days left to grow beyond target
                           </p>
+                        ) : dailyNeeded !== null ? (
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            Changed {formatRelative(change.created_at)}
+                            per day to hit target
                           </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="mt-2.5 w-full text-xs h-8 border-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-                      >
-                        Review Now
-                      </Button>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        ) : !goal ? (
+                          <Link href="/goals" className="text-xs text-primary hover:underline">
+                            Set a goal →
+                          </Link>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${targetExceeded ? "bg-emerald-500/10" : "bg-purple-500/10"}`}>
+                    <Zap className={`h-5 w-5 ${targetExceeded ? "text-emerald-700 dark:text-emerald-400" : "text-purple-600 dark:text-purple-400"}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

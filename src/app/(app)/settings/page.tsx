@@ -3,13 +3,18 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
+import { Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, Plus } from "lucide-react";
+import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, Plus, Type, Sprout } from "lucide-react";
 import { toast } from "sonner";
 import { ApiKey } from "@/lib/types/ad-copies";
 import { ThemeSelector } from "@/components/ui/theme-toggle";
+import { CopyPool } from "@/lib/types/generation-jobs";
+import { CopyPoolEditor } from "@/components/generate/copy-pool-editor";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);
@@ -33,10 +38,153 @@ export default function SettingsPage() {
   const [generatingKey, setGeneratingKey] = useState(false);
   const [newPlaintextKey, setNewPlaintextKey] = useState<string | null>(null);
 
+  // Copy Pool
+  const [copyPool, setCopyPool] = useState<CopyPool>({ headlines: [], subheadlines: [], ctas: [], disclaimers: [] });
+  const [savingPool, setSavingPool] = useState(false);
+  const [seedingPool, setSeedingPool] = useState(false);
+
+  const ENGLISH_SEED: CopyPool = {
+    headlines: [
+      "NOW HIRING AT {brand}",
+      "{brand} IS HIRING",
+      "HOW TO APPLY AT {brand}",
+      "JOBS AT {brand}",
+      "WE'RE HIRING",
+      "START WORK THIS WEEK",
+      "HIRING NOW — APPLY TODAY",
+    ],
+    subheadlines: [
+      "Start work this week",
+      "Step by step guide",
+      "No resume needed",
+      "Apply in minutes",
+      "Part-Time • Free Food",
+      "Free Meals • Flexible Shifts • Weekly Pay",
+      "Quick and easy application",
+    ],
+    ctas: [
+      "APPLY IN MINUTES",
+      "APPLY TODAY",
+      "OPEN THE GUIDE",
+      "SEE JOBS",
+      "APPLY NOW",
+      "GET STARTED",
+      "START TODAY",
+    ],
+    disclaimers: [
+      "Guide only. Not an official application.",
+      "Not affiliated with {brand}.",
+      "Informational guide only.",
+    ],
+  };
+
+  const SPANISH_SEED: CopyPool = {
+    headlines: [
+      "EMPLEOS EN {brand}",
+      "CÓMO APLICAR EN {brand}",
+      "{brand} ESTÁ CONTRATANDO",
+    ],
+    subheadlines: [
+      "Guía clara de solicitud y requisitos",
+      "Empieza esta semana",
+      "Sin currículum necesario",
+    ],
+    ctas: [
+      "VER EMPLEOS",
+      "APLICA HOY",
+      "ABRIR LA GUÍA",
+    ],
+    disclaimers: [
+      "Solo guía. No es solicitud oficial.",
+      "No afiliado con {brand}.",
+    ],
+  };
+
   useEffect(() => {
     loadUser();
     loadApiKeys();
+    loadCopyPool();
   }, []);
+
+  async function loadCopyPool() {
+    try {
+      const res = await fetch("/api/style-preferences");
+      if (res.ok) {
+        const { preferences } = await res.json();
+        if (preferences?.copy_pool) {
+          setCopyPool(preferences.copy_pool);
+        }
+      }
+    } catch {
+      // use defaults
+    }
+  }
+
+  async function handleSeedCopyPool(seed: CopyPool) {
+    setSeedingPool(true);
+    try {
+      const merged: CopyPool = {
+        headlines: [...new Set([...copyPool.headlines, ...seed.headlines])],
+        subheadlines: [...new Set([...copyPool.subheadlines, ...seed.subheadlines])],
+        ctas: [...new Set([...copyPool.ctas, ...seed.ctas])],
+        disclaimers: [...new Set([...(copyPool.disclaimers || []), ...(seed.disclaimers || [])])],
+      };
+      setCopyPool(merged);
+      const res = await fetch("/api/style-preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ copy_pool: merged }),
+      });
+      if (res.ok) {
+        toast.success(`Seeded ${seed.headlines.length} headlines, ${seed.subheadlines.length} subheadlines, ${seed.ctas.length} CTAs`);
+      } else {
+        toast.error("Failed to seed copy pool");
+      }
+    } catch {
+      toast.error("Failed to seed copy pool");
+    }
+    setSeedingPool(false);
+  }
+
+  async function handleSaveCopyPool() {
+    setSavingPool(true);
+    try {
+      const res = await fetch("/api/style-preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ copy_pool: copyPool }),
+      });
+      if (res.ok) {
+        toast.success("Copy pool saved");
+      } else {
+        toast.error("Failed to save copy pool");
+      }
+    } catch {
+      toast.error("Failed to save copy pool");
+    }
+    setSavingPool(false);
+  }
+
+  async function handleClearCopyPool() {
+    const empty: CopyPool = { headlines: [], subheadlines: [], ctas: [], disclaimers: [] };
+    setCopyPool(empty);
+    setSavingPool(true);
+    try {
+      const res = await fetch("/api/style-preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ copy_pool: empty }),
+      });
+      if (res.ok) {
+        toast.success("Copy pool cleared");
+      } else {
+        toast.error("Failed to clear copy pool");
+      }
+    } catch {
+      toast.error("Failed to clear copy pool");
+    }
+    setSavingPool(false);
+  }
 
   async function loadUser() {
     const supabase = createClient();
@@ -151,7 +299,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <PageShell>
+      <GradientPageHeader
+        icon={Settings}
+        title="Settings"
+        description="Manage your account, appearance, and API access."
+      />
+      <div className="max-w-2xl space-y-6">
       {/* Appearance */}
       <Card className="border-border">
         <CardHeader className="pb-4">
@@ -382,7 +536,7 @@ export default function SettingsPage() {
           )}
 
           {/* Generate new key */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               placeholder="Key name"
               value={newKeyName}
@@ -393,6 +547,7 @@ export default function SettingsPage() {
               size="sm"
               onClick={handleGenerateKey}
               disabled={generatingKey}
+              className="w-full sm:w-auto"
             >
               {generatingKey ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -400,6 +555,60 @@ export default function SettingsPage() {
                 <Plus className="h-4 w-4 mr-1" />
               )}
               Generate Key
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Copy Pool */}
+      <Card className="border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Type className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">Copy Pool</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Headlines, subheadlines, and CTAs the AI uses when generating in Custom mode.
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CopyPoolEditor value={copyPool} onChange={setCopyPool} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button size="sm" onClick={handleSaveCopyPool} disabled={savingPool}>
+              {savingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+              Save Copy Pool
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSeedCopyPool(ENGLISH_SEED)}
+              disabled={seedingPool}
+            >
+              {seedingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sprout className="h-3.5 w-3.5 mr-1.5" />}
+              Seed English
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSeedCopyPool(SPANISH_SEED)}
+              disabled={seedingPool}
+            >
+              {seedingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sprout className="h-3.5 w-3.5 mr-1.5" />}
+              Seed Spanish
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={handleClearCopyPool}
+              disabled={savingPool}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Clear All
             </Button>
           </div>
         </CardContent>
@@ -416,6 +625,7 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </PageShell>
   );
 }

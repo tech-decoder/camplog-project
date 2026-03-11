@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/components/providers/profile-provider";
@@ -121,7 +123,13 @@ export default function MySitesPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+    <PageShell>
+      <GradientPageHeader
+        icon={Globe}
+        title="My Sites"
+        description="Manage your sites and profile information."
+      />
+      <div className="max-w-2xl space-y-6">
       {/* Profile Card */}
       <Card>
         <CardHeader>
@@ -218,7 +226,7 @@ export default function MySitesPage() {
           )}
 
           {/* Add site form */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={newSiteName}
               onChange={(e) => setNewSiteName(e.target.value)}
@@ -249,7 +257,7 @@ export default function MySitesPage() {
               size="icon"
               onClick={addSite}
               disabled={!newSiteName.trim()}
-              className="shrink-0"
+              className="shrink-0 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -270,6 +278,7 @@ export default function MySitesPage() {
           </Button>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </PageShell>
   );
 }

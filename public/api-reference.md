@@ -9,6 +9,7 @@ CampLog is a campaign change tracking platform for ad arbitrage marketers runnin
 - **Campaign dashboard** — all campaigns with change counts, metrics over time (margin %, FB spend, revenue)
 - **Impact reviews** — upload post-change screenshots to measure whether a change helped or hurt
 - **Ad copy variants** — store headline, primary text, and description variations per campaign
+- **AI image generation** — generate ad creative images with GPT Image or Google Imagen 3, multiple styles and quality tiers
 - **Goals & strategy** — set revenue goals per site, get AI-generated strategy recommendations
 - **Reports** — auto-generated daily/weekly performance summaries
 
@@ -163,6 +164,85 @@ Content-Type: application/json
 ```json
 {
   "ids": ["variant-uuid-1", "variant-uuid-2"]
+}
+```
+
+---
+
+### Generate Ad Images
+
+```
+POST /api/campaigns/{id}/images/generate
+Content-Type: application/json
+```
+
+Generate AI-powered ad creative images for a campaign.
+
+**Request body:**
+```json
+{
+  "headline": "10 Remote Jobs That Pay $80K+",
+  "primary_text": "Looking for a remote job?",
+  "style_preset": "modern",
+  "model": "gpt-image-1",
+  "quality": "standard",
+  "custom_instructions": "Include a laptop on a desk with warm lighting",
+  "count": 2
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `headline` | string | Headline text to include in the image |
+| `primary_text` | string | Ad copy for context |
+| `style_preset` | string | One of: `modern`, `minimal`, `bold`, `lifestyle`, `product` |
+| `model` | string | `gpt-image-1` (best text rendering) or `imagen-3` (fast, cost-effective) |
+| `quality` | string | `draft` (~$0.01), `standard` (~$0.03), `premium` (~$0.13) |
+| `custom_instructions` | string | Additional prompt instructions |
+| `count` | number | Number of images to generate (1-4) |
+
+All fields are optional.
+
+**Response:**
+```json
+{
+  "images": [
+    {
+      "id": "uuid",
+      "image_url": "https://...",
+      "model": "gpt-image-1",
+      "quality": "standard",
+      "style_preset": "modern",
+      "headline_ref": "10 Remote Jobs That Pay $80K+",
+      "created_at": "2026-03-10T..."
+    }
+  ]
+}
+```
+
+---
+
+### List Generated Images
+
+```
+GET /api/campaigns/{id}/images
+```
+
+Returns all generated images for a campaign, newest first.
+
+---
+
+### Delete Generated Image
+
+```
+DELETE /api/campaigns/{id}/images
+Content-Type: application/json
+```
+
+**Request body:**
+```json
+{
+  "imageId": "image-uuid"
 }
 ```
 

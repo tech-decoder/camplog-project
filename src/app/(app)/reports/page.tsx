@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -118,14 +120,20 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <PageShell>
+      <GradientPageHeader
+        icon={BarChart3}
+        title="Reports"
+        description="Generate daily, weekly, or monthly reports with AI-powered insights."
+      />
+
       {/* Generate Section */}
       <Card>
         <CardContent className="pt-6">
@@ -210,7 +218,7 @@ export default function ReportsPage() {
         </Card>
 
         {/* Report Content */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 hover-card-glow">
           <CardContent className="pt-6">
             {generating ? (
               <div className="flex flex-col items-center justify-center py-16">
@@ -221,7 +229,7 @@ export default function ReportsPage() {
               </div>
             ) : selectedReport ? (
               <div>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                   <div>
                     <h2 className="text-lg font-semibold">
                       {selectedReport.title}
@@ -236,7 +244,7 @@ export default function ReportsPage() {
                     </p>
                   </div>
                   {selectedReport.metadata && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {selectedReport.metadata.positive != null &&
                         selectedReport.metadata.positive > 0 && (
                           <Badge
@@ -283,8 +291,8 @@ export default function ReportsPage() {
                           const dataRows = tableLines.slice(isSeparator(tableLines[1]) ? 2 : 1).map(parseRow);
 
                           elements.push(
-                            <div key={`table-${idx}`} className="my-4 rounded-lg border overflow-hidden">
-                              <Table>
+                            <div key={`table-${idx}`} className="my-4 rounded-lg border overflow-hidden overflow-x-auto">
+                              <Table className="min-w-[480px]">
                                 <TableHeader>
                                   <TableRow className="bg-muted/30">
                                     {headers.map((h, hi) => (
@@ -438,6 +446,6 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

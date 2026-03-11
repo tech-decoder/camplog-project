@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/layout/page-shell";
+import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,7 +76,21 @@ export default function ChangesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <PageShell>
+      <GradientPageHeader
+        icon={List}
+        title="Changes"
+        description="Track all campaign optimizations and measure their impact."
+        actions={
+          <Link href="/chat">
+            <Button size="sm">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Log Change
+            </Button>
+          </Link>
+        }
+      />
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
@@ -122,12 +138,12 @@ export default function ChangesPage() {
         </CardContent>
       </Card>
 
-      {/* Header with view toggle */}
+      {/* View toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold">
-            Campaign Changes ({changes.length})
-          </h2>
+          <span className="text-sm text-muted-foreground font-medium">
+            {changes.length} changes
+          </span>
           <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
             {([
               { mode: "list" as const, icon: List, label: "List" },
@@ -150,12 +166,6 @@ export default function ChangesPage() {
             ))}
           </div>
         </div>
-        <Link href="/chat">
-          <Button size="sm">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Log Change
-          </Button>
-        </Link>
       </div>
 
       {/* Content */}
@@ -213,10 +223,10 @@ export default function ChangesPage() {
                   <Link
                     key={change.id}
                     href={`/changes/${change.id}`}
-                    className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${
+                    className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
                       isVoided
                         ? "border-border bg-muted/30 opacity-60"
-                        : "border-border hover:bg-accent"
+                        : "border-border hover:bg-accent hover-card-glow"
                     }`}
                   >
                     <Badge
@@ -236,7 +246,7 @@ export default function ChangesPage() {
                       <p className={`text-sm font-medium ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                         {change.campaign_name}
                         {change.campaign_url && (
-                          <code className="text-[11px] font-normal bg-muted px-1 py-0.5 rounded ml-1">{change.campaign_url}</code>
+                          <code className="text-[11px] font-normal bg-muted px-1 py-0.5 rounded ml-1 hidden sm:inline">{change.campaign_url}</code>
                         )}
                         {change.site ? ` (${change.site})` : ""}
                         {change.geo ? ` — ${change.geo}` : ""}
@@ -306,6 +316,6 @@ export default function ChangesPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageShell>
   );
 }

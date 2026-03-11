@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOpenAIClient } from "@/lib/openai/client";
+import { getOpenAIClient, getOpenAIErrorMessage } from "@/lib/openai/client";
 import { buildMetricsExtractionPrompt } from "@/lib/openai/prompts";
 import { toNumericValue } from "@/lib/utils/metrics";
 
@@ -65,10 +65,11 @@ export async function POST(request: NextRequest) {
       site: parsed.site || null,
       time_range: parsed.metrics?.time_range || null,
     });
-  } catch {
+  } catch (err) {
+    const { message, status } = getOpenAIErrorMessage(err);
     return NextResponse.json(
-      { error: "Failed to parse extraction result" },
-      { status: 500 }
+      { error: status === 500 ? "Failed to parse extraction result" : message },
+      { status }
     );
   }
 }

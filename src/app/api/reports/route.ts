@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getOpenAIClient } from "@/lib/openai/client";
+import { getOpenAIClient, getOpenAIErrorMessage } from "@/lib/openai/client";
 import { REPORT_GENERATION_PROMPT } from "@/lib/openai/prompts";
 
 export async function GET() {
@@ -144,9 +144,10 @@ ${changesSummary}${goalContext}`;
     return NextResponse.json({ report }, { status: 201 });
   } catch (err) {
     console.error("Report generation failed:", err);
+    const { message, status } = getOpenAIErrorMessage(err);
     return NextResponse.json(
-      { error: "Failed to generate report" },
-      { status: 500 }
+      { error: status === 500 ? "Failed to generate report" : message },
+      { status }
     );
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUserId } from "@/lib/supabase/auth-helper";
 import { generateGoalStrategy } from "@/lib/openai/generate-strategy";
+import { getOpenAIErrorMessage } from "@/lib/openai/client";
 
 export async function POST(
   request: NextRequest,
@@ -101,9 +102,10 @@ export async function POST(
     return NextResponse.json({ strategy });
   } catch (err) {
     console.error("Strategy generation failed:", err);
+    const { message, status } = getOpenAIErrorMessage(err);
     return NextResponse.json(
-      { error: "Failed to generate strategy" },
-      { status: 500 }
+      { error: status === 500 ? "Failed to generate strategy" : message },
+      { status }
     );
   }
 }
