@@ -51,7 +51,7 @@ export default function SettingsPage() {
       "JOBS AT {brand}",
       "WE'RE HIRING",
       "START WORK THIS WEEK",
-      "HIRING NOW — APPLY TODAY",
+      "HIRING NOW - APPLY TODAY",
     ],
     subheadlines: [
       "Start work this week",
@@ -514,7 +514,7 @@ export default function SettingsPage() {
             <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 space-y-2">
               <p className="text-sm font-medium text-primary">New API Key Created</p>
               <p className="text-xs text-muted-foreground">
-                Copy this key now — it won&apos;t be shown again.
+                Copy this key now. It won&apos;t be shown again.
               </p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs font-mono bg-card p-2 rounded border border-border break-all">

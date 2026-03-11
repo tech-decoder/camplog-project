@@ -166,7 +166,7 @@ export function ImageGallery({
     setSavingFeedback(true);
     try {
       await handleRate(imageId, -1, feedbackNotes.trim());
-      toast.success("Feedback saved — the AI will learn from this");
+      toast.success("Feedback saved. The AI will learn from this");
       setShowFeedback(false);
       setFeedbackNotes("");
     } finally {

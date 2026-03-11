@@ -1083,7 +1083,7 @@ export default function GoalsPage() {
                               </span>
                               <span className="text-sm text-muted-foreground">
                                 {" "}
-                                &mdash; {flag.issue}
+                                · {flag.issue}
                               </span>
                             </div>
                             <Badge

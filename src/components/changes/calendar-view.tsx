@@ -252,7 +252,7 @@ export function CalendarView({ changes }: CalendarViewProps) {
                     >
                       {change.campaign_name}
                       {change.site ? ` (${change.site})` : ""}
-                      {change.geo ? ` — ${change.geo}` : ""}
+                      {change.geo ? ` · ${change.geo}` : ""}
                       {change.change_value ? ` ${change.change_value}` : ""}
                     </p>
 

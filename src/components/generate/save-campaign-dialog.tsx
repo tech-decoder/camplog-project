@@ -32,7 +32,7 @@ export function SaveCampaignDialog({
     day: "numeric",
     year: "numeric",
   });
-  const [name, setName] = useState(`${brandName} — ${today}`);
+  const [name, setName] = useState(`${brandName} - ${today}`);
   const [saving, setSaving] = useState(false);
   const [existingCampaign, setExistingCampaign] = useState(false);
   const [existingImageCount, setExistingImageCount] = useState(0);
@@ -136,7 +136,7 @@ export function SaveCampaignDialog({
             {existingCampaign && (
               <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                 <Info className="h-3 w-3 flex-shrink-0" />
-                Campaign exists — {imageCount} images will be added to it
+                Campaign exists. {imageCount} images will be added to it
               </p>
             )}
           </div>

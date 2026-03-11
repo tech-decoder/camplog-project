@@ -188,7 +188,7 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                             </Badge>
                             <span className={`text-sm flex-1 min-w-0 truncate ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                               {change.campaign_name}
-                              {change.geo ? ` — ${change.geo}` : ""}
+                              {change.geo ? ` · ${change.geo}` : ""}
                               {change.change_value ? ` ${change.change_value}` : ""}
                             </span>
                             <span className="text-xs text-muted-foreground flex-shrink-0">

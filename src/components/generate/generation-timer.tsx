@@ -39,7 +39,7 @@ const PHASE_MESSAGES: { maxSeconds: number; messages: string[] }[] = [
   {
     maxSeconds: 120,
     messages: [
-      "Almost there — quality can't be rushed...",
+      "Almost there, quality can't be rushed...",
       "Your competitors are still opening Canva...",
       "This batch is getting the VIP treatment...",
     ],
@@ -48,7 +48,7 @@ const PHASE_MESSAGES: { maxSeconds: number; messages: string[] }[] = [
     maxSeconds: Infinity,
     messages: [
       "This batch is getting the VIP treatment...",
-      "Still going — must be a masterpiece...",
+      "Still going... must be a masterpiece...",
       "The AI is being extra perfectionist today...",
     ],
   },
@@ -111,7 +111,7 @@ export function GenerationTimer({
           <span className="font-semibold">Done in {formatDuration(elapsed)}</span>
           {totalImages > 0 && (
             <span className="text-green-600/80 dark:text-green-400/80">
-              {" "}&mdash; {totalImages} images at ~{perImage}s each. Try doing that with Canva
+              {" · "}{totalImages} images at ~{perImage}s each. Try doing that with Canva
             </span>
           )}
           <span className="ml-0.5">

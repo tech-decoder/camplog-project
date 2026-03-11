@@ -190,7 +190,7 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                             <span className={`text-sm font-medium ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                               {change.campaign_name}
                               {change.site ? ` (${change.site})` : ""}
-                              {change.geo ? ` — ${change.geo}` : ""}
+                              {change.geo ? ` · ${change.geo}` : ""}
                               {change.change_value ? ` ${change.change_value}` : ""}
                             </span>
                           </div>

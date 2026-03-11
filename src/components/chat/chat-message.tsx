@@ -105,7 +105,7 @@ export function ChatMessage({ message }: MessageProps) {
                   <p className="text-sm font-medium">
                     {change.campaign_name}
                     {change.site ? ` (${change.site})` : ""}
-                    {change.geo ? ` — ${change.geo}` : ""}
+                    {change.geo ? ` · ${change.geo}` : ""}
                     {change.change_value ? ` ${change.change_value}` : ""}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">

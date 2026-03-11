@@ -249,7 +249,7 @@ export default function ChangesPage() {
                           <code className="text-[11px] font-normal bg-muted px-1 py-0.5 rounded ml-1 hidden sm:inline">{change.campaign_url}</code>
                         )}
                         {change.site ? ` (${change.site})` : ""}
-                        {change.geo ? ` — ${change.geo}` : ""}
+                        {change.geo ? ` · ${change.geo}` : ""}
                         {change.change_value
                           ? ` ${change.change_value}`
                           : ""}

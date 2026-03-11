@@ -506,7 +506,7 @@ export default function ChangeDetailPage() {
                         <SelectItem value="none">No site</SelectItem>
                         {KNOWN_SITES.map((s) => (
                           <SelectItem key={s.abbreviation} value={s.abbreviation}>
-                            {s.abbreviation} — {s.shortName}
+                            {s.abbreviation} · {s.shortName}
                           </SelectItem>
                         ))}
                       </SelectContent>

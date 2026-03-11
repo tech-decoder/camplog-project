@@ -166,7 +166,7 @@ export function WinningVariantsForm({
             <SelectContent>
               {MODEL_OPTIONS.map((m) => (
                 <SelectItem key={m.value} value={m.value} className="text-xs">
-                  {m.label} <span className="text-muted-foreground">— {m.desc}</span>
+                  {m.label} <span className="text-muted-foreground">· {m.desc}</span>
                 </SelectItem>
               ))}
             </SelectContent>

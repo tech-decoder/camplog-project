@@ -16,7 +16,7 @@ const TIPS = [
   "The best ad creative is the one you haven't tested yet",
   "Facebook rewards ad accounts that consistently test new creatives",
   "Video ads under 15 seconds have the highest completion rates",
-  "Dark backgrounds make text pop — great for scroll-stopping ads",
+  "Dark backgrounds make text pop. Great for scroll-stopping ads",
   "Users scroll 300 feet of content daily. Your ad needs to stop that thumb.",
   "The avg CPC drops 20% when you test 10+ creative variants",
   "Ad fatigue sets in after ~500 impressions per creative",
