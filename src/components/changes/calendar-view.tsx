@@ -243,6 +243,13 @@ export function CalendarView({ changes }: CalendarViewProps) {
                           >
                             Review Due
                           </Badge>
+                        ) : isPause ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs"
+                          >
+                            Paused
+                          </Badge>
                         ) : null}
                       </div>
                     </div>

@@ -12,6 +12,7 @@ export async function POST(
   const supabase = createAdminClient();
   const body = await request.json();
   const postMetrics: CampaignMetrics = body.post_metrics;
+  const screenshotBase64: string | null = body.screenshot_base64 || null;
 
   // Fetch the existing change
   const { data: change, error: fetchError } = await supabase
@@ -24,12 +25,13 @@ export async function POST(
     return NextResponse.json({ error: "Change not found" }, { status: 404 });
   }
 
-  // Generate impact assessment using AI
+  // Generate impact assessment using AI (with optional screenshot for vision analysis)
   let assessment;
   try {
     assessment = await generateImpactAssessment(
       change as Change,
-      postMetrics
+      postMetrics,
+      screenshotBase64
     );
   } catch (err) {
     console.error("Impact assessment failed:", err);
@@ -44,6 +46,7 @@ export async function POST(
       post_metrics: postMetrics,
       impact_summary: assessment.impact_summary,
       impact_verdict: assessment.impact_verdict,
+      impact_kpi_trends: assessment.kpi_trends || null,
       impact_reviewed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

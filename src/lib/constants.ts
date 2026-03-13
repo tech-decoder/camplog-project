@@ -5,7 +5,7 @@ export const DEFAULT_USER_ID = "0139e35f-5e5b-4e76-be0d-064ceaa842f5";
 
 // Action color strategy (semantic tokens for light/dark support):
 // Green  — Growth actions (increase, resume, new, clone)
-// Yellow — Caution actions (decrease, bid, budget)
+// Yellow — Caution actions (decrease, bid)
 // Grey   — Stop actions (pause)
 // Blue   — Modify actions (creative, audience): primary
 // Slate  — Other
@@ -78,12 +78,6 @@ export const ACTION_TYPE_CONFIG: Record<
     icon: "users",
     color: "text-primary",
     bgColor: "bg-primary/10",
-  },
-  budget_change: {
-    label: "Budget Change",
-    icon: "wallet",
-    color: "text-amber-700 dark:text-amber-400",
-    bgColor: "bg-amber-500/10",
   },
   other: {
     label: "Other",

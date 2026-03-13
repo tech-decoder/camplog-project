@@ -102,7 +102,15 @@ export async function POST(
 
   if (imgUpdateError) {
     console.error("Failed to link images:", imgUpdateError);
+    return NextResponse.json({ error: "Failed to link images to campaign" }, { status: 500 });
   }
 
-  return NextResponse.json({ campaign, appended: isAppend }, { status: isAppend ? 200 : 201 });
+  // Verify images were actually linked
+  const { count } = await supabase
+    .from("generated_images")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaign.id)
+    .eq("job_id", jobId);
+
+  return NextResponse.json({ campaign, appended: isAppend, images_linked: count || 0 }, { status: isAppend ? 200 : 201 });
 }

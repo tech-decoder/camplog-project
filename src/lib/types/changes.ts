@@ -10,7 +10,6 @@ export type ActionType =
   | "creative_change"
   | "bid_change"
   | "audience_change"
-  | "budget_change"
   | "other";
 
 export type ImpactVerdict =
@@ -75,6 +74,12 @@ export interface Change {
   impact_reviewed_at: string | null;
   impact_summary: string | null;
   impact_verdict: ImpactVerdict | null;
+  impact_kpi_trends?: {
+    fb_cpc?: { trend: string; detail: string };
+    ad_rpm?: { trend: string; detail: string };
+    ad_cpc?: { trend: string; detail: string };
+    fb_margin?: { trend: string; detail: string };
+  } | null;
   status: ChangeStatus;
   void_reason: string | null;
   tags: string[];

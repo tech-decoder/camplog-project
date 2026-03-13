@@ -23,7 +23,9 @@ import {
   ChevronUp,
   MessageSquare,
   Info,
+  FolderPlus,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { toast } from "sonner";
 import { GeneratedImage } from "@/lib/types/generated-images";
@@ -65,6 +67,11 @@ export function ImageGallery({
 
   // ── ZIP download state ───────────────────────────────────────────────────
   const [zipping, setZipping] = useState(false);
+
+  // ── Save to campaign state ──────────────────────────────────────────────
+  const [showSaveCampaign, setShowSaveCampaign] = useState(false);
+  const [saveCampaignName, setSaveCampaignName] = useState("");
+  const [savingToCampaign, setSavingToCampaign] = useState(false);
 
   // ── Confirmation dialog ──────────────────────────────────────────────────
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -257,6 +264,37 @@ export function ImageGallery({
     }
   }
 
+  // ── Save to Campaign ──────────────────────────────────────────────────────
+  async function handleSaveToCampaign() {
+    if (!saveCampaignName.trim() || selectedIds.size === 0) return;
+    setSavingToCampaign(true);
+    try {
+      const res = await fetch("/api/generated-images/save-to-campaign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_ids: Array.from(selectedIds),
+          campaign_name: saveCampaignName.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`${data.images_saved} image${data.images_saved !== 1 ? "s" : ""} saved to "${data.campaign.name}"`);
+        setShowSaveCampaign(false);
+        setSaveCampaignName("");
+        deselectAll();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to save to campaign");
+      }
+    } catch {
+      toast.error("Failed to save to campaign");
+    } finally {
+      setSavingToCampaign(false);
+    }
+  }
+
   if (images.length === 0) return null;
 
   const selectedCount = selectedIds.size;
@@ -286,6 +324,19 @@ export function ImageGallery({
         )}
 
         <div className="ml-auto flex items-center gap-1.5">
+          {/* Save to Campaign */}
+          {selectedCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => setShowSaveCampaign(true)}
+            >
+              <FolderPlus className="h-3.5 w-3.5" />
+              Save to Campaign ({selectedCount})
+            </Button>
+          )}
+
           {/* Delete selected */}
           {selectedCount > 0 && (
             <Button
@@ -747,6 +798,57 @@ export function ImageGallery({
             >
               {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Delete"}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Save to Campaign Dialog ────────────────────────────────────── */}
+      <Dialog open={showSaveCampaign} onOpenChange={(open) => { if (!savingToCampaign) setShowSaveCampaign(open); }}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle className="text-sm font-semibold flex items-center gap-2">
+            <FolderPlus className="h-4 w-4" />
+            Save to Campaign
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            Save {selectedCount} selected image{selectedCount !== 1 ? "s" : ""} to a campaign. If the campaign exists, images will be added to it.
+          </p>
+          <div className="space-y-3 mt-1">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Campaign Name</label>
+              <Input
+                value={saveCampaignName}
+                onChange={(e) => setSaveCampaignName(e.target.value)}
+                placeholder="Enter campaign name..."
+                className="h-9 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveToCampaign();
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSaveCampaign(false)}
+                disabled={savingToCampaign}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveToCampaign}
+                disabled={!saveCampaignName.trim() || savingToCampaign}
+                className="gap-1.5"
+              >
+                {savingToCampaign ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <FolderPlus className="h-3.5 w-3.5" />
+                )}
+                Save
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

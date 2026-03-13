@@ -193,7 +193,10 @@ export default function ChangeDetailPage() {
       const res = await fetch(`/api/changes/${change.id}/impact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ post_metrics: metrics }),
+        body: JSON.stringify({
+          post_metrics: metrics,
+          screenshot_base64: screenshotPreview || null,
+        }),
       });
 
       if (res.ok) {
@@ -562,9 +565,37 @@ export default function ChangeDetailPage() {
                 </div>
               )}
               {change.campaign_url && (
-                <div className="flex items-center gap-1.5">
-                  <Link2 className="h-3.5 w-3.5" />
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{change.campaign_url}</code>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Link2 className="h-3.5 w-3.5 flex-shrink-0" />
+                  {(() => {
+                    try {
+                      const url = new URL(change.campaign_url);
+                      const display = url.hostname + (url.pathname.length > 30 ? url.pathname.slice(0, 30) + "..." : url.pathname);
+                      return (
+                        <a
+                          href={change.campaign_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline truncate max-w-[300px]"
+                          title={change.campaign_url}
+                        >
+                          {display}
+                        </a>
+                      );
+                    } catch {
+                      return (
+                        <a
+                          href={change.campaign_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline truncate max-w-[300px]"
+                          title={change.campaign_url}
+                        >
+                          {change.campaign_url.slice(0, 50)}{change.campaign_url.length > 50 ? "..." : ""}
+                        </a>
+                      );
+                    }
+                  })()}
                 </div>
               )}
               {change.geo && (
@@ -761,8 +792,53 @@ export default function ChangeDetailPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-sm leading-relaxed">{change.impact_summary}</p>
+
+            {/* KPI Trend Cards */}
+            {change.impact_kpi_trends && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(
+                  [
+                    { key: "fb_cpc", label: "FB CPC", goodDirection: "lower" },
+                    { key: "ad_rpm", label: "Ad RPM", goodDirection: "higher" },
+                    { key: "ad_cpc", label: "Ad CPC", goodDirection: "higher" },
+                    { key: "fb_margin", label: "FB Margin", goodDirection: "higher" },
+                  ] as const
+                ).map(({ key, label, goodDirection }) => {
+                  const trend = change.impact_kpi_trends?.[key];
+                  if (!trend) return null;
+
+                  const trendConfig: Record<string, { arrow: string; color: string; bg: string }> = {
+                    improving: { arrow: goodDirection === "lower" ? "\u2193" : "\u2191", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                    declining: { arrow: goodDirection === "lower" ? "\u2191" : "\u2193", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-500/10 border-rose-500/20" },
+                    spike_then_drop: { arrow: "\u2191\u2193", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                    drop_then_recovery: { arrow: "\u2193\u2191", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                    volatile: { arrow: "\u223C", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                    stable: { arrow: "\u2192", color: "text-muted-foreground", bg: "bg-muted/50 border-border" },
+                    insufficient_data: { arrow: "?", color: "text-muted-foreground", bg: "bg-muted/50 border-border" },
+                  };
+
+                  const cfg = trendConfig[trend.trend] || trendConfig.stable;
+
+                  return (
+                    <div
+                      key={key}
+                      className={`rounded-lg border p-2.5 ${cfg.bg}`}
+                      title={trend.detail}
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+                        <span className={`text-sm font-bold ${cfg.color}`}>{cfg.arrow}</span>
+                      </div>
+                      <p className={`text-xs font-medium capitalize ${cfg.color}`}>
+                        {trend.trend.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

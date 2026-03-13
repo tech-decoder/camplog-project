@@ -223,6 +223,23 @@ export async function executeGenerationJob(jobId: string): Promise<void> {
     await updateJobProgress(supabase, jobId, completed, failed);
   }
 
+  // Backfill campaign_id: if the job was saved to a campaign while generating,
+  // the images inserted during generation won't have the campaign_id.
+  // Re-read the job and link any orphaned images.
+  const { data: freshJob } = await supabase
+    .from("generation_jobs")
+    .select("campaign_id")
+    .eq("id", jobId)
+    .single();
+
+  if (freshJob?.campaign_id) {
+    await supabase
+      .from("generated_images")
+      .update({ campaign_id: freshJob.campaign_id })
+      .eq("job_id", jobId)
+      .is("campaign_id", null);
+  }
+
   // Finalize job
   const finalStatus = completed === 0 ? "failed" : "completed";
   const errorMessage = billingCircuitBroken

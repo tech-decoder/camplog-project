@@ -210,6 +210,10 @@ export function WeeklyView({ changes }: WeeklyViewProps) {
                               <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
                                 Review Due
                               </Badge>
+                            ) : isPause ? (
+                              <Badge variant="secondary" className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs">
+                                Paused
+                              </Badge>
                             ) : null}
                           </div>
                         </Link>

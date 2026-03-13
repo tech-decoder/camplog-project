@@ -241,6 +241,13 @@ export function GroupedView({ changes }: GroupedViewProps) {
                                 >
                                   Review Due
                                 </Badge>
+                              ) : isPause ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs"
+                                >
+                                  Paused
+                                </Badge>
                               ) : null}
                               <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {formatDate(change.change_date)}

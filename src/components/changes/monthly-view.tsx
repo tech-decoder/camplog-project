@@ -205,6 +205,10 @@ export function MonthlyView({ changes }: MonthlyViewProps) {
                               >
                                 {VERDICT_CONFIG[change.impact_verdict]?.label}
                               </Badge>
+                            ) : change.action_type === "pause_campaign" || change.action_type === "pause_geo" ? (
+                              <Badge variant="secondary" className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs flex-shrink-0">
+                                Paused
+                              </Badge>
                             ) : null}
                           </Link>
                         );

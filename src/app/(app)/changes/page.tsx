@@ -44,7 +44,7 @@ export default function ChangesPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [reviewFilter, setReviewFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("grouped");
 
   useEffect(() => {
     fetchChanges();
@@ -146,12 +146,12 @@ export default function ChangesPage() {
           </span>
           <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
             {([
-              { mode: "list" as const, icon: List, label: "List" },
+              { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
               { mode: "weekly" as const, icon: Clock, label: "Weekly" },
               { mode: "monthly" as const, icon: CalendarRange, label: "Monthly" },
               { mode: "calendar" as const, icon: CalendarDays, label: "Calendar" },
-              { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
               { mode: "tests" as const, icon: FlaskConical, label: "Tests" },
+              { mode: "list" as const, icon: List, label: "List" },
             ] as const).map(({ mode, icon: Icon, label }) => (
               <Button
                 key={mode}
@@ -245,9 +245,6 @@ export default function ChangesPage() {
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                         {change.campaign_name}
-                        {change.campaign_url && (
-                          <code className="text-[11px] font-normal bg-muted px-1 py-0.5 rounded ml-1 hidden sm:inline">{change.campaign_url}</code>
-                        )}
                         {change.site ? ` (${change.site})` : ""}
                         {change.geo ? ` · ${change.geo}` : ""}
                         {change.change_value
@@ -298,6 +295,13 @@ export default function ChangesPage() {
                           className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
                         >
                           Review Due
+                        </Badge>
+                      ) : isPause ? (
+                        <Badge
+                          variant="secondary"
+                          className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs"
+                        >
+                          Paused
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">
