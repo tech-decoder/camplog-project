@@ -8,7 +8,9 @@ import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/components/providers/profile-provider";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Globe } from "lucide-react";
+import { Loader2, Plus, X, Globe, User } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Link from "next/link";
 
 interface SiteEntry {
   name: string;
@@ -96,9 +98,52 @@ export default function MySitesPage() {
       <GradientPageHeader
         icon={Globe}
         title="My Sites"
-        description="Manage your sites."
+        description="Manage your sites and profile information."
       />
       <div className="max-w-2xl space-y-6">
+      {/* Profile Card (read-only) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profile
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <Avatar className="w-16 h-16">
+              {profile?.avatar_url && (
+                <AvatarImage src={profile.avatar_url} alt="Avatar" />
+              )}
+              <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                {profile
+                  ? (profile.nickname || profile.full_name || profile.email || "?")
+                      .split(/\s+/)
+                      .map((w) => w[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : ".."}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">
+                {profile?.full_name || "No name set"}
+              </p>
+              {profile?.nickname && (
+                <p className="text-xs text-muted-foreground">{profile.nickname}</p>
+              )}
+              <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
+            </div>
+            <Link href="/settings">
+              <Button variant="outline" size="sm">
+                Edit Profile
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Sites Card */}
       <Card>
         <CardHeader>
