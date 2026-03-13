@@ -85,16 +85,16 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
         <nav className="flex items-center gap-1.5 text-sm min-w-0 truncate">
           {breadcrumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && (
+              {i > 1 && (
                 <span className="text-muted-foreground/40">/</span>
               )}
               {i === 0 ? (
                 <Image
                   src="/camplog.svg"
                   alt="CampLog"
-                  width={22}
-                  height={22}
-                  className="rounded"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
                 />
               ) : crumb.href ? (
                 <Link

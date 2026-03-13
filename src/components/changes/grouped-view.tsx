@@ -117,7 +117,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
             <CardHeader className="pb-3">
               <button
                 onClick={() => toggleSite(group.site)}
-                className="flex items-center gap-3 w-full text-left"
+                className="flex items-center gap-2 sm:gap-3 w-full text-left min-w-0"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -127,12 +127,12 @@ export function GroupedView({ changes }: GroupedViewProps) {
 
                 <Badge
                   variant="secondary"
-                  className="bg-primary/10 text-primary text-sm font-semibold px-3 py-1"
+                  className="bg-primary/10 text-primary text-sm font-semibold px-3 py-1 flex-shrink-0"
                 >
                   {group.site}
                 </Badge>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 hidden sm:block">
                   {group.siteInfo ? (
                     <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                       <Globe className="h-3.5 w-3.5" />
@@ -146,10 +146,8 @@ export function GroupedView({ changes }: GroupedViewProps) {
                 </div>
 
                 <Badge variant="outline" className="text-xs flex-shrink-0">
-                  {group.totalChanges} change
-                  {group.totalChanges !== 1 ? "s" : ""} &middot;{" "}
-                  {group.campaigns.length} campaign
-                  {group.campaigns.length !== 1 ? "s" : ""}
+                  {group.totalChanges} change{group.totalChanges !== 1 ? "s" : ""}
+                  <span className="hidden sm:inline"> &middot; {group.campaigns.length} campaign{group.campaigns.length !== 1 ? "s" : ""}</span>
                 </Badge>
               </button>
             </CardHeader>
@@ -185,7 +183,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                           <Link
                             key={change.id}
                             href={`/changes/${change.id}`}
-                            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors ${
+                            className={`flex items-start sm:items-center gap-2 p-2.5 rounded-lg transition-colors min-w-0 ${
                               isVoided
                                 ? "opacity-60 bg-muted/30"
                                 : "hover:bg-accent"
@@ -201,7 +199,7 @@ export function GroupedView({ changes }: GroupedViewProps) {
                                   className="h-3 w-3"
                                 />
                               )}
-                              {config?.label}
+                              <span className="hidden sm:inline">{config?.label}</span>
                             </Badge>
 
                             <div className="flex-1 min-w-0">
@@ -216,18 +214,18 @@ export function GroupedView({ changes }: GroupedViewProps) {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                               {isVoided ? (
                                 <Badge
                                   variant="secondary"
-                                  className="bg-muted text-muted-foreground text-xs"
+                                  className="bg-muted text-muted-foreground text-[10px] sm:text-xs"
                                 >
                                   Voided
                                 </Badge>
                               ) : change.impact_verdict ? (
                                 <Badge
                                   variant="secondary"
-                                  className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-xs`}
+                                  className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-[10px] sm:text-xs`}
                                 >
                                   {
                                     VERDICT_CONFIG[change.impact_verdict]
@@ -237,19 +235,19 @@ export function GroupedView({ changes }: GroupedViewProps) {
                               ) : isPendingReview ? (
                                 <Badge
                                   variant="secondary"
-                                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
+                                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] sm:text-xs"
                                 >
                                   Review Due
                                 </Badge>
                               ) : isPause ? (
                                 <Badge
                                   variant="secondary"
-                                  className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs"
+                                  className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs"
                                 >
                                   Paused
                                 </Badge>
                               ) : null}
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                                 {formatDate(change.change_date)}
                               </span>
                             </div>

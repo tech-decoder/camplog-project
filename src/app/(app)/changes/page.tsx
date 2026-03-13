@@ -139,32 +139,30 @@ export default function ChangesPage() {
       </Card>
 
       {/* View toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground font-medium">
-            {changes.length} changes
-          </span>
-          <div className="flex gap-0.5 bg-muted rounded-lg p-0.5">
-            {([
-              { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
-              { mode: "weekly" as const, icon: Clock, label: "Weekly" },
-              { mode: "monthly" as const, icon: CalendarRange, label: "Monthly" },
-              { mode: "calendar" as const, icon: CalendarDays, label: "Calendar" },
-              { mode: "tests" as const, icon: FlaskConical, label: "Tests" },
-              { mode: "list" as const, icon: List, label: "List" },
-            ] as const).map(({ mode, icon: Icon, label }) => (
-              <Button
-                key={mode}
-                variant={viewMode === mode ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 px-2 gap-1 text-xs"
-                onClick={() => setViewMode(mode)}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{label}</span>
-              </Button>
-            ))}
-          </div>
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-sm text-muted-foreground font-medium whitespace-nowrap flex-shrink-0">
+          {changes.length} changes
+        </span>
+        <div className="flex gap-0.5 bg-muted rounded-lg p-0.5 overflow-x-auto">
+          {([
+            { mode: "grouped" as const, icon: LayoutGrid, label: "Sites" },
+            { mode: "weekly" as const, icon: Clock, label: "Weekly" },
+            { mode: "monthly" as const, icon: CalendarRange, label: "Monthly" },
+            { mode: "calendar" as const, icon: CalendarDays, label: "Calendar" },
+            { mode: "tests" as const, icon: FlaskConical, label: "Tests" },
+            { mode: "list" as const, icon: List, label: "List" },
+          ] as const).map(({ mode, icon: Icon, label }) => (
+            <Button
+              key={mode}
+              variant={viewMode === mode ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 px-2 gap-1 text-xs flex-shrink-0"
+              onClick={() => setViewMode(mode)}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{label}</span>
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -223,7 +221,7 @@ export default function ChangesPage() {
                   <Link
                     key={change.id}
                     href={`/changes/${change.id}`}
-                    className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
+                    className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border transition-all ${
                       isVoided
                         ? "border-border bg-muted/30 opacity-60"
                         : "border-border hover:bg-accent hover-card-glow"
@@ -239,7 +237,7 @@ export default function ChangesPage() {
                           className="h-3 w-3"
                         />
                       )}
-                      {config?.label}
+                      <span className="hidden sm:inline">{config?.label}</span>
                     </Badge>
 
                     <div className="flex-1 min-w-0">
@@ -262,10 +260,10 @@ export default function ChangesPage() {
                       ) : null}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                       {!isVoided && hasPreMetrics &&
                         change.pre_metrics.margin_pct != null && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground hidden sm:inline">
                             {Number(
                               parseFloat(
                                 String(change.pre_metrics.margin_pct)
@@ -278,38 +276,38 @@ export default function ChangesPage() {
                       {isVoided ? (
                         <Badge
                           variant="secondary"
-                          className="bg-muted text-muted-foreground text-xs"
+                          className="bg-muted text-muted-foreground text-[10px] sm:text-xs"
                         >
                           Voided
                         </Badge>
                       ) : change.impact_verdict ? (
                         <Badge
                           variant="secondary"
-                          className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-xs`}
+                          className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-[10px] sm:text-xs`}
                         >
                           {VERDICT_CONFIG[change.impact_verdict]?.label}
                         </Badge>
                       ) : isPendingReview ? (
                         <Badge
                           variant="secondary"
-                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs"
+                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] sm:text-xs"
                         >
                           Review Due
                         </Badge>
                       ) : isPause ? (
                         <Badge
                           variant="secondary"
-                          className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-xs"
+                          className="bg-slate-500/10 text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs"
                         >
                           Paused
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
                           Logged
                         </Badge>
                       )}
 
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(change.change_date)}
                       </span>
                     </div>
