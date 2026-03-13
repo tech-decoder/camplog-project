@@ -15,6 +15,7 @@ export interface UserProfile {
   nickname: string | null;
   avatar_url: string | null;
   onboarding_completed: boolean;
+  google_drive_connected_at: string | null;
   sites: UserSite[];
 }
 

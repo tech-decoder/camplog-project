@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ const FIELD_LABELS: Record<AdCopyFieldType, string> = {
 export default function CampaignDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const campaignName = decodeURIComponent(params.id as string);
 
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
@@ -129,6 +130,18 @@ export default function CampaignDetailPage() {
     }
     load();
   }, [fetchCampaign, fetchChanges]);
+
+  // Handle Drive OAuth callback
+  useEffect(() => {
+    const driveStatus = searchParams.get("drive");
+    if (driveStatus === "connected") {
+      toast.success("Google Drive connected! You can now export images.");
+      window.history.replaceState({}, "", `/campaigns/${encodeURIComponent(campaignName)}`);
+    } else if (driveStatus === "denied") {
+      toast.error("Google Drive access was denied");
+      window.history.replaceState({}, "", `/campaigns/${encodeURIComponent(campaignName)}`);
+    }
+  }, [searchParams, campaignName]);
 
   useEffect(() => {
     if (campaign?.primary_id) {
@@ -419,6 +432,8 @@ export default function CampaignDetailPage() {
             images={images}
             onDelete={(id) => setImages((prev) => prev.filter((img) => img.id !== id))}
             onBulkDelete={(ids) => setImages((prev) => prev.filter((img) => !ids.includes(img.id)))}
+            campaignId={campaign?.primary_id}
+            campaignName={campaign?.name}
           />
         </div>
       )}

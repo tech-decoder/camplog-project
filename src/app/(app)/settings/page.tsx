@@ -9,17 +9,22 @@ import { Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, Plus, Type, Sprout } from "lucide-react";
+import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, Plus, Type, Sprout, HardDriveUpload, Check, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { ApiKey } from "@/lib/types/ad-copies";
 import { ThemeSelector } from "@/components/ui/theme-toggle";
 import { CopyPool, LanguageCopyPools } from "@/lib/types/generation-jobs";
 import { CopyPoolEditor } from "@/components/generate/copy-pool-editor";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
+import { useProfile } from "@/components/providers/profile-provider";
+import { useSearchParams } from "next/navigation";
 
 export default function SettingsPage() {
+  const { profile, refresh: refreshProfile } = useProfile();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [disconnectingDrive, setDisconnectingDrive] = useState(false);
 
   // Profile form
   const [fullName, setFullName] = useState("");
@@ -128,6 +133,44 @@ export default function SettingsPage() {
     loadApiKeys();
     loadCopyPool();
   }, []);
+
+  // Handle Drive OAuth callback params
+  useEffect(() => {
+    const driveStatus = searchParams.get("drive");
+    if (driveStatus === "connected") {
+      toast.success("Google Drive connected successfully");
+      refreshProfile();
+      // Clean URL
+      window.history.replaceState({}, "", "/settings");
+    } else if (driveStatus === "denied") {
+      toast.error("Google Drive access was denied");
+      window.history.replaceState({}, "", "/settings");
+    } else if (driveStatus === "error") {
+      toast.error("Failed to connect Google Drive");
+      window.history.replaceState({}, "", "/settings");
+    }
+  }, [searchParams, refreshProfile]);
+
+  async function handleDisconnectDrive() {
+    if (!window.confirm("Disconnect Google Drive? You can reconnect anytime.")) return;
+    setDisconnectingDrive(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ google_drive_refresh_token: null, google_drive_connected_at: null }),
+      });
+      if (res.ok) {
+        toast.success("Google Drive disconnected");
+        refreshProfile();
+      } else {
+        toast.error("Failed to disconnect");
+      }
+    } catch {
+      toast.error("Failed to disconnect");
+    }
+    setDisconnectingDrive(false);
+  }
 
   async function loadCopyPool() {
     try {
@@ -586,6 +629,71 @@ export default function SettingsPage() {
               Generate Key
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Google Drive */}
+      <Card className="border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <HardDriveUpload className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">Google Drive</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Export campaign images directly to your Google Drive.
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {profile?.google_drive_connected_at ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-700 dark:text-green-400">Connected</p>
+                  <p className="text-xs text-muted-foreground">
+                    Connected {new Date(profile.google_drive_connected_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+                  onClick={handleDisconnectDrive}
+                  disabled={disconnectingDrive}
+                >
+                  {disconnectingDrive ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Unplug className="h-3.5 w-3.5" />
+                  )}
+                  Disconnect
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Images are saved to a &quot;CampLog&quot; folder in your Drive, organized by campaign name.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Connect your Google Drive to export campaign images with one click.
+              </p>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  window.location.href = "/api/auth/google-drive?returnUrl=/settings";
+                }}
+              >
+                <HardDriveUpload className="h-3.5 w-3.5" />
+                Connect Google Drive
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -24,12 +24,15 @@ import {
   MessageSquare,
   Info,
   FolderPlus,
+  HardDriveUpload,
+  ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { toast } from "sonner";
 import { GeneratedImage } from "@/lib/types/generated-images";
 import { isPortraitDimension } from "@/lib/constants/image-gen";
+import { useProfile } from "@/components/providers/profile-provider";
 
 interface ConfirmState {
   type: "selected" | "all";
@@ -41,11 +44,16 @@ export function ImageGallery({
   images,
   onDelete,
   onBulkDelete,
+  campaignId,
+  campaignName,
 }: {
   images: GeneratedImage[];
   onDelete?: (imageId: string) => void;
   onBulkDelete?: (imageIds: string[]) => void;
+  campaignId?: string;
+  campaignName?: string;
 }) {
+  const { profile } = useProfile();
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
 
   // ── Selection state ──────────────────────────────────────────────────────
@@ -72,6 +80,9 @@ export function ImageGallery({
   const [showSaveCampaign, setShowSaveCampaign] = useState(false);
   const [saveCampaignName, setSaveCampaignName] = useState("");
   const [savingToCampaign, setSavingToCampaign] = useState(false);
+
+  // ── Google Drive export state ──────────────────────────────────────────
+  const [exportingDrive, setExportingDrive] = useState(false);
 
   // ── Confirmation dialog ──────────────────────────────────────────────────
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
@@ -295,6 +306,61 @@ export function ImageGallery({
     }
   }
 
+  // ── Google Drive export ──────────────────────────────────────────────────
+  async function handleExportDrive() {
+    if (!campaignId) return;
+
+    // If not connected, redirect to OAuth
+    if (!profile?.google_drive_connected_at) {
+      const returnUrl = campaignName
+        ? `/campaigns/${encodeURIComponent(campaignName)}`
+        : "/settings";
+      window.location.href = `/api/auth/google-drive?returnUrl=${encodeURIComponent(returnUrl)}`;
+      return;
+    }
+
+    setExportingDrive(true);
+    try {
+      const imageIds = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
+      const res = await fetch(`/api/campaigns/${campaignId}/export-drive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageIds }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(
+          <span className="inline-flex items-center gap-1.5">
+            Exported {data.count} image{data.count !== 1 ? "s" : ""} to Drive
+            <a
+              href={data.folderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 underline font-medium"
+            >
+              Open <ExternalLink className="h-3 w-3" />
+            </a>
+          </span>
+        );
+      } else {
+        const data = await res.json();
+        if (data.error === "google_drive_not_connected") {
+          const returnUrl = campaignName
+            ? `/campaigns/${encodeURIComponent(campaignName)}`
+            : "/settings";
+          window.location.href = `/api/auth/google-drive?returnUrl=${encodeURIComponent(returnUrl)}`;
+        } else {
+          toast.error(data.error || "Failed to export to Drive");
+        }
+      }
+    } catch {
+      toast.error("Failed to export to Drive");
+    } finally {
+      setExportingDrive(false);
+    }
+  }
+
   if (images.length === 0) return null;
 
   const selectedCount = selectedIds.size;
@@ -353,6 +419,30 @@ export function ImageGallery({
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete ({selectedCount})
+            </Button>
+          )}
+
+          {/* Export to Google Drive */}
+          {campaignId && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={handleExportDrive}
+              disabled={exportingDrive}
+            >
+              {exportingDrive ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <HardDriveUpload className="h-3.5 w-3.5" />
+              )}
+              {exportingDrive
+                ? "Exporting…"
+                : profile?.google_drive_connected_at
+                ? selectedCount > 0
+                  ? `Drive (${selectedCount})`
+                  : "Drive"
+                : "Connect Drive"}
             </Button>
           )}
 
