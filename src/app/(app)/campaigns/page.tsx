@@ -114,17 +114,17 @@ export default function CampaignsPage() {
       />
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <form onSubmit={handleSearch} className="flex flex-1 gap-2 sm:justify-end flex-wrap">
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <div className="flex gap-2">
           {sites.length > 0 && (
             <Select
               value={siteFilter}
@@ -133,7 +133,7 @@ export default function CampaignsPage() {
                 fetchCampaigns(v);
               }}
             >
-              <SelectTrigger className="w-36 h-9">
+              <SelectTrigger className="flex-1 sm:w-36 h-9">
                 <SelectValue placeholder="All sites" />
               </SelectTrigger>
               <SelectContent>
@@ -153,7 +153,7 @@ export default function CampaignsPage() {
               fetchCampaigns(undefined, v);
             }}
           >
-            <SelectTrigger className="w-36 h-9">
+            <SelectTrigger className="flex-1 sm:w-36 h-9">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -172,11 +172,11 @@ export default function CampaignsPage() {
               onClick={handleClearDrafts}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Clear Drafts
+              <span className="hidden sm:inline">Clear Drafts</span>
             </Button>
           )}
-        </form>
-      </div>
+        </div>
+      </form>
 
       {/* Campaign List */}
       {loading ? (

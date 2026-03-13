@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useProfile } from "@/components/providers/profile-provider";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { Search, LogOut, Settings, Globe } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
@@ -87,7 +88,15 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
               {i > 0 && (
                 <span className="text-muted-foreground/40">/</span>
               )}
-              {crumb.href ? (
+              {i === 0 ? (
+                <Image
+                  src="/camplog.svg"
+                  alt="CampLog"
+                  width={22}
+                  height={22}
+                  className="rounded"
+                />
+              ) : crumb.href ? (
                 <Link
                   href={crumb.href}
                   className="text-muted-foreground hover:text-foreground transition-colors"

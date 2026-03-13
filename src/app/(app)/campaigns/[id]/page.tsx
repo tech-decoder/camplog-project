@@ -308,7 +308,7 @@ export default function CampaignDetailPage() {
         title={campaign.name}
         description={`${allSites.join(" · ")}${allSites.length > 0 ? " · " : ""}${campaign.change_count} changes · Since ${formatDate(campaign.created_at)}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <Button
               size="icon"
               variant="ghost"
@@ -327,15 +327,15 @@ export default function CampaignDetailPage() {
               onClick={handleToggleStatus}
             >
               {campaign.status === "active" ? (
-                <><Pause className="h-3.5 w-3.5" /> Pause</>
+                <><Pause className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Pause</span></>
               ) : (
-                <><Play className="h-3.5 w-3.5" /> Activate</>
+                <><Play className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Activate</span></>
               )}
             </Button>
             <Link href={`/generate?campaign=${campaign.primary_id}`}>
               <Button size="sm" variant="outline" className="gap-1.5">
                 <ImageIcon className="h-3.5 w-3.5" />
-                Generate Images
+                <span className="hidden sm:inline">Generate Images</span>
               </Button>
             </Link>
             {campaign.change_count === 0 && (
@@ -592,7 +592,7 @@ export default function CampaignDetailPage() {
                     <Link
                       key={change.id}
                       href={`/changes/${change.id}`}
-                      className={`flex items-center gap-3 px-4 py-2.5 hover:bg-accent/50 transition-colors ${
+                      className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-accent/50 transition-colors min-w-0 ${
                         isVoided ? "opacity-50" : ""
                       }`}
                     >
@@ -601,21 +601,21 @@ export default function CampaignDetailPage() {
                         className={`${config?.bgColor} ${config?.color} text-[11px] flex-shrink-0 gap-1 h-5 px-1.5`}
                       >
                         {config && <ActionIcon iconName={config.icon} className="h-3 w-3" />}
-                        {config?.label}
+                        <span className="hidden sm:inline">{config?.label}</span>
                       </Badge>
                       {change.site && (
                         <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 font-normal flex-shrink-0">
                           {change.site}
                         </Badge>
                       )}
-                      <span className={`flex-1 text-sm truncate ${isVoided ? "line-through text-muted-foreground" : ""}`}>
+                      <span className={`flex-1 text-sm truncate min-w-0 ${isVoided ? "line-through text-muted-foreground" : ""}`}>
                         {change.geo ? `${change.geo} ` : ""}
                         {change.change_value || change.description || ""}
                       </span>
                       {change.impact_verdict && (
                         <Badge
                           variant="secondary"
-                          className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-[11px] h-5 px-1.5`}
+                          className={`${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color} text-[11px] h-5 px-1.5 hidden sm:flex`}
                         >
                           {VERDICT_CONFIG[change.impact_verdict]?.label}
                         </Badge>

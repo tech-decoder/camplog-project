@@ -39,7 +39,7 @@ export function ChatMessage({ message }: MessageProps) {
     >
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-3",
+          "max-w-[85%] rounded-2xl px-4 py-3 overflow-hidden",
           isUser
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-foreground"
@@ -67,7 +67,7 @@ export function ChatMessage({ message }: MessageProps) {
 
         {/* Text */}
         {message.content && (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          <p className="text-sm whitespace-pre-wrap break-words overflow-hidden">{message.content}</p>
         )}
 
         {/* Extracted Changes (assistant only) */}
