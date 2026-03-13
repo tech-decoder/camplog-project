@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageShell } from "@/components/layout/page-shell";
 import { GradientPageHeader } from "@/components/layout/gradient-page-header";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/components/providers/profile-provider";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Globe, User } from "lucide-react";
-import { AvatarUpload } from "@/components/settings/avatar-upload";
+import { Loader2, Plus, X, Globe } from "lucide-react";
 
 interface SiteEntry {
   name: string;
@@ -20,19 +18,14 @@ interface SiteEntry {
 
 export default function MySitesPage() {
   const { profile, refresh } = useProfile();
-  const [nickname, setNickname] = useState("");
-  const [fullName, setFullName] = useState("");
   const [sites, setSites] = useState<SiteEntry[]>([]);
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
   const [savingSites, setSavingSites] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (profile && !initialized) {
-      setNickname(profile.nickname || "");
-      setFullName(profile.full_name || "");
       setSites(
         profile.sites.map((s) => ({
           name: s.name,
@@ -70,31 +63,6 @@ export default function MySitesPage() {
     setSites((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleSaveProfile() {
-    setSavingProfile(true);
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nickname: nickname.trim(),
-          full_name: fullName.trim(),
-        }),
-      });
-      if (res.ok) {
-        await refresh();
-        toast.success("Profile updated");
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to update profile");
-      }
-    } catch {
-      toast.error("Failed to update profile");
-    } finally {
-      setSavingProfile(false);
-    }
-  }
-
   async function handleSaveSites() {
     setSavingSites(true);
     try {
@@ -128,57 +96,9 @@ export default function MySitesPage() {
       <GradientPageHeader
         icon={Globe}
         title="My Sites"
-        description="Manage your sites and profile information."
+        description="Manage your sites."
       />
       <div className="max-w-2xl space-y-6">
-      {/* Profile Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <AvatarUpload />
-          <div>
-            <Label className="text-sm font-medium">Nickname</Label>
-            <Input
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="Your nickname"
-              maxLength={20}
-              className="mt-1.5"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Shown in the header and sidebar.
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Full Name</Label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Your full name"
-              className="mt-1.5"
-            />
-          </div>
-          <Button
-            onClick={handleSaveProfile}
-            disabled={savingProfile}
-                      >
-            {savingProfile ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Profile"
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Sites Card */}
       <Card>
         <CardHeader>
@@ -268,7 +188,7 @@ export default function MySitesPage() {
           <Button
             onClick={handleSaveSites}
             disabled={savingSites}
-                      >
+          >
             {savingSites ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
