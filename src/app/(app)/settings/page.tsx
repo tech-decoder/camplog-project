@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -20,6 +20,14 @@ import { useProfile } from "@/components/providers/profile-provider";
 import { useSearchParams } from "next/navigation";
 
 export default function SettingsPage() {
+  return (
+    <Suspense>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
+function SettingsContent() {
   const { profile, refresh: refreshProfile } = useProfile();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);

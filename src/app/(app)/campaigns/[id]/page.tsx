@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,14 @@ const FIELD_LABELS: Record<AdCopyFieldType, string> = {
 };
 
 export default function CampaignDetailPage() {
+  return (
+    <Suspense>
+      <CampaignDetailContent />
+    </Suspense>
+  );
+}
+
+function CampaignDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
