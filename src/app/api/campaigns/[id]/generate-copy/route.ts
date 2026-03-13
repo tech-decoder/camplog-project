@@ -46,7 +46,7 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { field_type, count = 5 } = body;
+  const { field_type, count = 5, language = "English" } = body;
 
   if (!field_type || !VALID_FIELD_TYPES.includes(field_type)) {
     return NextResponse.json(
@@ -70,6 +70,7 @@ export async function POST(
       fieldType: field_type as AdCopyFieldType,
       existingVariants: existingTexts,
       count: Math.min(count, 10),
+      language,
     });
 
     if (generated.length === 0) {

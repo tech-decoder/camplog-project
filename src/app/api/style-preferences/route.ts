@@ -59,6 +59,7 @@ export async function PUT(request: NextRequest) {
   if ("default_language" in body) updatePayload.default_language = body.default_language;
   if ("default_format_split" in body) updatePayload.default_format_split = body.default_format_split;
   if ("copy_pool" in body) updatePayload.copy_pool = body.copy_pool;
+  if ("copy_pools" in body) updatePayload.copy_pools = body.copy_pools;
 
   let data, error;
 

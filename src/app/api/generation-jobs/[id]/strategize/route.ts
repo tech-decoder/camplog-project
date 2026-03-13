@@ -117,7 +117,12 @@ export async function POST(
       language: typedJob.language,
     });
 
-    // ── Step 4: Generate strategy using the brief (with retry) ────────────────
+    // ── Step 4: Resolve language-aware copy pool ────────────────────────────
+    const languagePool = stylePrefs?.copy_pools?.[typedJob.language];
+    const fallbackPool = stylePrefs?.copy_pool;
+    const resolvedCopyPool = languagePool || fallbackPool;
+
+    // ── Step 5: Generate strategy using the brief (with retry) ────────────────
     if (typedJob.mode === "ai_takeover") {
       strategy = await withStrategyRetry(
         () => generateTakeoverStrategy({
@@ -137,7 +142,7 @@ export async function POST(
           formatSplit,
           language: typedJob.language,
           stylePreferences: styles,
-          copyPool: stylePrefs?.copy_pool,
+          copyPool: resolvedCopyPool,
           creativeBrief,
         }),
         "Custom strategy"

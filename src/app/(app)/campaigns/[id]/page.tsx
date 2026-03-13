@@ -85,6 +85,8 @@ export default function CampaignDetailPage() {
     description: false,
   });
 
+  const [copyLanguage, setCopyLanguage] = useState<"English" | "Spanish">("English");
+
   const fetchCampaign = useCallback(async () => {
     const res = await fetch(`/api/campaigns/by-name?name=${encodeURIComponent(campaignName)}`);
     if (res.ok) setCampaign(await res.json());
@@ -215,7 +217,7 @@ export default function CampaignDetailPage() {
       const res = await fetch(`/api/campaigns/${campaign.primary_id}/generate-copy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field_type: fieldType, count: 5 }),
+        body: JSON.stringify({ field_type: fieldType, count: 5, language: copyLanguage }),
       });
 
       if (res.ok) {
@@ -391,11 +393,27 @@ export default function CampaignDetailPage() {
 
       {/* Ad Copy Variants */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
-            <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h2 className="text-sm font-semibold">Ad Copy Variants</h2>
           </div>
-          <h2 className="text-sm font-semibold">Ad Copy Variants</h2>
+          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-xs">
+            <button
+              className={`px-2 py-1 rounded-md transition-colors ${copyLanguage === "English" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setCopyLanguage("English")}
+            >
+              EN
+            </button>
+            <button
+              className={`px-2 py-1 rounded-md transition-colors ${copyLanguage === "Spanish" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setCopyLanguage("Spanish")}
+            >
+              ES
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(["headline", "primary_text", "description"] as const).map((fieldType) => {

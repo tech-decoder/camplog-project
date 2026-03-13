@@ -13,7 +13,7 @@ import { Loader2, User, Mail, Shield, Eye, EyeOff, Palette, Key, Copy, Trash2, P
 import { toast } from "sonner";
 import { ApiKey } from "@/lib/types/ad-copies";
 import { ThemeSelector } from "@/components/ui/theme-toggle";
-import { CopyPool } from "@/lib/types/generation-jobs";
+import { CopyPool, LanguageCopyPools } from "@/lib/types/generation-jobs";
 import { CopyPoolEditor } from "@/components/generate/copy-pool-editor";
 
 export default function SettingsPage() {
@@ -39,9 +39,16 @@ export default function SettingsPage() {
   const [newPlaintextKey, setNewPlaintextKey] = useState<string | null>(null);
 
   // Copy Pool
-  const [copyPool, setCopyPool] = useState<CopyPool>({ headlines: [], subheadlines: [], ctas: [], disclaimers: [] });
+  const emptyCopyPool: CopyPool = { headlines: [], subheadlines: [], ctas: [], disclaimers: [] };
+  const [copyPools, setCopyPools] = useState<LanguageCopyPools>({ English: { ...emptyCopyPool }, Spanish: { ...emptyCopyPool } });
+  const [copyPoolLanguage, setCopyPoolLanguage] = useState<"English" | "Spanish">("English");
   const [savingPool, setSavingPool] = useState(false);
   const [seedingPool, setSeedingPool] = useState(false);
+
+  const copyPool = copyPools[copyPoolLanguage] || emptyCopyPool;
+  const setCopyPool = (pool: CopyPool) => {
+    setCopyPools((prev) => ({ ...prev, [copyPoolLanguage]: pool }));
+  };
 
   const ENGLISH_SEED: CopyPool = {
     headlines: [
@@ -83,20 +90,35 @@ export default function SettingsPage() {
       "EMPLEOS EN {brand}",
       "CÓMO APLICAR EN {brand}",
       "{brand} ESTÁ CONTRATANDO",
+      "TRABAJA EN {brand}",
+      "VACANTES EN {brand}",
+      "GUÍA DE EMPLEO {brand}",
+      "{brand} BUSCA PERSONAL",
+      "OPORTUNIDADES EN {brand}",
     ],
     subheadlines: [
       "Guía clara de solicitud y requisitos",
       "Empieza esta semana",
       "Sin currículum necesario",
+      "Proceso paso a paso",
+      "Requisitos y cómo aplicar",
+      "Guía actualizada {brand}",
+      "Todo lo que necesitas saber",
+      "Aplica desde tu celular",
     ],
     ctas: [
       "VER EMPLEOS",
       "APLICA HOY",
       "ABRIR LA GUÍA",
+      "VER VACANTES",
+      "COMENZAR AHORA",
+      "LEER LA GUÍA",
     ],
     disclaimers: [
       "Solo guía. No es solicitud oficial.",
       "No afiliado con {brand}.",
+      "Guía informativa solamente.",
+      "Este sitio no es {brand}.",
     ],
   };
 
@@ -111,8 +133,11 @@ export default function SettingsPage() {
       const res = await fetch("/api/style-preferences");
       if (res.ok) {
         const { preferences } = await res.json();
-        if (preferences?.copy_pool) {
-          setCopyPool(preferences.copy_pool);
+        if (preferences?.copy_pools) {
+          setCopyPools((prev) => ({ ...prev, ...preferences.copy_pools }));
+        } else if (preferences?.copy_pool) {
+          // Backwards compat: migrate single pool to English
+          setCopyPools((prev) => ({ ...prev, English: preferences.copy_pool }));
         }
       }
     } catch {
@@ -120,23 +145,25 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleSeedCopyPool(seed: CopyPool) {
+  async function handleSeedCopyPool(seed: CopyPool, targetLanguage: "English" | "Spanish") {
     setSeedingPool(true);
     try {
+      const currentPool = copyPools[targetLanguage] || emptyCopyPool;
       const merged: CopyPool = {
-        headlines: [...new Set([...copyPool.headlines, ...seed.headlines])],
-        subheadlines: [...new Set([...copyPool.subheadlines, ...seed.subheadlines])],
-        ctas: [...new Set([...copyPool.ctas, ...seed.ctas])],
-        disclaimers: [...new Set([...(copyPool.disclaimers || []), ...(seed.disclaimers || [])])],
+        headlines: [...new Set([...currentPool.headlines, ...seed.headlines])],
+        subheadlines: [...new Set([...currentPool.subheadlines, ...seed.subheadlines])],
+        ctas: [...new Set([...currentPool.ctas, ...seed.ctas])],
+        disclaimers: [...new Set([...(currentPool.disclaimers || []), ...(seed.disclaimers || [])])],
       };
-      setCopyPool(merged);
+      const updatedPools = { ...copyPools, [targetLanguage]: merged };
+      setCopyPools(updatedPools);
       const res = await fetch("/api/style-preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ copy_pool: merged }),
+        body: JSON.stringify({ copy_pools: updatedPools }),
       });
       if (res.ok) {
-        toast.success(`Seeded ${seed.headlines.length} headlines, ${seed.subheadlines.length} subheadlines, ${seed.ctas.length} CTAs`);
+        toast.success(`Seeded ${seed.headlines.length} headlines, ${seed.subheadlines.length} subheadlines, ${seed.ctas.length} CTAs to ${targetLanguage}`);
       } else {
         toast.error("Failed to seed copy pool");
       }
@@ -152,7 +179,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/style-preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ copy_pool: copyPool }),
+        body: JSON.stringify({ copy_pools: copyPools }),
       });
       if (res.ok) {
         toast.success("Copy pool saved");
@@ -166,17 +193,17 @@ export default function SettingsPage() {
   }
 
   async function handleClearCopyPool() {
-    const empty: CopyPool = { headlines: [], subheadlines: [], ctas: [], disclaimers: [] };
-    setCopyPool(empty);
+    const updatedPools = { ...copyPools, [copyPoolLanguage]: { ...emptyCopyPool } };
+    setCopyPools(updatedPools);
     setSavingPool(true);
     try {
       const res = await fetch("/api/style-preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ copy_pool: empty }),
+        body: JSON.stringify({ copy_pools: updatedPools }),
       });
       if (res.ok) {
-        toast.success("Copy pool cleared");
+        toast.success(`${copyPoolLanguage} copy pool cleared`);
       } else {
         toast.error("Failed to clear copy pool");
       }
@@ -576,6 +603,20 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-xs w-fit">
+            <button
+              className={`px-3 py-1.5 rounded-md transition-colors font-medium ${copyPoolLanguage === "English" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setCopyPoolLanguage("English")}
+            >
+              English
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-md transition-colors font-medium ${copyPoolLanguage === "Spanish" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setCopyPoolLanguage("Spanish")}
+            >
+              Spanish
+            </button>
+          </div>
           <CopyPoolEditor value={copyPool} onChange={setCopyPool} />
           <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" onClick={handleSaveCopyPool} disabled={savingPool}>
@@ -585,20 +626,11 @@ export default function SettingsPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleSeedCopyPool(ENGLISH_SEED)}
+              onClick={() => handleSeedCopyPool(copyPoolLanguage === "English" ? ENGLISH_SEED : SPANISH_SEED, copyPoolLanguage)}
               disabled={seedingPool}
             >
               {seedingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sprout className="h-3.5 w-3.5 mr-1.5" />}
-              Seed English
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleSeedCopyPool(SPANISH_SEED)}
-              disabled={seedingPool}
-            >
-              {seedingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sprout className="h-3.5 w-3.5 mr-1.5" />}
-              Seed Spanish
+              Seed {copyPoolLanguage}
             </Button>
             <Button
               size="sm"
@@ -608,7 +640,7 @@ export default function SettingsPage() {
               disabled={savingPool}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Clear All
+              Clear {copyPoolLanguage}
             </Button>
           </div>
         </CardContent>

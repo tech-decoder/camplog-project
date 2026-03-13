@@ -64,6 +64,10 @@ export interface CopyPool {
   disclaimers: string[];
 }
 
+export interface LanguageCopyPools {
+  [language: string]: CopyPool;
+}
+
 export interface StylePreference {
   id: string;
   user_id: string;
@@ -72,6 +76,7 @@ export interface StylePreference {
   default_language: string;
   default_format_split: FormatSplit;
   copy_pool?: CopyPool;
+  copy_pools?: LanguageCopyPools;
   created_at: string;
   updated_at: string;
 }
