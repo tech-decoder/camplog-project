@@ -215,7 +215,7 @@ export default function CampaignDetailPage() {
       const res = await fetch(`/api/campaigns/${campaign.primary_id}/generate-copy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field_type: fieldType, count: 3 }),
+        body: JSON.stringify({ field_type: fieldType, count: 5 }),
       });
 
       if (res.ok) {

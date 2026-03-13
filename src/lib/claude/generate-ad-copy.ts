@@ -3,18 +3,56 @@ import { AdCopyFieldType } from "@/lib/types/ad-copies";
 
 const FIELD_INSTRUCTIONS: Record<AdCopyFieldType, string> = {
   headline:
-    "Generate short, punchy ad headlines. Each must be under 40 characters. Focus on curiosity, urgency, or clear value propositions.",
+    `Generate META AD HEADLINES in ALL CAPS. Each must be under 40 characters.
+Focus on keyword-rich, search-intent matching phrases.
+Include the brand name prominently. Use patterns like:
+- "[BRAND] JOBS NEAR YOU"
+- "HOW TO APPLY FOR [BRAND] JOBS"
+- "[BRAND] HIRING: STEP-BY-STEP GUIDE"
+- "[BRAND] JOBS APPLICATION GUIDE"
+- "[BRAND] CAREERS GUIDE [YEAR]"
+- "[BRAND] JOBS: WHAT THEY DON'T TELL YOU"
+- "[BRAND] NZ HIRING: STEP-BY-STEP GUIDE"
+- "HOW TO GET A [BRAND] JOB IN NZ"
+All headlines MUST be ALL CAPS. Extract the brand name from the campaign name.`,
+
   primary_text:
-    "Generate compelling ad primary text (1-3 sentences each). These appear as the main body copy in Facebook/Meta ads. Make them persuasive and action-oriented.",
+    `Generate META AD PRIMARY TEXT for content arbitrage campaigns.
+Each variant must be EXACTLY 3 short paragraphs, each starting or ending with a relevant emoji.
+Each paragraph should be 1-2 sentences max.
+Structure:
+- Line 1: Hook/discovery with emoji (e.g., "🛒 Looking for [Brand] jobs near you?")
+- Line 2: Value proposition with emoji (e.g., "📋 Learn how to apply for [Brand] store jobs and warehouse jobs")
+- Line 3: CTA-oriented with emoji (e.g., "📍 Step-by-step [Brand] job application guide")
+
+Pack EVERY line with keywords: "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] careers", "[brand] warehouse jobs", "[brand] store jobs".
+
+Generate 5 DIFFERENT ANGLE VARIATIONS:
+1. Keyword/Discovery (straightforward keyword-rich)
+2. Curiosity/Hook ("Most people apply the wrong way...")
+3. Social Proof/Volume ("Thousands applied this month...")
+4. Question Hook ("Have you applied yet?...")
+5. Number Hook ("[Brand] has 100+ locations hiring...")
+
+Extract the brand name from the campaign name. Separate each of the 3 lines with a newline character.`,
+
   description:
-    "Generate concise ad descriptions (1 sentence each, under 90 characters). These appear below the headline in ads. Keep them clear and benefit-focused.",
+    `Generate META AD DESCRIPTIONS for content arbitrage campaigns.
+Each description must:
+- Start with ⭐⭐⭐⭐⭐
+- Be ONE long run-on sentence (150-250 characters)
+- Be packed with keywords: "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] warehouse jobs", "[brand] store jobs", "[brand] careers", "how to apply"
+- Frame as an "independent informational guide"
+Example: "⭐⭐⭐⭐⭐ Informational guide explaining [Brand] jobs near me, [Brand] hiring process, [Brand] store jobs, [Brand] warehouse jobs, [Brand] careers and how to apply for [Brand] job openings online."
+
+Extract the brand name from the campaign name.`,
 };
 
 export async function generateAdCopy({
   campaignName,
   fieldType,
   existingVariants,
-  count = 3,
+  count = 5,
 }: {
   campaignName: string;
   fieldType: AdCopyFieldType;
@@ -30,9 +68,17 @@ export async function generateAdCopy({
 
   const response = await claude.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
+    max_tokens: 2048,
     system:
-      "You are an expert advertising copywriter specializing in digital marketing, Facebook Ads, and performance marketing. You write copy that drives clicks and conversions.",
+      `You are a Meta ads copywriter specializing in content arbitrage campaigns that drive traffic from Facebook/Meta ads to informational guide websites monetized with Google AdSense.
+
+Your copy must be:
+- Keyword-dense for Meta's Andromeda and GEM ranking algorithms
+- Optimized for high CTR on Facebook feed placement
+- Framed as informational guides (NOT direct applications or sales)
+- Heavy on search-intent keywords like "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] careers"
+
+You write keyword-stuffed copy that matches search intent and drives curiosity clicks to guide pages.`,
     messages: [
       {
         role: "user",

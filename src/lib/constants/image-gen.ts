@@ -84,10 +84,10 @@ HEADLINE ZONE (center 50-60% of vertical space):
 - Letter-spacing: tight (-0.02em condensed)
 
 DECORATIVE DIVIDERS (above and below headline):
-- TWO horizontal lines/brush-strokes as decorative dividers
-- Line 1: brand primary color (e.g., KFC red #E31837, Walmart blue #0071CE)
-- Line 2: brand secondary/accent color (e.g., KFC yellow #F5B335, Walmart yellow #FFC220)
-- Style: thick brush-stroke, zigzag, or solid bar — NOT thin hairlines
+- TWO horizontal thick solid flat bars as decorative dividers
+- Bar 1: brand primary color (e.g., KFC red, Walmart blue, DHL red)
+- Bar 2: brand secondary/accent color (e.g., KFC yellow, Walmart yellow, DHL yellow)
+- Style: clean solid flat rectangular bars with sharp edges — NO brush strokes, NO paint texture, NO hand-drawn effects, NO zigzag, NO rough edges
 - Width: ~60-70% of image width, centered
 - One set above headline, one set below
 
@@ -147,8 +147,8 @@ Solid pure black background, no gradients.
 • TOP-LEFT: Small brand logo
 • TOP-RIGHT: Bright yellow rounded "GUIDE" badge
 • CENTER: Massive white ALL CAPS headline in bold condensed font, filling most of the center area across 2-3 stacked lines
-• ABOVE the headline: Two thick horizontal decorative brush-stroke lines — one in brand primary color, one in brand secondary/accent color, centered
-• BELOW the headline: Same two thick decorative lines repeated
+• ABOVE the headline: Two thick horizontal solid flat bars — one in brand primary color, one in brand secondary/accent color, centered. Clean sharp edges, NO brush strokes or paint texture.
+• BELOW the headline: Same two thick solid flat bars repeated
 • BELOW the dividers: Italic subheadline in soft cream color, centered
 • BOTTOM: Wide pill-shaped CTA button in the brand color, with white ALL CAPS text inside
 • VERY BOTTOM: Tiny light-gray disclaimer text, centered`,

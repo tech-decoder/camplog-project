@@ -46,7 +46,7 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { field_type, count = 3 } = body;
+  const { field_type, count = 5 } = body;
 
   if (!field_type || !VALID_FIELD_TYPES.includes(field_type)) {
     return NextResponse.json(
