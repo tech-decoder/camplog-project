@@ -8,7 +8,7 @@ import { GeneratedImage } from "@/lib/types/generated-images";
 import { isPortraitDimension } from "@/lib/constants/image-gen";
 import Image from "next/image";
 
-const TIPS = [
+const IMAGE_TIPS = [
   "Top performers test 50+ creatives per week",
   "9:16 portrait ads get 20-30% more engagement on Stories",
   "The first 3 seconds determine if someone stops scrolling",
@@ -29,20 +29,35 @@ const TIPS = [
   "The best-performing Meta ads load in under 3 seconds",
 ];
 
-function RotatingTip() {
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * TIPS.length));
+const VIDEO_TIPS = [
+  "Video ads have 2x higher click-through rates than static images",
+  "Each video takes 1-3 minutes to generate. Patience pays off!",
+  "Short-form video ads (4-8s) are ideal for Reels and Stories placement",
+  "Video creatives get 20-30% lower CPM than static ads on Meta",
+  "Vertical 9:16 videos dominate mobile feeds. Landscape 16:9 works for in-stream.",
+  "The first frame of your video ad is basically a thumbnail. Make it count.",
+  "Video ads with text overlays perform 40% better than those without",
+  "Meta prioritizes video content in the feed algorithm",
+  "Test multiple video lengths — 4s for awareness, 8s for engagement",
+  "AI-generated video ads let you test 10x more concepts at a fraction of the cost",
+  "Videos with movement in the first second stop more thumbs",
+  "Looping video ads get 3x more replay value in Stories",
+];
+
+function RotatingTip({ tips }: { tips: string[] }) {
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * tips.length));
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setIdx((prev) => (prev + 1) % TIPS.length);
+        setIdx((prev) => (prev + 1) % tips.length);
         setFade(true);
       }, 300);
     }, 8000);
     return () => clearInterval(interval);
-  }, []);
+  }, [tips.length]);
 
   return (
     <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
@@ -53,7 +68,7 @@ function RotatingTip() {
         }`}
       >
         <span className="font-medium text-amber-700 dark:text-amber-400">Did you know?</span>{" "}
-        {TIPS[idx]}
+        {tips[idx]}
       </p>
     </div>
   );
@@ -62,9 +77,11 @@ function RotatingTip() {
 export function GenerationProgress({
   job,
   images,
+  mode = "images",
 }: {
   job: GenerationJob;
   images: GeneratedImage[];
+  mode?: "images" | "videos";
 }) {
   const total = job.images_requested || 0;
   const completed = job.images_completed || 0;
@@ -106,7 +123,7 @@ export function GenerationProgress({
                 ? job.status === "completed"
                   ? "Generation Complete"
                   : "Generation Failed"
-                : "Generating Images..."}
+                : mode === "videos" ? "Generating Videos..." : "Generating Images..."}
             </span>
           </div>
           <span className="text-muted-foreground">
@@ -123,7 +140,7 @@ export function GenerationProgress({
       </div>
 
       {/* Rotating tips (only during generation) */}
-      {!isComplete && <RotatingTip />}
+      {!isComplete && <RotatingTip tips={mode === "videos" ? VIDEO_TIPS : IMAGE_TIPS} />}
 
       {/* Live Image Grid + Skeleton Slots */}
       {(images.length > 0 || skeletonSlots.length > 0) && (

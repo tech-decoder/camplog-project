@@ -6,7 +6,7 @@ import {
   CopyPool,
   CreativeBrief,
 } from "@/lib/types/generation-jobs";
-import { AD_STYLES, GLOBAL_CREATIVE_RULES } from "@/lib/constants/image-gen";
+import { AD_STYLES, getGlobalCreativeRules, getLocalizedText } from "@/lib/constants/image-gen";
 
 // ── Copy pool helpers ────────────────────────────────────────────────────────
 
@@ -301,6 +301,7 @@ export async function generateTakeoverStrategy({
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
       const claude = getClaudeClient();
+      const t = getLocalizedText(language);
       const briefSection = creativeBrief
         ? `\n\n${briefToSystemSection(creativeBrief)}`
         : "";
@@ -318,7 +319,7 @@ export async function generateTakeoverStrategy({
 Available ad styles:
 ${AD_STYLES_DESCRIPTION}
 
-${GLOBAL_CREATIVE_RULES}
+${getGlobalCreativeRules(language)}
 
 You must decide the optimal distribution of images across styles and formats based on what will perform best for the given brand. Think about what visual approaches work best for this specific brand and industry.${briefSection}`,
         messages: [
@@ -336,7 +337,7 @@ Requirements:
 - Subheadlines should be 1 short sentence
 - CTAs should be action-oriented (2-4 words)
 - Make each creative distinct — vary the visual approach, messaging angle, and style
-- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 characters) for the bottom of the image (e.g., "Guide only. Not an official application." or "Not affiliated with ${brandName}.")${indexNote}
+- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 characters) for the bottom of the image (e.g., "${t.disclaimer_example}" or "${t.not_affiliated.replace("{brand}", brandName)}")${indexNote}
 
 FORMAT NOTES:
 - Square (1:1) creatives: Compact, tight composition. All elements centered and closely grouped.
@@ -381,6 +382,7 @@ export async function generateCustomStrategy({
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
       const claude = getClaudeClient();
+      const t = getLocalizedText(language);
 
       const enabledStyles = stylePreferences.filter((s) => s.enabled);
       const totalWeight = enabledStyles.reduce((sum, s) => sum + s.weight, 0);
@@ -430,7 +432,7 @@ If a headline/CTA is not in the list above, you MUST NOT use it. Distribute pool
 Available ad styles:
 ${AD_STYLES_DESCRIPTION}
 
-${GLOBAL_CREATIVE_RULES}${briefSection}${copyPoolSystemConstraint}`,
+${getGlobalCreativeRules(language)}${briefSection}${copyPoolSystemConstraint}`,
         messages: [
           {
             role: "user",
@@ -446,7 +448,7 @@ Requirements:
 - Follow the style weights above for distribution
 - Each prompt_direction must be extremely detailed — use natural visual language ONLY (e.g., "bright yellow", "bold condensed", "warm cream"). NEVER write hex codes, pixel values, font-weight numbers, opacity percentages, or CSS property names — image models render those as literal visible text.
 ${copyRequirements}
-- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 chars).${hasCopyPool && (copyPool!.disclaimers || []).length > 0 ? " Pick from the allowed disclaimers pool." : ` e.g., "Guide only. Not an official application." or "Not affiliated with ${brandName}."`}${indexNote}
+- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 chars).${hasCopyPool && (copyPool!.disclaimers || []).length > 0 ? " Pick from the allowed disclaimers pool." : ` e.g., "${t.disclaimer_example}" or "${t.not_affiliated.replace("{brand}", brandName)}"`}${indexNote}
 
 FORMAT NOTES:
 - Square (1:1) creatives: Compact, tight composition. All elements centered and closely grouped.
@@ -493,6 +495,7 @@ export async function generateWinningVariantsStrategy({
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
       const claude = getClaudeClient();
+      const t = getLocalizedText(language);
 
       // Build content blocks with images for Claude Vision
       const contentBlocks: Array<
@@ -535,7 +538,7 @@ Requirements:
 - Each prompt_direction must be extremely detailed and self-contained — use natural visual language ONLY (e.g., "bright yellow", "bold condensed", "warm cream"). NEVER write hex codes, pixel values, font-weight numbers, opacity percentages, or CSS property names — image models render those as literal visible text.
 - Headlines: short, punchy, under 40 chars
 - CTAs: action-oriented, 2-4 words
-- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 chars) for the bottom of the image (e.g., "Guide only. Not an official application.")${indexNote}
+- Each creative MUST have a "disclaimer" field — a SHORT string (max 60 chars) for the bottom of the image (e.g., "${t.disclaimer_example}")${indexNote}
 
 FORMAT NOTES:
 - Square (1:1) creatives: Compact, tight composition. All elements centered and closely grouped.
@@ -556,7 +559,7 @@ ${STRATEGY_OUTPUT_SCHEMA}`,
         max_tokens: 16384,
         system: `You are an elite advertising creative director with expertise in analyzing winning ad creatives and producing high-performing variants. You have deep knowledge of visual composition, color psychology, and direct-response advertising.
 
-${GLOBAL_CREATIVE_RULES}${briefSection}`,
+${getGlobalCreativeRules(language)}${briefSection}`,
         messages: [
           {
             role: "user",

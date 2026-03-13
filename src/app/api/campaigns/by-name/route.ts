@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 /**
  * GET /api/campaigns/by-name?name=KFC

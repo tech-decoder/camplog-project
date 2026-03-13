@@ -11,19 +11,30 @@ export async function GET(
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { id: jobId } = await params;
   const supabase = createAdminClient();
 
-  const { data: job, error } = await supabase
+  // Verify job belongs to user
+  const { data: job, error: jobError } = await supabase
     .from("generation_jobs")
-    .select("*")
-    .eq("id", id)
+    .select("id")
+    .eq("id", jobId)
     .eq("user_id", userId)
     .single();
 
-  if (error || !job) {
+  if (jobError || !job) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ job });
+  const { data: videos, error } = await supabase
+    .from("generated_videos")
+    .select("*")
+    .eq("job_id", jobId)
+    .order("generation_index", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ videos: videos || [] });
 }

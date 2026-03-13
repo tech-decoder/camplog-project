@@ -5,7 +5,7 @@ import {
   GenerationMode,
   StylePreferenceEntry,
 } from "@/lib/types/generation-jobs";
-import { AD_STYLES, GLOBAL_CREATIVE_RULES } from "@/lib/constants/image-gen";
+import { AD_STYLES, getGlobalCreativeRules } from "@/lib/constants/image-gen";
 
 const AD_STYLES_FULL = AD_STYLES.map(
   (s) => `## ${s.label} (style key: "${s.value}")\n${s.description}`
@@ -71,7 +71,7 @@ You have encyclopedic knowledge of these ad styles and their exact visual specif
 
 ${AD_STYLES_FULL}
 
-${GLOBAL_CREATIVE_RULES}
+${getGlobalCreativeRules(language)}
 
 Additional creative rules derived from top-performing hiring ad campaigns (KFC, Home Depot, Walmart):
 - Card overlays on storefront: warm cream (#F5F0E8 or similar), solid fill, never translucent

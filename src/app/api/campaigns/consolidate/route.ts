@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 interface MergeEntry {
   from: string[];
@@ -21,8 +13,13 @@ export async function POST(request: NextRequest) {
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const merges: MergeEntry[] = body.merges;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const merges: MergeEntry[] = (body.merges as MergeEntry[]);
 
   if (!Array.isArray(merges) || merges.length === 0) {
     return NextResponse.json(

@@ -1,6 +1,54 @@
 import { ImageModel, StylePreset } from "@/lib/types/generated-images";
 import { AdStyle, ImageFormat } from "@/lib/types/generation-jobs";
 
+// ── Localized text for badge, CTAs, subheadlines, disclaimers ────────────────
+export const LOCALIZED_TEXT: Record<string, {
+  badge: string;
+  open_guide_cta: string;
+  read_more_cta: string;
+  step_by_step: string;
+  disclaimer_example: string;
+  not_affiliated: string;
+}> = {
+  English: {
+    badge: "GUIDE",
+    open_guide_cta: "OPEN THE GUIDE",
+    read_more_cta: "READ MORE",
+    step_by_step: "Step by Step",
+    disclaimer_example: "Guide only. Not an official application.",
+    not_affiliated: "Not affiliated with {brand}.",
+  },
+  Spanish: {
+    badge: "GUÍA",
+    open_guide_cta: "ABRIR LA GUÍA",
+    read_more_cta: "LEER MÁS",
+    step_by_step: "Paso a Paso",
+    disclaimer_example: "Solo guía. No es solicitud oficial.",
+    not_affiliated: "No afiliado con {brand}.",
+  },
+  French: {
+    badge: "GUIDE",
+    open_guide_cta: "OUVRIR LE GUIDE",
+    read_more_cta: "LIRE PLUS",
+    step_by_step: "Étape par Étape",
+    disclaimer_example: "Guide uniquement. Pas une candidature officielle.",
+    not_affiliated: "Non affilié à {brand}.",
+  },
+  Portuguese: {
+    badge: "GUIA",
+    open_guide_cta: "ABRIR O GUIA",
+    read_more_cta: "LEIA MAIS",
+    step_by_step: "Passo a Passo",
+    disclaimer_example: "Apenas guia. Não é candidatura oficial.",
+    not_affiliated: "Não afiliado com {brand}.",
+  },
+};
+
+/** Get localized text for a language, falling back to English */
+export function getLocalizedText(language: string) {
+  return LOCALIZED_TEXT[language] || LOCALIZED_TEXT["English"];
+}
+
 // Legacy style presets (kept for backward compat with existing generated_images)
 export const STYLE_PRESETS: { value: StylePreset; label: string; desc: string }[] = [
   { value: "modern", label: "Modern", desc: "Clean, bold, vibrant" },
@@ -13,7 +61,9 @@ export const STYLE_PRESETS: { value: StylePreset; label: string; desc: string }[
 // Global rules enforced across ALL ad styles.
 // IMPORTANT: Use natural visual language only — no hex codes, pixel values, font weights,
 // or CSS properties. Image models will render technical specs as literal visible text.
-export const GLOBAL_CREATIVE_RULES = `GLOBAL RULES (apply to ALL ad styles without exception):
+export function getGlobalCreativeRules(language: string = "English"): string {
+  const t = getLocalizedText(language);
+  return `GLOBAL RULES (apply to ALL ad styles without exception):
 
 TYPOGRAPHY:
 - Headlines: bold, heavy, condensed, ALL CAPS
@@ -36,8 +86,8 @@ CTA BUTTONS:
 - Filled with brand accent color (never outline/ghost style)
 - Text: ALL CAPS, bold condensed, high-contrast color (white on dark, dark on light)
 
-"GUIDE" BADGE:
-- Include a bright yellow rounded "GUIDE" badge on EVERY creative
+"${t.badge}" BADGE:
+- Include a bright yellow rounded "${t.badge}" badge on EVERY creative
 - Position: top-right corner, small but clearly readable
 - Text: ALL CAPS, bold, dark text on yellow background
 - Purpose: Frames the ad as an information resource
@@ -47,7 +97,7 @@ DISCLAIMERS:
 - Very small, light gray, centered
 - Positioned at the absolute bottom of the image
 - KEEP IT SHORT: max 60 characters. Shorter text renders more reliably.
-- Example: "Guide only. Not an official application."
+- Example: "${t.disclaimer_example}"
 
 CRITICAL PROMPT_DIRECTION RULE:
 When writing prompt_direction for each creative, describe visuals using natural language ONLY.
@@ -58,6 +108,7 @@ When writing prompt_direction for each creative, describe visuals using natural 
 - Spacing: say "generous spacing", "tight" — NEVER write em values like -0.02em
 Image models render technical values as literal text in the image. Use only descriptive words.
 `;
+}
 
 // New ad style taxonomy for the AI creative pipeline
 // Specs refined from winning KFC, Walmart, Home Depot campaigns
@@ -141,30 +192,32 @@ Card/overlay content follows same hierarchy: ALL CAPS condensed headline, subhea
 // Condensed style specs injected directly into the image generation prompt.
 // IMPORTANT: Use natural visual language only — no CSS values, pixel sizes, hex codes,
 // font weights, or opacity percentages. Image models render those as literal text.
-export const STYLE_PROMPT_BOOSTERS: Record<string, string> = {
-  graphic_text: `VISUAL LAYOUT — DARK GUIDE FORMAT:
+export function getStylePromptBoosters(language: string = "English"): Record<string, string> {
+  const t = getLocalizedText(language);
+  return {
+    graphic_text: `VISUAL LAYOUT — DARK GUIDE FORMAT:
 Solid pure black background, no gradients.
 • TOP-LEFT: Small brand logo
-• TOP-RIGHT: Bright yellow rounded "GUIDE" badge
+• TOP-RIGHT: Bright yellow rounded "${t.badge}" badge
 • CENTER: Massive white ALL CAPS headline in bold condensed font, filling most of the center area across 2-3 stacked lines
 • ABOVE the headline: Two thick horizontal solid flat bars — one in brand primary color, one in brand secondary/accent color, centered. Clean sharp edges, NO brush strokes or paint texture.
 • BELOW the headline: Same two thick solid flat bars repeated
-• BELOW the dividers: Italic subheadline in soft cream color, centered
-• BOTTOM: Wide pill-shaped CTA button in the brand color, with white ALL CAPS text inside
+• BELOW the dividers: Italic subheadline in soft cream color, centered — e.g. "${t.step_by_step}"
+• BOTTOM: Wide pill-shaped CTA button in the brand color, with white ALL CAPS text inside — e.g. "${t.open_guide_cta}"
 • VERY BOTTOM: Tiny light-gray disclaimer text, centered`,
 
-  storefront_card: `VISUAL LAYOUT — STOREFRONT + CARD:
+    storefront_card: `VISUAL LAYOUT — STOREFRONT + CARD:
 • TOP HALF: Real store exterior photo — daylight, parking lot visible, full building signage clearly readable
-• TOP-RIGHT of the photo: Bright yellow rounded "GUIDE" badge
+• TOP-RIGHT of the photo: Bright yellow rounded "${t.badge}" badge
 • BOTTOM HALF: Solid warm cream/off-white rounded card overlay (fully opaque, not see-through), wide and centered
 • Card interior from top to bottom: bold ALL CAPS headline (the brand name rendered slightly larger and in brand color), a lighter softer subheadline below, then a wide pill-shaped CTA button in brand accent color with dark bold text
 • Below the card floating in the photo area: small white benefit text chips
 • BOTTOM of card: Tiny light-gray disclaimer text
 • NO floating logo anywhere — the building signage in the photo IS the brand identity`,
 
-  uniform_style: `VISUAL LAYOUT — UNIFORM/PRODUCT STYLE:
+    uniform_style: `VISUAL LAYOUT — UNIFORM/PRODUCT STYLE:
 Clean white background with generous whitespace.
-• TOP-RIGHT: Bright yellow rounded "GUIDE" badge
+• TOP-RIGHT: Bright yellow rounded "${t.badge}" badge
 • TOP: Massive bold ALL CAPS dark headline in condensed font, spanning full width
 • A thin horizontal divider line below the headline
 • A lighter, softer subheadline below the divider
@@ -173,14 +226,15 @@ Clean white background with generous whitespace.
 • VERY BOTTOM: Tiny light-gray disclaimer text
 • NO separate floating logo anywhere — the logo on the product is enough`,
 
-  inside_store: `VISUAL LAYOUT — INSIDE STORE VIEW:
+    inside_store: `VISUAL LAYOUT — INSIDE STORE VIEW:
 • BACKGROUND: Store interior, aisle, or warehouse photo — well-lit, clean, no harsh shadows
-• TOP-RIGHT: Bright yellow rounded "GUIDE" badge
+• TOP-RIGHT: Bright yellow rounded "${t.badge}" badge
 • BOTTOM PORTION: Either a solid warm cream/off-white rounded card overlay OR a dark semi-transparent overlay
 • Overlay content from top to bottom: bold ALL CAPS condensed headline, a lighter softer subheadline, and a wide pill-shaped CTA button in brand color
 • VERY BOTTOM: Tiny light-gray disclaimer text
 • Brand is established through visible store signage, shelf labels, and branded decor in the photo — NO floating logo overlay`,
-};
+  };
+}
 
 export const MODEL_OPTIONS: { value: ImageModel; label: string; desc: string }[] = [
   { value: "gemini-pro-image", label: "Nano Banana Pro", desc: "Gemini 3 Pro · Studio-quality, free" },

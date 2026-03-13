@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 export async function GET(
   request: NextRequest,
@@ -70,7 +62,12 @@ export async function POST(
     return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+  let body: { headlines?: string[]; primary_texts?: string[]; descriptions?: string[] };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { headlines, primary_texts, descriptions } = body as {
     headlines?: string[];
     primary_texts?: string[];
@@ -149,8 +146,13 @@ export async function DELETE(
   const { id } = await params;
   const supabase = createAdminClient();
 
-  const body = await request.json();
-  const { ids } = body as { ids: string[] };
+  let body: { ids: string[] };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const { ids } = body;
 
   if (!ids?.length) {
     return NextResponse.json({ error: "No variant IDs provided" }, { status: 400 });

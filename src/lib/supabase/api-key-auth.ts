@@ -32,12 +32,12 @@ export async function getApiKeyUserId(
 
   if (!data) return null;
 
-  // Fire-and-forget last_used_at update
+  // Fire-and-forget last_used_at update (non-critical, don't block auth)
   supabase
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id)
-    .then();
+    .then(null, (err) => console.warn("[api-key-auth] Failed to update last_used_at:", err));
 
   return data.user_id;
 }

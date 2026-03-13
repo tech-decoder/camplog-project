@@ -9,7 +9,7 @@ import {
   generateImageWithGeminiPro,
 } from "@/lib/gemini/client";
 import { buildPromptFromStrategy } from "./prompt-builder";
-import { GenerationJob, StrategyItem } from "@/lib/types/generation-jobs";
+import { GenerationJob, GenerationStrategy, StrategyItem } from "@/lib/types/generation-jobs";
 import { ImageModel } from "@/lib/types/generated-images";
 import { FORMAT_DIMENSIONS } from "@/lib/constants/image-gen";
 
@@ -111,7 +111,7 @@ export async function executeGenerationJob(jobId: string): Promise<void> {
   }
 
   const typedJob = job as GenerationJob;
-  const strategy = typedJob.strategy;
+  const strategy = typedJob.strategy as GenerationStrategy | null;
   if (!strategy || !strategy.items?.length) {
     await supabase
       .from("generation_jobs")
@@ -137,7 +137,7 @@ export async function executeGenerationJob(jobId: string): Promise<void> {
   const BATCH_SIZE = 3;
 
   async function processItem(item: StrategyItem) {
-    const prompt = buildPromptFromStrategy(item, typedJob.brand_name);
+    const prompt = buildPromptFromStrategy(item, typedJob.brand_name, typedJob.language || "English");
     const dimensions = FORMAT_DIMENSIONS[item.format];
 
     const result = await generateSingleImage(

@@ -76,10 +76,12 @@ export function GenerationTimer({
   startTimestamp,
   isComplete,
   totalImages,
+  mediaType = "image",
 }: {
   startTimestamp: number;
   isComplete: boolean;
   totalImages: number;
+  mediaType?: "image" | "video";
 }) {
   const [elapsed, setElapsed] = useState(0);
   const endTimeRef = useRef<number | null>(null);
@@ -111,7 +113,7 @@ export function GenerationTimer({
           <span className="font-semibold">Done in {formatDuration(elapsed)}</span>
           {totalImages > 0 && (
             <span className="text-green-600/80 dark:text-green-400/80">
-              {" · "}{totalImages} images at ~{perImage}s each. Try doing that with Canva
+              {" · "}{totalImages} {mediaType === "video" ? "videos" : "images"} at ~{perImage}s each. Try doing that with Canva
             </span>
           )}
           <span className="ml-0.5">

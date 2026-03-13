@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 export async function POST(
   request: NextRequest,
@@ -20,8 +12,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id: jobId } = await params;
-  const body = await request.json();
-  const campaignName = body.name?.trim();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const campaignName = (body.name as string | undefined)?.trim();
 
   if (!campaignName) {
     return NextResponse.json({ error: "Campaign name is required" }, { status: 400 });
@@ -105,12 +102,29 @@ export async function POST(
     return NextResponse.json({ error: "Failed to link images to campaign" }, { status: 500 });
   }
 
+  // Link all videos from this job to the campaign
+  const { error: vidUpdateError } = await supabase
+    .from("generated_videos")
+    .update({ campaign_id: campaign.id })
+    .eq("job_id", jobId);
+
+  if (vidUpdateError) {
+    console.error("Failed to link videos:", vidUpdateError);
+    return NextResponse.json({ error: "Failed to link videos to campaign" }, { status: 500 });
+  }
+
   // Verify images were actually linked
-  const { count } = await supabase
+  const { count: imageCount } = await supabase
     .from("generated_images")
     .select("id", { count: "exact", head: true })
     .eq("campaign_id", campaign.id)
     .eq("job_id", jobId);
 
-  return NextResponse.json({ campaign, appended: isAppend, images_linked: count || 0 }, { status: isAppend ? 200 : 201 });
+  const { count: videoCount } = await supabase
+    .from("generated_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaign.id)
+    .eq("job_id", jobId);
+
+  return NextResponse.json({ campaign, appended: isAppend, images_linked: imageCount || 0, videos_linked: videoCount || 0 }, { status: isAppend ? 200 : 201 });
 }

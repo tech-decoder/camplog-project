@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 import { getClaudeClient } from "@/lib/claude/client";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 // GET /api/creative-memory?brand_name=X
 // Returns brand-specific + global (brand_name IS NULL) memory items for user

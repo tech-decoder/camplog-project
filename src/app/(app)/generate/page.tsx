@@ -3,17 +3,20 @@
 import { Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Sparkles, Save, Library, Plus } from "lucide-react";
+import { Loader2, Sparkles, Save, Library, Plus, ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
-import { GenerationMode, GenerationStrategy, GenerationJob } from "@/lib/types/generation-jobs";
+import { GenerationMode, GenerationStrategy, GenerationJob, MediaType } from "@/lib/types/generation-jobs";
 import { GeneratedImage } from "@/lib/types/generated-images";
+import { GeneratedVideo } from "@/lib/types/generated-videos";
 import { ModeSelector } from "@/components/generate/mode-selector";
 import { AiTakeoverForm, AiTakeoverFormData } from "@/components/generate/ai-takeover-form";
 import { CustomForm, CustomFormData } from "@/components/generate/custom-form";
 import { WinningVariantsForm, WinningVariantsFormData } from "@/components/generate/winning-variants-form";
+import { VideoTakeoverForm, VideoTakeoverFormData } from "@/components/generate/video-takeover-form";
 import { StrategyPreview } from "@/components/generate/strategy-preview";
 import { GenerationProgress } from "@/components/generate/generation-progress";
 import { ImageGallery } from "@/components/generate/image-gallery";
+import { VideoGallery } from "@/components/generate/video-gallery";
 import { SaveCampaignDialog } from "@/components/generate/save-campaign-dialog";
 import { PipelineBreadcrumbs } from "@/components/generate/pipeline-breadcrumbs";
 import { GenerationTimer } from "@/components/generate/generation-timer";
@@ -37,6 +40,7 @@ export default function GeneratePage() {
 type PageStep = "form" | "strategy" | "generating" | "complete";
 
 function GeneratePageContent() {
+  const [mediaType, setMediaType] = useState<MediaType>("image");
   const [mode, setMode] = useState<GenerationMode>("ai_takeover");
   const [step, setStep] = useState<PageStep>("form");
 
@@ -45,6 +49,7 @@ function GeneratePageContent() {
   const [job, setJob] = useState<GenerationJob | null>(null);
   const [strategy, setStrategy] = useState<GenerationStrategy | null>(null);
   const [jobImages, setJobImages] = useState<GeneratedImage[]>([]);
+  const [jobVideos, setJobVideos] = useState<GeneratedVideo[]>([]);
 
   // Loading states
   const [strategizing, setStrategizing] = useState(false);
@@ -80,8 +85,8 @@ function GeneratePageContent() {
     load();
   }, []);
 
-  // Poll job status during generation
-  const startPolling = useCallback(
+  // Poll job status during generation (images)
+  const startImagePolling = useCallback(
     (id: string) => {
       if (pollRef.current) clearInterval(pollRef.current);
 
@@ -122,6 +127,69 @@ function GeneratePageContent() {
           console.error("Polling error:", err);
         }
       }, 3000);
+    },
+    []
+  );
+
+  // Poll job status during generation (videos — slower interval)
+  const startVideoPolling = useCallback(
+    (id: string) => {
+      if (pollRef.current) clearInterval(pollRef.current);
+
+      pollRef.current = setInterval(async () => {
+        try {
+          const [jobRes, vidRes] = await Promise.all([
+            fetch(`/api/generation-jobs/${id}`),
+            fetch(`/api/generation-jobs/${id}/videos`),
+          ]);
+
+          // Always update videos first (before completion check)
+          let fetchedVideos: unknown[] = [];
+          if (vidRes.ok) {
+            const { videos } = await vidRes.json();
+            fetchedVideos = videos || [];
+            setJobVideos(fetchedVideos as typeof jobVideos);
+          }
+
+          let updatedJob = null;
+          if (jobRes.ok) {
+            const data = await jobRes.json();
+            updatedJob = data.job;
+            setJob(updatedJob);
+          }
+
+          // Only transition to complete AFTER videos are fetched
+          if (updatedJob && (updatedJob.status === "completed" || updatedJob.status === "failed")) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+
+            // If job completed with videos but we got 0, retry after a short delay
+            if (
+              updatedJob.status === "completed" &&
+              updatedJob.images_completed > 0 &&
+              fetchedVideos.length === 0
+            ) {
+              await new Promise((r) => setTimeout(r, 2000));
+              const retryRes = await fetch(`/api/generation-jobs/${id}/videos`);
+              if (retryRes.ok) {
+                const { videos } = await retryRes.json();
+                if (videos?.length > 0) {
+                  setJobVideos(videos);
+                }
+              }
+            }
+
+            setStep("complete");
+            if (updatedJob.status === "completed") {
+              toast.success(`Generated ${updatedJob.images_completed} videos`);
+            } else {
+              toast.error(updatedJob.error_message || "Video generation failed");
+            }
+          }
+        } catch (err) {
+          console.error("Video polling error:", err);
+        }
+      }, 10000); // 10s for videos
     },
     []
   );
@@ -314,6 +382,63 @@ function GeneratePageContent() {
     }
   }
 
+  // ── Video Form Submit ─────────────────────────────────────────────────
+
+  async function handleVideoTakeoverSubmit(data: VideoTakeoverFormData) {
+    setStrategizing(true);
+    setPipelineStartTime(Date.now());
+    try {
+      const createRes = await fetch("/api/generation-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          media_type: "video",
+          mode: "ai_takeover",
+          brand_name: data.brand_name,
+          language: data.language,
+          video_duration: data.duration,
+          video_format_split: {
+            landscape: data.landscape_count,
+            portrait: data.portrait_count,
+          },
+        }),
+      });
+
+      if (!createRes.ok) {
+        const err = await createRes.json();
+        toast.error(err.error || "Failed to create video job");
+        setPipelineStartTime(null);
+        return;
+      }
+
+      const { job: newJob } = await createRes.json();
+      setJobId(newJob.id);
+      setJob(newJob);
+
+      const stratRes = await fetch(`/api/generation-jobs/${newJob.id}/strategize`, {
+        method: "POST",
+      });
+
+      if (!stratRes.ok) {
+        const err = await stratRes.json();
+        const detail = err.detail ? `\n${err.detail}` : "";
+        toast.error(`Video strategy failed: ${err.error || "Unknown error"}${detail}`, { duration: 8000 });
+        setPipelineStartTime(null);
+        return;
+      }
+
+      const { strategy: newStrategy } = await stratRes.json();
+      setStrategy(newStrategy);
+      setStep("strategy");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Video strategy failed: ${msg}`, { duration: 8000 });
+      setPipelineStartTime(null);
+    } finally {
+      setStrategizing(false);
+    }
+  }
+
   // ── Execute ──────────────────────────────────────────────────────────
 
   async function handleExecute() {
@@ -326,7 +451,12 @@ function GeneratePageContent() {
       if (res.ok) {
         setStep("generating");
         setJobImages([]);
-        startPolling(jobId);
+        setJobVideos([]);
+        if (mediaType === "video") {
+          startVideoPolling(jobId);
+        } else {
+          startImagePolling(jobId);
+        }
       } else {
         const err = await res.json();
         toast.error(err.error || "Failed to start generation");
@@ -359,6 +489,15 @@ function GeneratePageContent() {
     setJobImages((prev) => prev.filter((img) => !idSet.has(img.id)));
   }
 
+  function handleDeleteVideo(videoId: string) {
+    setJobVideos((prev) => prev.filter((v) => v.id !== videoId));
+  }
+
+  function handleBulkDeleteVideos(videoIds: string[]) {
+    const idSet = new Set(videoIds);
+    setJobVideos((prev) => prev.filter((v) => !idSet.has(v.id)));
+  }
+
   // ── Reset ────────────────────────────────────────────────────────────
 
   function handleNewGeneration() {
@@ -367,12 +506,12 @@ function GeneratePageContent() {
     setJob(null);
     setStrategy(null);
     setJobImages([]);
+    setJobVideos([]);
     setPipelineStartTime(null);
     setShowLibrary(false);
   }
 
   function handleBreadcrumbNav(target: PageStep) {
-    // Only allow navigating back to form
     if (target === "form") {
       handleNewGeneration();
     }
@@ -380,6 +519,9 @@ function GeneratePageContent() {
 
   const isComplete = step === "complete";
   const showTimer = pipelineStartTime !== null;
+  const isVideo = mediaType === "video";
+  const completedCount = job?.images_completed || 0;
+  const mediaLabel = isVideo ? "videos" : "images";
 
   return (
     <PageShell className="space-y-4">
@@ -389,7 +531,7 @@ function GeneratePageContent() {
         description="Create ad creatives with AI."
         actions={
           <div className="flex items-center gap-2">
-            {!loadingGallery && allImages.length > 0 && (
+            {!loadingGallery && allImages.length > 0 && !isVideo && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -427,34 +569,79 @@ function GeneratePageContent() {
       {step === "form" && (
         <Card>
           <CardContent className="p-4 space-y-4">
-            <ModeSelector value={mode} onChange={setMode} />
-
-            <div className="border-t border-border pt-4">
-              {mode === "ai_takeover" && (
-                <AiTakeoverForm
-                  onSubmit={handleTakeoverSubmit}
-                  loading={strategizing}
-                />
-              )}
-              {mode === "custom" && (
-                <CustomForm
-                  onSubmit={handleCustomSubmit}
-                  loading={strategizing}
-                />
-              )}
-              {mode === "winning_variants" && (
-                <WinningVariantsForm
-                  onSubmit={handleWinningVariantsSubmit}
-                  loading={strategizing}
-                />
-              )}
+            {/* Media type toggle — Images / Videos */}
+            <div className="flex items-center gap-1 p-0.5 bg-muted rounded-lg w-fit">
+              <button
+                onClick={() => setMediaType("image")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  mediaType === "image"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                Images
+              </button>
+              <button
+                onClick={() => setMediaType("video")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  mediaType === "video"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Video className="h-3.5 w-3.5" />
+                Videos
+                <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary/10 text-primary leading-none">
+                  BETA
+                </span>
+              </button>
             </div>
-            {/* Timer during strategizing — shows below the form, near the button */}
+
+            {/* Image modes */}
+            {mediaType === "image" && (
+              <>
+                <ModeSelector value={mode} onChange={setMode} />
+                <div className="border-t border-border pt-4">
+                  {mode === "ai_takeover" && (
+                    <AiTakeoverForm
+                      onSubmit={handleTakeoverSubmit}
+                      loading={strategizing}
+                    />
+                  )}
+                  {mode === "custom" && (
+                    <CustomForm
+                      onSubmit={handleCustomSubmit}
+                      loading={strategizing}
+                    />
+                  )}
+                  {mode === "winning_variants" && (
+                    <WinningVariantsForm
+                      onSubmit={handleWinningVariantsSubmit}
+                      loading={strategizing}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Video mode — AI Takeover only */}
+            {mediaType === "video" && (
+              <div className="border-t border-border pt-4">
+                <VideoTakeoverForm
+                  onSubmit={handleVideoTakeoverSubmit}
+                  loading={strategizing}
+                />
+              </div>
+            )}
+
+            {/* Timer during strategizing */}
             {showTimer && (
               <GenerationTimer
                 startTimestamp={pipelineStartTime!}
                 isComplete={isComplete}
-                totalImages={job?.images_completed || 0}
+                totalImages={completedCount}
+                mediaType={mediaType}
               />
             )}
           </CardContent>
@@ -466,7 +653,7 @@ function GeneratePageContent() {
         <Card>
           <CardContent className="p-4 space-y-4">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              AI Strategy Preview
+              AI {isVideo ? "Video " : ""}Strategy Preview
             </h2>
             <StrategyPreview
               strategy={strategy}
@@ -479,7 +666,8 @@ function GeneratePageContent() {
               <GenerationTimer
                 startTimestamp={pipelineStartTime!}
                 isComplete={isComplete}
-                totalImages={job?.images_completed || 0}
+                totalImages={completedCount}
+                mediaType={mediaType}
               />
             )}
           </CardContent>
@@ -490,12 +678,25 @@ function GeneratePageContent() {
       {step === "generating" && job && (
         <Card>
           <CardContent className="p-4 space-y-4">
-            <GenerationProgress job={job} images={jobImages} />
+            <GenerationProgress job={job} images={isVideo ? [] : jobImages} mode={isVideo ? "videos" : "images"} />
+            {isVideo && jobVideos.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {jobVideos.length} video{jobVideos.length !== 1 ? "s" : ""} completed so far...
+                </p>
+                <VideoGallery
+                  videos={jobVideos}
+                  onDelete={handleDeleteVideo}
+                  onBulkDelete={handleBulkDeleteVideos}
+                />
+              </div>
+            )}
             {showTimer && (
               <GenerationTimer
                 startTimestamp={pipelineStartTime!}
                 isComplete={isComplete}
-                totalImages={job?.images_completed || 0}
+                totalImages={completedCount}
+                mediaType={mediaType}
               />
             )}
           </CardContent>
@@ -530,27 +731,38 @@ function GeneratePageContent() {
             </div>
           )}
 
-          {/* Show batch results with full gallery (click-to-view, rating, etc.) */}
-          {jobImages.length > 0 && (
-            <ImageGallery
-              images={jobImages}
-              onDelete={handleDeleteImage}
-              onBulkDelete={handleBulkDelete}
-            />
+          {/* Show batch results */}
+          {isVideo ? (
+            jobVideos.length > 0 && (
+              <VideoGallery
+                videos={jobVideos}
+                onDelete={handleDeleteVideo}
+                onBulkDelete={handleBulkDeleteVideos}
+              />
+            )
+          ) : (
+            jobImages.length > 0 && (
+              <ImageGallery
+                images={jobImages}
+                onDelete={handleDeleteImage}
+                onBulkDelete={handleBulkDelete}
+              />
+            )
           )}
 
           {showTimer && (
             <GenerationTimer
               startTimestamp={pipelineStartTime!}
               isComplete={isComplete}
-              totalImages={job?.images_completed || 0}
+              totalImages={completedCount}
+              mediaType={mediaType}
             />
           )}
         </div>
       )}
 
-      {/* ── Library Panel (toggleable overlay) ───────────────────────── */}
-      {showLibrary && (
+      {/* ── Library Panel (images only) ──────────────────────────────── */}
+      {showLibrary && !isVideo && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -596,7 +808,7 @@ function GeneratePageContent() {
           onOpenChange={setShowSaveDialog}
           jobId={jobId}
           brandName={job.brand_name}
-          imageCount={jobImages.length}
+          imageCount={isVideo ? jobVideos.length : jobImages.length}
           onSaved={handleNewGeneration}
         />
       )}

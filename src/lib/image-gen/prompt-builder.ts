@@ -1,6 +1,6 @@
 import { StylePreset } from "@/lib/types/generated-images";
 import { StrategyItem } from "@/lib/types/generation-jobs";
-import { FORMAT_DIMENSIONS, STYLE_PROMPT_BOOSTERS } from "@/lib/constants/image-gen";
+import { FORMAT_DIMENSIONS, getStylePromptBoosters, getLocalizedText } from "@/lib/constants/image-gen";
 
 const STYLE_INSTRUCTIONS: Record<StylePreset, string> = {
   modern:
@@ -71,9 +71,11 @@ export function buildImagePrompt({
 
 export function buildPromptFromStrategy(
   item: StrategyItem,
-  brandName: string
+  brandName: string,
+  language: string = "English"
 ): string {
   const dimensions = FORMAT_DIMENSIONS[item.format];
+  const t = getLocalizedText(language);
   const parts: string[] = [];
 
   // 0. TEXT ALLOWLIST — explicitly tell the image model what text to render
@@ -86,7 +88,7 @@ export function buildPromptFromStrategy(
     textAllowlist.push(`• Subheadline: "${item.subheadline}"`);
   }
   textAllowlist.push(`• CTA button: "${item.cta}"`);
-  textAllowlist.push(`• Badge: "GUIDE"`);
+  textAllowlist.push(`• Badge: "${t.badge}"`);
   if (item.disclaimer) {
     textAllowlist.push(`• Disclaimer (tiny, bottom): "${item.disclaimer}"`);
   }
@@ -97,7 +99,8 @@ export function buildPromptFromStrategy(
   parts.push(""); // blank separator
 
   // 1. Style booster — structured spec reinforcement for the image model
-  const styleBooster = STYLE_PROMPT_BOOSTERS[item.ad_style];
+  const boosters = getStylePromptBoosters(language);
+  const styleBooster = boosters[item.ad_style];
   if (styleBooster) {
     parts.push(styleBooster);
     parts.push(""); // blank line separator
@@ -119,7 +122,7 @@ export function buildPromptFromStrategy(
 
   // 4. Text rendering emphasis (reinforces the allowlist)
   parts.push(
-    `\nCRITICAL: Render ONLY the exact text listed at the top of this prompt (headline, subheadline, CTA, GUIDE badge, disclaimer). Every word must be crisp, legible, and spelled exactly as specified. Do NOT render any layout instructions, font names, color codes, or technical terms as visible text. The image should look like a professional digital ad creative.`
+    `\nCRITICAL: Render ONLY the exact text listed at the top of this prompt (headline, subheadline, CTA, ${t.badge} badge, disclaimer). Every word must be crisp, legible, and spelled exactly as specified. Do NOT render any layout instructions, font names, color codes, or technical terms as visible text. The image should look like a professional digital ad creative.`
   );
 
   return parts.join("\n");

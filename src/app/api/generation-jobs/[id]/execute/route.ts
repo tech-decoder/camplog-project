@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 import { executeGenerationJob } from "@/lib/image-gen/generate-batch";
+import { executeVideoGenerationJob } from "@/lib/video-gen/generate-batch";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
+export const maxDuration = 300; // 5 min for video generation
+
 
 export async function POST(
   request: NextRequest,
@@ -26,7 +21,7 @@ export async function POST(
   // Load and verify the job
   const { data: job, error } = await supabase
     .from("generation_jobs")
-    .select("id, user_id, status, strategy")
+    .select("id, user_id, status, strategy, media_type")
     .eq("id", jobId)
     .eq("user_id", userId)
     .single();
@@ -49,8 +44,12 @@ export async function POST(
     );
   }
 
-  // Use after() to keep execution alive after response is sent
-  after(() => executeGenerationJob(jobId).catch(console.error));
+  // Branch execution by media type
+  if (job.media_type === "video") {
+    after(() => executeVideoGenerationJob(jobId).catch(console.error));
+  } else {
+    after(() => executeGenerationJob(jobId).catch(console.error));
+  }
 
   return NextResponse.json({ status: "generating", jobId });
 }

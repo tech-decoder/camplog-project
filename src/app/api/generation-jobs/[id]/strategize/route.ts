@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 import {
   generateTakeoverStrategy,
   generateCustomStrategy,
   generateWinningVariantsStrategy,
   withStrategyRetry,
 } from "@/lib/claude/generate-strategy";
+import { generateVideoTakeoverStrategy } from "@/lib/claude/generate-video-strategy";
 import { generateCreativeBrief } from "@/lib/claude/creative-director";
 import {
   GenerationJob,
   StylePreference,
   CreativeMemoryItem,
+  VideoDuration,
 } from "@/lib/types/generation-jobs";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 export async function POST(
   request: NextRequest,
@@ -123,6 +117,40 @@ export async function POST(
     const resolvedCopyPool = languagePool || fallbackPool;
 
     // ── Step 5: Generate strategy using the brief (with retry) ────────────────
+
+    // Video generation uses a separate strategy generator
+    if (typedJob.media_type === "video") {
+      const videoFormatSplit = typedJob.format_split
+        ? { landscape: typedJob.format_split.square || 0, portrait: typedJob.format_split.portrait || 0 }
+        : { landscape: 3, portrait: 3 };
+      const videoDuration = (typedJob.video_duration || 4) as VideoDuration;
+
+      strategy = await withStrategyRetry(
+        () => generateVideoTakeoverStrategy({
+          brandName: typedJob.brand_name,
+          totalCount: typedJob.total_count || undefined,
+          formatSplit: videoFormatSplit,
+          language: typedJob.language,
+          duration: videoDuration,
+          creativeBrief,
+        }),
+        "Video Takeover strategy"
+      );
+
+      // Save strategy + brief to job
+      await supabase
+        .from("generation_jobs")
+        .update({
+          strategy,
+          creative_brief: creativeBrief,
+          status: "strategy_ready",
+          images_requested: strategy.items.length,
+        })
+        .eq("id", jobId);
+
+      return NextResponse.json({ strategy });
+    }
+
     if (typedJob.mode === "ai_takeover") {
       strategy = await withStrategyRetry(
         () => generateTakeoverStrategy({

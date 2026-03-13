@@ -29,8 +29,8 @@ export async function GET(
     );
   }
 
-  const { data: images, error } = await supabase
-    .from("generated_images")
+  const { data: videos, error } = await supabase
+    .from("generated_videos")
     .select("*")
     .eq("campaign_id", campaignId)
     .eq("user_id", userId)
@@ -40,7 +40,7 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ images: images || [] });
+  return NextResponse.json({ videos: videos || [] });
 }
 
 export async function DELETE(
@@ -54,39 +54,39 @@ export async function DELETE(
   const { id: campaignId } = await params;
   const supabase = createAdminClient();
   const body = await request.json();
-  const { imageId } = body;
+  const { videoId } = body;
 
-  if (!imageId) {
+  if (!videoId) {
     return NextResponse.json(
-      { error: "imageId is required" },
+      { error: "videoId is required" },
       { status: 400 }
     );
   }
 
   // Verify ownership
-  const { data: image } = await supabase
-    .from("generated_images")
-    .select("id, image_url")
-    .eq("id", imageId)
+  const { data: video } = await supabase
+    .from("generated_videos")
+    .select("id, video_url")
+    .eq("id", videoId)
     .eq("campaign_id", campaignId)
     .eq("user_id", userId)
     .single();
 
-  if (!image) {
-    return NextResponse.json({ error: "Image not found" }, { status: 404 });
+  if (!video) {
+    return NextResponse.json({ error: "Video not found" }, { status: 404 });
   }
 
   // Extract storage path from URL and delete from storage
-  const url = new URL(image.image_url);
-  const storagePath = url.pathname.split("/generated-images/")[1];
+  const url = new URL(video.video_url);
+  const storagePath = url.pathname.split("/generated-videos/")[1];
   if (storagePath) {
     await supabase.storage
-      .from("generated-images")
+      .from("generated-videos")
       .remove([decodeURIComponent(storagePath)]);
   }
 
   // Delete DB record
-  await supabase.from("generated_images").delete().eq("id", imageId);
+  await supabase.from("generated_videos").delete().eq("id", videoId);
 
   return NextResponse.json({ success: true });
 }

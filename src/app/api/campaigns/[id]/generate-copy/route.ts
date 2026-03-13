@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthUserId } from "@/lib/supabase/auth-helper";
-import { getApiKeyUserId } from "@/lib/supabase/api-key-auth";
+import { resolveUserId } from "@/lib/supabase/route-helpers";
 import { generateAdCopy } from "@/lib/claude/generate-ad-copy";
 import { AdCopyFieldType } from "@/lib/types/ad-copies";
 
-async function resolveUserId(request: NextRequest): Promise<string | null> {
-  let userId = await getAuthUserId();
-  if (!userId) {
-    userId = await getApiKeyUserId(request.headers.get("authorization"));
-  }
-  return userId;
-}
 
 const VALID_FIELD_TYPES: AdCopyFieldType[] = [
   "headline",
@@ -45,10 +37,15 @@ export async function POST(
     );
   }
 
-  const body = await request.json();
-  const { field_type, count = 5, language = "English" } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const { field_type, count = 5, language = "English" } = body as { field_type: AdCopyFieldType; count?: number; language?: string };
 
-  if (!field_type || !VALID_FIELD_TYPES.includes(field_type)) {
+  if (!field_type || !VALID_FIELD_TYPES.includes(field_type as AdCopyFieldType)) {
     return NextResponse.json(
       { error: "field_type must be one of: headline, primary_text, description" },
       { status: 400 }

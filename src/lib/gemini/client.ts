@@ -3,7 +3,7 @@ import { ImageFormat } from "@/lib/types/generation-jobs";
 
 let geminiInstance: GoogleGenAI | null = null;
 
-function getGeminiClient(): GoogleGenAI {
+export function getGeminiClient(): GoogleGenAI {
   if (!geminiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

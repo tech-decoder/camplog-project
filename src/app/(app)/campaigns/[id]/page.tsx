@@ -22,6 +22,7 @@ import {
   Pause,
   Play,
   List,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { GradientPageHeader } from "@/components/layout/gradient-page-header";
@@ -40,10 +41,12 @@ import {
 import { Change } from "@/lib/types/changes";
 import { AdCopyVariant, AdCopyFieldType } from "@/lib/types/ad-copies";
 import { GeneratedImage } from "@/lib/types/generated-images";
+import { GeneratedVideo } from "@/lib/types/generated-videos";
 import { ACTION_TYPE_CONFIG, VERDICT_CONFIG } from "@/lib/constants";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatDate } from "@/lib/utils/dates";
 import { ImageGallery } from "@/components/generate/image-gallery";
+import { VideoGallery } from "@/components/generate/video-gallery";
 
 interface CampaignData {
   name: string;
@@ -80,6 +83,7 @@ function CampaignDetailContent() {
   const [changes, setChanges] = useState<Change[]>([]);
   const [variants, setVariants] = useState<AdCopyVariant[]>([]);
   const [images, setImages] = useState<GeneratedImage[]>([]);
+  const [videos, setVideos] = useState<GeneratedVideo[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingName, setEditingName] = useState(false);
@@ -100,33 +104,63 @@ function CampaignDetailContent() {
   const [copyLanguage, setCopyLanguage] = useState<"English" | "Spanish">("English");
 
   const fetchCampaign = useCallback(async () => {
-    const res = await fetch(`/api/campaigns/by-name?name=${encodeURIComponent(campaignName)}`);
-    if (res.ok) setCampaign(await res.json());
+    try {
+      const res = await fetch(`/api/campaigns/by-name?name=${encodeURIComponent(campaignName)}`);
+      if (res.ok) setCampaign(await res.json());
+      else if (res.status !== 404) toast.error("Failed to load campaign");
+    } catch {
+      toast.error("Network error loading campaign");
+    }
   }, [campaignName]);
 
   const fetchChanges = useCallback(async () => {
-    const res = await fetch(`/api/changes?campaign=${encodeURIComponent(campaignName)}&limit=200`);
-    if (res.ok) {
-      const data = await res.json();
-      setChanges(data.changes || []);
+    try {
+      const res = await fetch(`/api/changes?campaign=${encodeURIComponent(campaignName)}&limit=200`);
+      if (res.ok) {
+        const data = await res.json();
+        setChanges(data.changes || []);
+      }
+    } catch {
+      // Non-critical — changes list is supplementary
     }
   }, [campaignName]);
 
   const fetchVariants = useCallback(async () => {
     if (!campaign?.primary_id) return;
-    const res = await fetch(`/api/campaigns/${campaign.primary_id}/variants`);
-    if (res.ok) {
-      const data = await res.json();
-      setVariants(data.variants || []);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.primary_id}/variants`);
+      if (res.ok) {
+        const data = await res.json();
+        setVariants(data.variants || []);
+      }
+    } catch {
+      // Non-critical — variants can be reloaded
     }
   }, [campaign?.primary_id]);
 
   const fetchImages = useCallback(async () => {
     if (!campaign?.primary_id) return;
-    const res = await fetch(`/api/campaigns/${campaign.primary_id}/images`);
-    if (res.ok) {
-      const data = await res.json();
-      setImages(data.images || []);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.primary_id}/images`);
+      if (res.ok) {
+        const data = await res.json();
+        setImages(data.images || []);
+      }
+    } catch {
+      toast.error("Failed to load campaign images");
+    }
+  }, [campaign?.primary_id]);
+
+  const fetchVideos = useCallback(async () => {
+    if (!campaign?.primary_id) return;
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.primary_id}/videos`);
+      if (res.ok) {
+        const data = await res.json();
+        setVideos(data.videos || []);
+      }
+    } catch {
+      toast.error("Failed to load campaign videos");
     }
   }, [campaign?.primary_id]);
 
@@ -155,8 +189,9 @@ function CampaignDetailContent() {
     if (campaign?.primary_id) {
       fetchVariants();
       fetchImages();
+      fetchVideos();
     }
-  }, [campaign?.primary_id, fetchVariants, fetchImages]);
+  }, [campaign?.primary_id, fetchVariants, fetchImages, fetchVideos]);
 
   async function handleSaveName() {
     if (!editName.trim() || editName === campaign?.name) {
@@ -440,6 +475,27 @@ function CampaignDetailContent() {
             images={images}
             onDelete={(id) => setImages((prev) => prev.filter((img) => img.id !== id))}
             onBulkDelete={(ids) => setImages((prev) => prev.filter((img) => !ids.includes(img.id)))}
+            campaignId={campaign?.primary_id}
+            campaignName={campaign?.name}
+          />
+        </div>
+      )}
+
+      {/* Campaign Videos */}
+      {videos.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
+              <Video className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <h2 className="text-sm font-semibold">
+              Creative Videos <span className="font-normal text-muted-foreground">({videos.length})</span>
+            </h2>
+          </div>
+          <VideoGallery
+            videos={videos}
+            onDelete={(id) => setVideos((prev) => prev.filter((v) => v.id !== id))}
+            onBulkDelete={(ids) => setVideos((prev) => prev.filter((v) => !ids.includes(v.id)))}
             campaignId={campaign?.primary_id}
             campaignName={campaign?.name}
           />

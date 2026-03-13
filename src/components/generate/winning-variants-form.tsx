@@ -158,11 +158,11 @@ export function WinningVariantsForm({
       </div>
 
       {/* Model + Language — side by side */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="min-w-0 space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Image Model</label>
           <Select value={model} onValueChange={(v) => setModel(v as ImageModel)}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs w-full overflow-hidden"><SelectValue /></SelectTrigger>
             <SelectContent>
               {MODEL_OPTIONS.map((m) => (
                 <SelectItem key={m.value} value={m.value} className="text-xs">
@@ -172,11 +172,11 @@ export function WinningVariantsForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Language</label>
           <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
+            <SelectTrigger className="h-9 text-xs w-full overflow-hidden"><SelectValue /></SelectTrigger>
+            <SelectContent className="z-[60]">
               {LANGUAGE_OPTIONS.map((lang) => (
                 <SelectItem key={lang} value={lang} className="text-xs">{lang}</SelectItem>
               ))}
