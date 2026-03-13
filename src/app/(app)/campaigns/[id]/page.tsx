@@ -39,6 +39,7 @@ import {
 } from "recharts";
 import { Change } from "@/lib/types/changes";
 import { AdCopyVariant, AdCopyFieldType } from "@/lib/types/ad-copies";
+import { GeneratedImage } from "@/lib/types/generated-images";
 import { ACTION_TYPE_CONFIG, VERDICT_CONFIG } from "@/lib/constants";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { formatDate } from "@/lib/utils/dates";
@@ -68,6 +69,7 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
   const [changes, setChanges] = useState<Change[]>([]);
   const [variants, setVariants] = useState<AdCopyVariant[]>([]);
+  const [images, setImages] = useState<GeneratedImage[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingName, setEditingName] = useState(false);
@@ -109,6 +111,15 @@ export default function CampaignDetailPage() {
     }
   }, [campaign?.primary_id]);
 
+  const fetchImages = useCallback(async () => {
+    if (!campaign?.primary_id) return;
+    const res = await fetch(`/api/campaigns/${campaign.primary_id}/images`);
+    if (res.ok) {
+      const data = await res.json();
+      setImages(data.images || []);
+    }
+  }, [campaign?.primary_id]);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -121,8 +132,9 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     if (campaign?.primary_id) {
       fetchVariants();
+      fetchImages();
     }
-  }, [campaign?.primary_id, fetchVariants]);
+  }, [campaign?.primary_id, fetchVariants, fetchImages]);
 
   async function handleSaveName() {
     if (!editName.trim() || editName === campaign?.name) {
@@ -232,6 +244,21 @@ export default function CampaignDetailPage() {
       toast.error("Failed to generate copy");
     } finally {
       setGeneratingCopy((prev) => ({ ...prev, [fieldType]: false }));
+    }
+  }
+
+  async function handleDeleteImage(imageId: string) {
+    if (!campaign?.primary_id) return;
+    const res = await fetch(`/api/campaigns/${campaign.primary_id}/images`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageId }),
+    });
+    if (res.ok) {
+      setImages((prev) => prev.filter((img) => img.id !== imageId));
+      toast.success("Image removed");
+    } else {
+      toast.error("Failed to remove image");
     }
   }
 
@@ -389,6 +416,55 @@ export default function CampaignDetailPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      )}
+
+      {/* Campaign Images */}
+      {images.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <ImageIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-sm font-semibold">
+              Creative Images <span className="font-normal text-muted-foreground">({images.length})</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {images.map((img) => (
+              <div
+                key={img.id}
+                className="group relative rounded-lg overflow-hidden border border-border bg-muted aspect-square"
+              >
+                <a href={img.image_url} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.thumbnail_url || img.image_url}
+                    alt={img.ad_style || "Campaign image"}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </a>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between">
+                  {img.ad_style && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-black/50 text-white border-0">
+                      {img.ad_style.replace(/_/g, " ")}
+                    </Badge>
+                  )}
+                  <button
+                    className="p-1.5 rounded-md bg-black/50 text-white hover:bg-destructive/80 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteImage(img.id);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Ad Copy Variants */}
