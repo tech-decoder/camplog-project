@@ -550,7 +550,7 @@ export default function GoalsPage() {
       {/* Progress Overview */}
       {goal && !showSetup && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="hover-card-glow border-border/60">
               <CardContent className="pt-5 pb-4 px-5">
                 <div className="flex items-start justify-between">
@@ -707,9 +707,9 @@ export default function GoalsPage() {
           {chartRows.length > 0 && (
             <Card className="hover-card-glow border-border/60">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <CardTitle className="text-base">Site Health</CardTitle>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                     <span className="text-[11px] font-medium text-muted-foreground">FBM</span>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -1110,7 +1110,7 @@ export default function GoalsPage() {
                       <h4 className="text-sm font-semibold mb-2">
                         Monthly Projection
                       </h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground text-xs">
                             Projected Revenue

@@ -8,15 +8,15 @@ import {
   MessageSquare,
   List,
   Megaphone,
-  Sparkles,
+  Target,
 } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Chat", href: "/chat", icon: MessageSquare },
-  { label: "Generate", href: "/generate", icon: Sparkles },
-  { label: "Changes", href: "/changes", icon: List },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { label: "Changes", href: "/changes", icon: List },
+  { label: "Goals", href: "/goals", icon: Target },
 ];
 
 export function MobileNav() {

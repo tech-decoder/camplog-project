@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <div className="md:pl-64">
           <Header onOpenCommandPalette={() => setCommandOpen(true)} />
-          <main className="px-4 py-6 pb-20 sm:px-6 sm:py-8 lg:px-8 md:pb-8">
+          <main className="px-4 py-6 pb-20 sm:px-6 sm:pt-8 lg:px-8 md:pb-8">
             <div className="max-w-6xl mx-auto">
               {children}
             </div>
