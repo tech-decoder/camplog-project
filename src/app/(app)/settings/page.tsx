@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnectingDrive, setDisconnectingDrive] = useState(false);
+  const [driveFolderUrl, setDriveFolderUrl] = useState("");
+  const [savingDriveFolder, setSavingDriveFolder] = useState(false);
 
   // Profile form
   const [fullName, setFullName] = useState("");
@@ -170,6 +172,49 @@ export default function SettingsPage() {
       toast.error("Failed to disconnect");
     }
     setDisconnectingDrive(false);
+  }
+
+  // Initialize folder URL from profile
+  useEffect(() => {
+    if (profile?.google_drive_folder_id) {
+      setDriveFolderUrl(`https://drive.google.com/drive/folders/${profile.google_drive_folder_id}`);
+    }
+  }, [profile?.google_drive_folder_id]);
+
+  async function handleSaveDriveFolder() {
+    setSavingDriveFolder(true);
+    try {
+      // Extract folder ID from URL or raw ID
+      let folderId: string | null = null;
+      const trimmed = driveFolderUrl.trim();
+      if (trimmed) {
+        const urlMatch = trimmed.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        if (urlMatch) {
+          folderId = urlMatch[1];
+        } else if (/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+          folderId = trimmed;
+        } else {
+          toast.error("Invalid Google Drive folder URL");
+          setSavingDriveFolder(false);
+          return;
+        }
+      }
+
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ google_drive_folder_id: folderId }),
+      });
+      if (res.ok) {
+        toast.success(folderId ? "Drive folder saved" : "Drive folder cleared — will use default CampLog folder");
+        refreshProfile();
+      } else {
+        toast.error("Failed to save folder");
+      }
+    } catch {
+      toast.error("Failed to save folder");
+    }
+    setSavingDriveFolder(false);
   }
 
   async function loadCopyPool() {
@@ -673,9 +718,32 @@ export default function SettingsPage() {
                   Disconnect
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Images are saved to a &quot;CampLog&quot; folder in your Drive, organized by campaign name.
-              </p>
+              {/* Folder setting */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-foreground/80">Save campaigns to folder</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={driveFolderUrl}
+                    onChange={(e) => setDriveFolderUrl(e.target.value)}
+                    placeholder="Paste Google Drive folder URL (or leave empty for default)"
+                    className="h-9 text-xs flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 text-xs"
+                    onClick={handleSaveDriveFolder}
+                    disabled={savingDriveFolder}
+                  >
+                    {savingDriveFolder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {profile?.google_drive_folder_id
+                    ? "Campaign subfolders will be created inside this folder."
+                    : "No folder set — a \"CampLog\" folder will be created in your Drive root."}
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

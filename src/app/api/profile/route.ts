@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at")
+    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at, google_drive_folder_id")
     .eq("id", userId)
     .single();
 
@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
   const supabase = createAdminClient();
   const body = await request.json();
 
-  const allowedFields = ["nickname", "full_name", "onboarding_completed", "avatar_url", "google_drive_refresh_token", "google_drive_connected_at"];
+  const allowedFields = ["nickname", "full_name", "onboarding_completed", "avatar_url", "google_drive_refresh_token", "google_drive_connected_at", "google_drive_folder_id"];
   const updates: Record<string, unknown> = {};
   for (const key of allowedFields) {
     if (key in body) {
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     .from("profiles")
     .update(updates)
     .eq("id", userId)
-    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at")
+    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at, google_drive_folder_id")
     .single();
 
   if (error) {

@@ -82,18 +82,33 @@ async function findOrCreateFolder(
 }
 
 /**
+ * Extract a Google Drive folder ID from a URL or raw ID.
+ */
+export function parseDriveFolderId(input: string): string | null {
+  if (!input) return null;
+  // URL format: https://drive.google.com/drive/folders/FOLDER_ID
+  const urlMatch = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (urlMatch) return urlMatch[1];
+  // Raw ID (no slashes)
+  if (/^[a-zA-Z0-9_-]+$/.test(input.trim())) return input.trim();
+  return null;
+}
+
+/**
  * Export images to Google Drive.
- * Creates CampLog/{folderName}/ and uploads each image.
+ * If parentFolderId is set, creates {folderName}/ inside it.
+ * Otherwise creates CampLog/{folderName}/ at root.
  */
 export async function exportImagesToDrive(
   refreshToken: string,
   images: { url: string; filename: string }[],
-  folderName: string
+  folderName: string,
+  parentFolderId?: string | null
 ): Promise<{ folderUrl: string; count: number }> {
   const drive = getDriveClient(refreshToken);
 
-  // Find or create "CampLog" root folder
-  const rootFolderId = await findOrCreateFolder(drive, "CampLog");
+  // Use user's chosen folder, or fall back to creating "CampLog" at root
+  const rootFolderId = parentFolderId || await findOrCreateFolder(drive, "CampLog");
 
   // Find or create campaign subfolder
   const subFolderId = await findOrCreateFolder(drive, folderName, rootFolderId);

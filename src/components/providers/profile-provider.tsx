@@ -16,6 +16,7 @@ export interface UserProfile {
   avatar_url: string | null;
   onboarding_completed: boolean;
   google_drive_connected_at: string | null;
+  google_drive_folder_id: string | null;
   sites: UserSite[];
 }
 

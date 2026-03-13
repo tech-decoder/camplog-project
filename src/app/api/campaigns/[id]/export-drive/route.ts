@@ -23,7 +23,7 @@ export async function POST(
   // Get user's Drive token
   const { data: profile } = await supabase
     .from("profiles")
-    .select("google_drive_refresh_token")
+    .select("google_drive_refresh_token, google_drive_folder_id")
     .eq("id", userId)
     .single();
 
@@ -84,7 +84,8 @@ export async function POST(
     const result = await exportImagesToDrive(
       profile.google_drive_refresh_token,
       driveImages,
-      campaign.name
+      campaign.name,
+      profile.google_drive_folder_id
     );
 
     return NextResponse.json({
