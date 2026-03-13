@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useProfile } from "@/components/providers/profile-provider";
 import { cn } from "@/lib/utils";
 import { Search, LogOut, Settings, Globe } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
@@ -131,8 +132,15 @@ export function Header({ onOpenCommandPalette }: HeaderProps) {
           {/* Account Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors">
-                <span className="text-xs font-medium text-primary">{initials}</span>
+              <button className="rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
+                <Avatar>
+                  {profile?.avatar_url && (
+                    <AvatarImage src={profile.avatar_url} alt="Avatar" />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">

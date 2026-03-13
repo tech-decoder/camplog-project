@@ -13,6 +13,7 @@ export interface UserProfile {
   email: string;
   full_name: string | null;
   nickname: string | null;
+  avatar_url: string | null;
   onboarding_completed: boolean;
   sites: UserSite[];
 }

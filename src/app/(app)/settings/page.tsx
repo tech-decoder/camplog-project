@@ -15,6 +15,7 @@ import { ApiKey } from "@/lib/types/ad-copies";
 import { ThemeSelector } from "@/components/ui/theme-toggle";
 import { CopyPool, LanguageCopyPools } from "@/lib/types/generation-jobs";
 import { CopyPoolEditor } from "@/components/generate/copy-pool-editor";
+import { AvatarUpload } from "@/components/settings/avatar-upload";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email: string; full_name: string } | null>(null);
@@ -360,6 +361,7 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <AvatarUpload />
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <Label htmlFor="settings-email" className="text-sm text-foreground/80">

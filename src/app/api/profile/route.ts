@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, nickname, onboarding_completed")
+    .select("id, email, full_name, nickname, onboarding_completed, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
   const supabase = createAdminClient();
   const body = await request.json();
 
-  const allowedFields = ["nickname", "full_name", "onboarding_completed"];
+  const allowedFields = ["nickname", "full_name", "onboarding_completed", "avatar_url"];
   const updates: Record<string, unknown> = {};
   for (const key of allowedFields) {
     if (key in body) {
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     .from("profiles")
     .update(updates)
     .eq("id", userId)
-    .select("id, email, full_name, nickname, onboarding_completed")
+    .select("id, email, full_name, nickname, onboarding_completed, avatar_url")
     .single();
 
   if (error) {
