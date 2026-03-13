@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/components/providers/profile-provider";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Globe, User } from "lucide-react";
+import { AvatarUpload } from "@/components/settings/avatar-upload";
 
 interface SiteEntry {
   name: string;
@@ -139,6 +140,7 @@ export default function MySitesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <AvatarUpload />
           <div>
             <Label className="text-sm font-medium">Nickname</Label>
             <Input
