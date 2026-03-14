@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Eye, EyeOff, RefreshCw, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 function generatePassword(length = 16): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -70,9 +71,13 @@ export default function SignupPage() {
   }
 
   async function handleCopyPassword() {
-    await navigator.clipboard.writeText(password);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   }
 
   useEffect(() => {

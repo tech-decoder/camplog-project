@@ -6,9 +6,9 @@ import {
   generateCustomStrategy,
   generateWinningVariantsStrategy,
   withStrategyRetry,
-} from "@/lib/claude/generate-strategy";
-import { generateVideoTakeoverStrategy } from "@/lib/claude/generate-video-strategy";
-import { generateCreativeBrief } from "@/lib/claude/creative-director";
+} from "@/lib/ai/generate-strategy";
+import { generateVideoTakeoverStrategy } from "@/lib/ai/generate-video-strategy";
+import { generateCreativeBrief } from "@/lib/ai/creative-director";
 import {
   GenerationJob,
   StylePreference,

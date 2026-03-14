@@ -1,4 +1,5 @@
-import { getClaudeClient } from "./client";
+import { getOpenAIClient } from "@/lib/openai/client";
+import { generateTextWithGeminiPro } from "@/lib/gemini/text-client";
 import {
   GenerationStrategy,
   FormatSplit,
@@ -10,7 +11,7 @@ import { AD_STYLES, getGlobalCreativeRules, getLocalizedText } from "@/lib/const
 
 // ── Copy pool helpers ────────────────────────────────────────────────────────
 
-/** Expand {brand} placeholders so validation works against Claude's output */
+/** Expand {brand} placeholders so validation works against model output */
 function expandPool(entries: string[], brandName: string): string[] {
   return entries.map((e) => e.replace(/\{brand\}/gi, brandName));
 }
@@ -104,7 +105,6 @@ function parseStrategy(text: string): GenerationStrategy {
     console.warn("[parseStrategy] Initial JSON.parse failed, attempting repair...", e instanceof Error ? e.message : e);
     const repaired = attemptJsonRepair(cleaned);
     if (repaired) return repaired;
-    // Re-throw with more context about the failure
     const preview = cleaned.slice(-200);
     throw new Error(
       `Strategy JSON parse failed (length: ${cleaned.length}). ` +
@@ -115,7 +115,7 @@ function parseStrategy(text: string): GenerationStrategy {
 }
 
 /**
- * Attempts to repair truncated JSON from Claude responses.
+ * Attempts to repair truncated JSON from model responses.
  * Common truncation scenarios:
  * - Response cut off mid-string (unclosed quote)
  * - Response cut off mid-object (unclosed braces/brackets)
@@ -123,19 +123,17 @@ function parseStrategy(text: string): GenerationStrategy {
  */
 function attemptJsonRepair(text: string): GenerationStrategy | null {
   try {
-    // Strategy 1: Try closing unclosed strings + structures progressively
     let repaired = text;
 
     // Close any unclosed string
     const quotes = (repaired.match(/"/g) || []).length;
     if (quotes % 2 !== 0) repaired += '"';
 
-    // Try closing various unclosed structures
     const closerCombinations = [
-      '}]}',      // close field + item + items array + root
-      '"}]}',     // close string + item + items array + root
+      '}]}',
+      '"}]}',
       '"}]}\n',
-      ']}'        // close items array + root
+      ']}',
     ];
 
     for (const closers of closerCombinations) {
@@ -152,7 +150,6 @@ function attemptJsonRepair(text: string): GenerationStrategy | null {
     }
 
     // Strategy 2: Find the last complete item and truncate everything after it
-    // Look for the last complete item by finding the last '"rationale"' field with a closing }
     const itemPattern = /"rationale"\s*:\s*"[^"]*"\s*\}/g;
     let lastMatch: RegExpExecArray | null = null;
     let match: RegExpExecArray | null;
@@ -192,17 +189,13 @@ export async function withStrategyRetry<T>(
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.warn(`[${label}] First attempt failed: ${msg}. Retrying...`);
-    // Single retry — the combination of 16384 max_tokens + JSON repair
-    // on the retry should succeed in nearly all cases
     return await fn();
   }
 }
 
-// ── Strategy batching for free-tier token limits ──────────────────────────────
-// Anthropic Free Tier = 4K output tokens/minute. The creative director call
-// consumes ~1200 tokens, leaving ~2800 for strategy. A full 12-item strategy
-// needs ~5100 tokens → truncation. Splitting into 2×6 keeps each batch under
-// the remaining budget.
+// ── Strategy batching ──────────────────────────────────────────────────────
+// Auto-splits large jobs into two sequential calls to keep each response
+// focused and within token limits, improving JSON completeness.
 
 const BATCH_THRESHOLD = 6;
 
@@ -218,11 +211,6 @@ function mergeDistributions(
   return merged;
 }
 
-/**
- * Auto-batches strategy generation when totalImages exceeds BATCH_THRESHOLD.
- * Splits large jobs into two sequential Claude calls so each stays within
- * the free-tier 4K output tokens/minute budget.
- */
 async function batchStrategyGeneration(
   totalImages: number,
   formatSplit: FormatSplit,
@@ -236,7 +224,6 @@ async function batchStrategyGeneration(
     return generateBatch(formatSplit, totalImages, 0);
   }
 
-  // Split into two halves
   const batch1Split: FormatSplit = {
     square: Math.ceil(formatSplit.square / 2),
     portrait: Math.ceil(formatSplit.portrait / 2),
@@ -252,10 +239,8 @@ async function batchStrategyGeneration(
     `[Strategy] Batching: ${totalImages} items → batch1=${batch1Total} batch2=${batch2Total}`
   );
 
-  // Sequential to respect rate limits (wait between calls)
   const result1 = await generateBatch(batch1Split, batch1Total, 0);
 
-  // Small delay to let the rate-limit window advance
   await new Promise((r) => setTimeout(r, 2000));
 
   const result2 = await generateBatch(
@@ -264,7 +249,6 @@ async function batchStrategyGeneration(
     result1.items.length
   );
 
-  // Merge results
   return {
     brand_analysis: result1.brand_analysis,
     style_distribution: mergeDistributions(
@@ -279,6 +263,38 @@ async function batchStrategyGeneration(
       })),
     ],
   };
+}
+
+// ── Shared batch call helper ─────────────────────────────────────────────────
+
+async function callStrategyModel(
+  systemPrompt: string,
+  userPrompt: string,
+  fallbackLabel: string
+): Promise<GenerationStrategy> {
+  // Primary: GPT-4.1
+  try {
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      max_tokens: 16384,
+      temperature: 0.8,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
+    const text = completion.choices[0].message.content ?? "";
+    return parseStrategy(text);
+  } catch (err) {
+    console.warn(
+      `[ai/strategy] GPT-4.1 failed for ${fallbackLabel}, falling back to Gemini 2.5 Pro:`,
+      err instanceof Error ? err.message : err
+    );
+    const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
+    return parseStrategy(raw);
+  }
 }
 
 export async function generateTakeoverStrategy({
@@ -300,7 +316,6 @@ export async function generateTakeoverStrategy({
     totalImages,
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
-      const claude = getClaudeClient();
       const t = getLocalizedText(language);
       const briefSection = creativeBrief
         ? `\n\n${briefToSystemSection(creativeBrief)}`
@@ -311,21 +326,16 @@ export async function generateTakeoverStrategy({
           ? `\n- Start item indices at ${startIndex} (this is batch 2 of a larger strategy)`
           : "";
 
-      const response = await claude.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 16384,
-        system: `You are an elite advertising creative director and strategist. You specialize in creating high-CTR digital ad creatives for social media platforms (Facebook, Instagram, TikTok). You understand visual composition, typography, color psychology, and what makes ads stop the scroll.
+      const systemPrompt = `You are an elite advertising creative director and strategist. You specialize in creating high-CTR digital ad creatives for social media platforms (Facebook, Instagram, TikTok). You understand visual composition, typography, color psychology, and what makes ads stop the scroll.
 
 Available ad styles:
 ${AD_STYLES_DESCRIPTION}
 
 ${getGlobalCreativeRules(language)}
 
-You must decide the optimal distribution of images across styles and formats based on what will perform best for the given brand. Think about what visual approaches work best for this specific brand and industry.${briefSection}`,
-        messages: [
-          {
-            role: "user",
-            content: `Create an ad creative strategy for the brand "${brandName}".
+You must decide the optimal distribution of images across styles and formats based on what will perform best for the given brand. Think about what visual approaches work best for this specific brand and industry.${briefSection}`;
+
+      const userPrompt = `Create an ad creative strategy for the brand "${brandName}".
 
 Requirements:
 - Generate exactly ${batchTotal} ad creatives total
@@ -343,14 +353,9 @@ FORMAT NOTES:
 - Square (1:1) creatives: Compact, tight composition. All elements centered and closely grouped.
 - Portrait (9:16) creatives: Tall vertical canvas — use generous spacing between sections. Headline zone can be 60-70% of height. Extra vertical space should be used for larger text, wider dividers, and more breathing room. DO NOT just stretch a square layout — redesign the composition for the tall format.
 
-${STRATEGY_OUTPUT_SCHEMA}`,
-          },
-        ],
-      });
+${STRATEGY_OUTPUT_SCHEMA}`;
 
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : "";
-      return parseStrategy(text);
+      return callStrategyModel(systemPrompt, userPrompt, "Takeover batch");
     }
   );
 }
@@ -373,15 +378,12 @@ export async function generateCustomStrategy({
   creativeBrief?: CreativeBrief;
 }): Promise<GenerationStrategy> {
   const totalImages = totalCount || formatSplit.square + formatSplit.portrait;
-
-  // Copy pool: when present, enforce as the highest-priority system-level constraint
   const hasCopyPool = !!(copyPool && copyPool.headlines.length > 0);
 
   const strategy = await batchStrategyGeneration(
     totalImages,
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
-      const claude = getClaudeClient();
       const t = getLocalizedText(language);
 
       const enabledStyles = stylePreferences.filter((s) => s.enabled);
@@ -424,19 +426,14 @@ If a headline/CTA is not in the list above, you MUST NOT use it. Distribute pool
           ? `\n- Start item indices at ${startIndex} (this is batch 2 of a larger strategy)`
           : "";
 
-      const response = await claude.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 16384,
-        system: `You are an elite advertising creative director. You follow the user's style preferences precisely while crafting the most effective ad creatives possible.
+      const systemPrompt = `You are an elite advertising creative director. You follow the user's style preferences precisely while crafting the most effective ad creatives possible.
 
 Available ad styles:
 ${AD_STYLES_DESCRIPTION}
 
-${getGlobalCreativeRules(language)}${briefSection}${copyPoolSystemConstraint}`,
-        messages: [
-          {
-            role: "user",
-            content: `Create an ad creative strategy for "${brandName}" following my style preferences.
+${getGlobalCreativeRules(language)}${briefSection}${copyPoolSystemConstraint}`;
+
+      const userPrompt = `Create an ad creative strategy for "${brandName}" following my style preferences.
 
 My style preferences (distribute images according to these weights):
 ${styleDistribution}
@@ -454,18 +451,13 @@ FORMAT NOTES:
 - Square (1:1) creatives: Compact, tight composition. All elements centered and closely grouped.
 - Portrait (9:16) creatives: Tall vertical canvas — use generous spacing between sections. Headline zone can be 60-70% of height. Extra vertical space should be used for larger text, wider dividers, and more breathing room. DO NOT just stretch a square layout — redesign the composition for the tall format.
 
-${STRATEGY_OUTPUT_SCHEMA}`,
-          },
-        ],
-      });
+${STRATEGY_OUTPUT_SCHEMA}`;
 
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : "";
-      return parseStrategy(text);
+      return callStrategyModel(systemPrompt, userPrompt, "Custom batch");
     }
   );
 
-  // Post-generation safety net: replace any non-pool copy (on merged result)
+  // Post-generation safety net: replace any non-pool copy
   if (hasCopyPool) {
     return validateCopyPool(strategy, copyPool!, brandName);
   }
@@ -494,41 +486,29 @@ export async function generateWinningVariantsStrategy({
     totalImages,
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
-      const claude = getClaudeClient();
       const t = getLocalizedText(language);
-
-      // Build content blocks with images for Claude Vision
-      const contentBlocks: Array<
-        | { type: "text"; text: string }
-        | { type: "image"; source: { type: "url"; url: string } }
-      > = [];
-
-      contentBlocks.push({
-        type: "text",
-        text: `I'm sharing ${referenceImageUrls.length} winning ad creative(s) for the brand "${brandName}". Analyze each image carefully:
-- What ad style is it? (graphic_text, storefront_card, uniform_style, inside_store)
-- What makes it effective? (layout, colors, typography, messaging, CTA placement)
-- What is the visual hierarchy and composition?
-- What text/copy is used?
-
-Then create ${batchTotal} variant creatives that maintain the winning elements but provide fresh variations.`,
-      });
-
-      for (const url of referenceImageUrls) {
-        contentBlocks.push({
-          type: "image",
-          source: { type: "url", url },
-        });
-      }
+      const briefSection = creativeBrief
+        ? `\n\n${briefToSystemSection(creativeBrief)}`
+        : "";
 
       const indexNote =
         startIndex > 0
           ? `\n- Start item indices at ${startIndex} (this is batch 2 of a larger strategy)`
           : "";
 
-      contentBlocks.push({
-        type: "text",
-        text: `Based on your analysis of the winning ads above, create variant ad creatives.
+      const systemPrompt = `You are an elite advertising creative director with expertise in analyzing winning ad creatives and producing high-performing variants. You have deep knowledge of visual composition, color psychology, and direct-response advertising.
+
+${getGlobalCreativeRules(language)}${briefSection}`;
+
+      const analysisIntro = `I'm sharing ${referenceImageUrls.length} winning ad creative(s) for the brand "${brandName}". Analyze each image carefully:
+- What ad style is it? (graphic_text, storefront_card, uniform_style, inside_store)
+- What makes it effective? (layout, colors, typography, messaging, CTA placement)
+- What is the visual hierarchy and composition?
+- What text/copy is used?
+
+Then create ${batchTotal} variant creatives that maintain the winning elements but provide fresh variations.`;
+
+      const analysisOutro = `Based on your analysis of the winning ads above, create variant ad creatives.
 
 Requirements:
 - Generate exactly ${batchTotal} variants total
@@ -547,30 +527,49 @@ FORMAT NOTES:
 Available ad styles for classification:
 ${AD_STYLES_DESCRIPTION}
 
-${STRATEGY_OUTPUT_SCHEMA}`,
-      });
+${STRATEGY_OUTPUT_SCHEMA}`;
 
-      const briefSection = creativeBrief
-        ? `\n\n${briefToSystemSection(creativeBrief)}`
-        : "";
+      // Primary: GPT-4.1 with vision (image_url format)
+      try {
+        const openai = getOpenAIClient();
+        type TextPart = { type: "text"; text: string };
+        type ImagePart = { type: "image_url"; image_url: { url: string } };
+        const userContent: (TextPart | ImagePart)[] = [
+          { type: "text", text: analysisIntro },
+          ...referenceImageUrls.map((url): ImagePart => ({
+            type: "image_url",
+            image_url: { url },
+          })),
+          { type: "text", text: analysisOutro },
+        ];
 
-      const response = await claude.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 16384,
-        system: `You are an elite advertising creative director with expertise in analyzing winning ad creatives and producing high-performing variants. You have deep knowledge of visual composition, color psychology, and direct-response advertising.
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4.1",
+          max_tokens: 16384,
+          temperature: 0.8,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        });
+        const text = completion.choices[0].message.content ?? "";
+        return parseStrategy(text);
+      } catch (err) {
+        console.warn(
+          "[ai/strategy] GPT-4.1 failed for Winning Variants, falling back to Gemini 2.5 Pro (text-only):",
+          err instanceof Error ? err.message : err
+        );
+        // Gemini fallback: text-only — pass image URLs as context
+        const fallbackUserPrompt = `${analysisIntro}
 
-${getGlobalCreativeRules(language)}${briefSection}`,
-        messages: [
-          {
-            role: "user",
-            content: contentBlocks,
-          },
-        ],
-      });
+Reference image URLs (analyze these winning ad creatives):
+${referenceImageUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}
 
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : "";
-      return parseStrategy(text);
+${analysisOutro}`;
+        const raw = await generateTextWithGeminiPro(systemPrompt, fallbackUserPrompt);
+        return parseStrategy(raw);
+      }
     }
   );
 }

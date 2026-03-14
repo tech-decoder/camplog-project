@@ -1,4 +1,5 @@
-import { getClaudeClient } from "./client";
+import { getOpenAIClient } from "@/lib/openai/client";
+import { generateTextWithGeminiPro } from "@/lib/gemini/text-client";
 import {
   CreativeBrief,
   CreativeMemoryItem,
@@ -23,6 +24,18 @@ const BRIEF_SCHEMA = `Return ONLY valid JSON (no markdown, no code fences):
   "avoided_patterns": "Specific visual or copy patterns to avoid based on memory (empty string if no history)"
 }`;
 
+function parseBrief(text: string): CreativeBrief {
+  const cleaned = text.replace(/```(?:json)?\n?([\s\S]*?)```/, "$1").trim();
+  try {
+    return JSON.parse(cleaned) as CreativeBrief;
+  } catch (e) {
+    throw new Error(
+      `Creative brief JSON parse failed (length: ${cleaned.length}). ` +
+      `Error: ${e instanceof Error ? e.message : String(e)}`
+    );
+  }
+}
+
 export async function generateCreativeBrief({
   brandName,
   mode,
@@ -36,8 +49,6 @@ export async function generateCreativeBrief({
   memoryItems: CreativeMemoryItem[];
   language: string;
 }): Promise<CreativeBrief> {
-  const claude = getClaudeClient();
-
   const enabledStyles = stylePreferences.filter((s) => s.enabled);
   const styleWeightSummary =
     enabledStyles.length > 0
@@ -60,10 +71,7 @@ export async function generateCreativeBrief({
       ? `CUSTOM MODE: Respect the user's style weights:\n${styleWeightSummary}`
       : "WINNING VARIANTS MODE: Analyze the visual patterns that made the reference images successful and replicate those winning elements.";
 
-  const response = await claude.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1500,
-    system: `You are an elite advertising creative director with deep expertise in Meta ad performance, direct-response creative, and brand identity systems. You brief creative teams before every campaign.
+  const systemPrompt = `You are an elite advertising creative director with deep expertise in Meta ad performance, direct-response creative, and brand identity systems. You brief creative teams before every campaign.
 
 Your job: Analyze the brand and produce a precise, actionable CreativeBrief that a strategy agent will use to generate high-performing ad creatives.
 
@@ -76,12 +84,9 @@ ${getGlobalCreativeRules(language)}
 Additional creative rules derived from top-performing hiring ad campaigns (KFC, Home Depot, Walmart):
 - Card overlays on storefront: warm cream (#F5F0E8 or similar), solid fill, never translucent
 - Logo: style-specific placement only (see style descriptions) — never floating overlays on photo ads
-- Brand color temperature: warm palettes outperform cool ones for blue-collar/QSR hiring campaigns`,
+- Brand color temperature: warm palettes outperform cool ones for blue-collar/QSR hiring campaigns`;
 
-    messages: [
-      {
-        role: "user",
-        content: `Create a creative brief for a ${language} ad campaign for the brand: "${brandName}"
+  const userPrompt = `Create a creative brief for a ${language} ad campaign for the brand: "${brandName}"
 
 Campaign context:
 - Mode: ${modeContext}
@@ -93,14 +98,30 @@ Analyze the brand name to infer:
 - Brand color palette (if well-known brand, use actual brand colors)
 - Emotional tone that resonates with the target audience
 
-${BRIEF_SCHEMA}`,
-      },
-    ],
-  });
+${BRIEF_SCHEMA}`;
 
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "{}";
+  // Primary: OpenAI GPT-4.1
+  try {
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      max_tokens: 1500,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
 
-  const cleaned = text.replace(/```(?:json)?\n?([\s\S]*?)```/, "$1").trim();
-  return JSON.parse(cleaned) as CreativeBrief;
+    const text = completion.choices[0].message.content ?? "{}";
+    return parseBrief(text);
+  } catch (err) {
+    console.warn(
+      "[ai/strategy] GPT-4.1 failed for creative brief, falling back to Gemini 2.5 Pro:",
+      err instanceof Error ? err.message : err
+    );
+    const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
+    return parseBrief(raw);
+  }
 }

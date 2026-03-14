@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserId } from "@/lib/supabase/route-helpers";
-import { getClaudeClient } from "@/lib/claude/client";
+import { getOpenAIClient } from "@/lib/openai/client";
 
 
 // GET /api/creative-memory?brand_name=X
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/creative-memory/synthesize
 // Body: { brand_name?: string }
-// Loads last 30 rated images, synthesizes learnings via Claude Haiku, inserts into creative_memory
+// Loads last 30 rated images, synthesizes learnings via GPT-4.1, inserts into creative_memory
 export async function POST(request: NextRequest) {
   const userId = await resolveUserId(request);
   if (!userId)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient();
 
   // Load last 30 rated images with their metadata
-  let ratingQuery = supabase
+  const ratingQuery = supabase
     .from("image_ratings")
     .select(
       `rating, notes, created_at,
@@ -78,10 +78,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "No ratings to synthesize", inserted: 0 });
   }
 
-  // Build summary for Claude
-  const ratingLines = ratings.map((r: any) => {
-    const img = r.generated_images;
-    const brand = img?.generation_jobs?.brand_name || "Unknown brand";
+  // Supabase returns nested relations as arrays even for one-to-one joins
+  type RatingRow = {
+    rating: number;
+    notes: string | null;
+    created_at: string;
+    generated_images: Array<{
+      id: string;
+      ad_style: string | null;
+      headline_ref: string | null;
+      job_id: string;
+      generation_jobs: Array<{ brand_name: string }>;
+    }>;
+  };
+
+  // Build summary for the AI
+  const ratingLines = (ratings as unknown as RatingRow[]).map((r) => {
+    const img = r.generated_images?.[0];
+    const brand = img?.generation_jobs?.[0]?.brand_name || "Unknown brand";
     const sentiment = r.rating === 1 ? "THUMBS UP ✅" : "THUMBS DOWN ❌";
     const style = img?.ad_style || "unknown style";
     const headline = img?.headline_ref ? `"${img.headline_ref}"` : "no headline";
@@ -93,10 +107,12 @@ export async function POST(request: NextRequest) {
     ? `Focus especially on patterns specific to the brand "${brand_name}".`
     : "Identify global cross-brand patterns.";
 
-  const claude = getClaudeClient();
-  const response = await claude.messages.create({
-    model: "claude-sonnet-4-20250514",
+  const openai = getOpenAIClient();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1",
     max_tokens: 800,
+    temperature: 0.3,
+    response_format: { type: "json_object" },
     messages: [
       {
         role: "user",
@@ -113,24 +129,24 @@ Output 3-5 concise learning bullets (each 1-2 sentences). Categorize each as one
 - composition_learning: layout, placement, proportion insights
 - brand_insight: brand-specific observations
 
-Format as JSON array (no markdown):
-[
+Return as a JSON object with a "learnings" key containing an array:
+{ "learnings": [
   { "memory_type": "style_learning", "content": "..." },
   { "memory_type": "copy_learning", "content": "..." }
-]`,
+] }`,
       },
     ],
   });
 
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "[]";
+  const text = completion.choices[0].message.content ?? "{}";
   const cleaned = text.replace(/```(?:json)?\n?([\s\S]*?)```/, "$1").trim();
 
   let learnings: { memory_type: string; content: string }[] = [];
   try {
-    learnings = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    learnings = Array.isArray(parsed) ? parsed : (parsed.learnings || []);
   } catch {
-    return NextResponse.json({ error: "Failed to parse Claude response" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
   }
 
   if (!learnings.length) {

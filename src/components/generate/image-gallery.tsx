@@ -89,9 +89,13 @@ export function ImageGallery({
   const [deleting, setDeleting] = useState(false);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function handleCopyPrompt(prompt: string) {
-    navigator.clipboard.writeText(prompt);
-    toast.success("Prompt copied to clipboard");
+  async function handleCopyPrompt(prompt: string) {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success("Prompt copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   }
 
   function toggleSelect(id: string) {

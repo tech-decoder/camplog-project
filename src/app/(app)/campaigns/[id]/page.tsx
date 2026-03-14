@@ -273,8 +273,13 @@ function CampaignDetailContent() {
     }
   }
 
-  function handleCopy(text: string) {
-    navigator.clipboard.writeText(text);
+  async function handleCopy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
     toast.success("Copied to clipboard");
   }
 

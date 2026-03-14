@@ -1,4 +1,5 @@
-import { getClaudeClient } from "./client";
+import { getOpenAIClient } from "@/lib/openai/client";
+import { generateTextWithGeminiFlash } from "@/lib/gemini/text-client";
 import { AdCopyFieldType } from "@/lib/types/ad-copies";
 
 const FIELD_INSTRUCTIONS: Record<AdCopyFieldType, string> = {
@@ -115,6 +116,27 @@ Tu copy debe:
 
 Escribes copy rico en keywords que coincide con la intención de búsqueda y genera clics de curiosidad hacia páginas de guías. Todo el contenido DEBE ser en español neutro latinoamericano.`;
 
+function parseVariants(text: string, count: number): string[] {
+  const cleaned = text.replace(/```(?:json)?\n?([\s\S]*?)```/, "$1").trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed.variants && Array.isArray(parsed.variants)) {
+      return parsed.variants.map(String).slice(0, count);
+    }
+    if (Array.isArray(parsed)) {
+      return parsed.map(String).slice(0, count);
+    }
+  } catch {
+    // Fall back to line-by-line extraction
+    const lines = cleaned
+      .split("\n")
+      .map((l) => l.replace(/^[\d]+\.\s*/, "").replace(/^["']|["']$/g, "").trim())
+      .filter((l) => l.length > 0);
+    return lines.slice(0, count);
+  }
+  return [];
+}
+
 export async function generateAdCopy({
   campaignName,
   fieldType,
@@ -128,8 +150,6 @@ export async function generateAdCopy({
   count?: number;
   language?: string;
 }): Promise<string[]> {
-  const claude = getClaudeClient();
-
   const isSpanish = language.toLowerCase() === "spanish" || language.toLowerCase() === "español";
   const instructions = isSpanish
     ? SPANISH_FIELD_INSTRUCTIONS[fieldType]
@@ -141,45 +161,38 @@ export async function generateAdCopy({
       ? `\n\nExisting variants (do NOT repeat these, generate completely new ones):\n${existingVariants.map((v, i) => `${i + 1}. ${v}`).join("\n")}`
       : "";
 
-  const response = await claude.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: [
-      {
-        role: "user",
-        content: `Campaign name: "${campaignName}"
+  const userPrompt = `Campaign name: "${campaignName}"
 
 ${instructions}
 
 Generate exactly ${count} new unique variants.${existingContext}
 
-Return ONLY a JSON array of strings, no other text. Example: ["variant 1", "variant 2", "variant 3"]`,
-      },
-    ],
-  });
+Return ONLY a JSON object with a "variants" key containing an array of strings. Example: { "variants": ["variant 1", "variant 2", "variant 3"] }`;
 
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "";
-
-  // Strip markdown code fences if present
-  const cleaned = text
-    .replace(/```(?:json)?\n?([\s\S]*?)```/, "$1")
-    .trim();
-
+  // Primary: OpenAI GPT-4.1
   try {
-    const variants = JSON.parse(cleaned);
-    if (Array.isArray(variants)) {
-      return variants.map(String).slice(0, count);
-    }
-  } catch {
-    // If JSON parsing fails, try to extract strings line by line
-    const lines = cleaned
-      .split("\n")
-      .map((l) => l.replace(/^[\d]+\.\s*/, "").replace(/^["']|["']$/g, "").trim())
-      .filter((l) => l.length > 0);
-    return lines.slice(0, count);
-  }
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      max_tokens: 2048,
+      temperature: 0.8,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
 
-  return [];
+    const text = completion.choices[0].message.content ?? "{}";
+    const variants = parseVariants(text, count);
+    if (variants.length > 0) return variants;
+    throw new Error("No variants parsed from GPT-4.1 response");
+  } catch (err) {
+    console.warn(
+      "[ai/copy] GPT-4.1 failed, falling back to Gemini 2.5 Flash:",
+      err instanceof Error ? err.message : err
+    );
+    const raw = await generateTextWithGeminiFlash(systemPrompt, userPrompt);
+    return parseVariants(raw, count);
+  }
 }

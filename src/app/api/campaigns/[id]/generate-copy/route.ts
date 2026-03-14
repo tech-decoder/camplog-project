@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveUserId } from "@/lib/supabase/route-helpers";
-import { generateAdCopy } from "@/lib/claude/generate-ad-copy";
+import { generateAdCopy } from "@/lib/ai/generate-ad-copy";
 import { AdCopyFieldType } from "@/lib/types/ad-copies";
 
 
@@ -118,7 +118,7 @@ export async function POST(
     return NextResponse.json(
       {
         error: isAuthError
-          ? "Claude API key is invalid or expired. Please check your CLAUDE_API_KEY."
+          ? "AI API key is invalid or expired. Please check your OPENAI_API_KEY_NEW."
           : "Failed to generate ad copy. Please try again.",
       },
       { status: isAuthError ? 402 : 500 }

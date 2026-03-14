@@ -1,4 +1,5 @@
-import { getClaudeClient } from "./client";
+import { getOpenAIClient } from "@/lib/openai/client";
+import { generateTextWithGeminiPro } from "@/lib/gemini/text-client";
 import {
   VideoGenerationStrategy,
   VideoFormatSplit,
@@ -50,7 +51,6 @@ function parseVideoStrategy(text: string): VideoGenerationStrategy {
   try {
     return JSON.parse(cleaned);
   } catch (e) {
-    // Try closing unclosed structures
     let repaired = cleaned;
     const quotes = (repaired.match(/"/g) || []).length;
     if (quotes % 2 !== 0) repaired += '"';
@@ -89,16 +89,11 @@ export async function generateVideoTakeoverStrategy({
   creativeBrief?: CreativeBrief;
 }): Promise<VideoGenerationStrategy> {
   const totalVideos = totalCount || formatSplit.landscape + formatSplit.portrait;
-  const claude = getClaudeClient();
-
   const briefSection = creativeBrief
     ? `\n\n${briefToSystemSection(creativeBrief)}`
     : "";
 
-  const response = await claude.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 8192,
-    system: `You are an elite video advertising creative director. You specialize in creating high-performing short-form video ad concepts for social media platforms (Facebook, Instagram, TikTok, YouTube Shorts).
+  const systemPrompt = `You are an elite video advertising creative director. You specialize in creating high-performing short-form video ad concepts for social media platforms (Facebook, Instagram, TikTok, YouTube Shorts).
 
 You understand cinematic language, camera movements, lighting, sound design, and what makes video ads stop the scroll and drive action.
 
@@ -112,11 +107,9 @@ IMPORTANT CONSTRAINTS:
 - Focus on products, environments, food, objects, and atmospheric scenes
 - Brand identity comes from products, store environments, colors, and signage — NOT from text overlays or logos
 - Each video is ${duration} seconds long at 720p
-- Veo 3 generates synchronized audio automatically — describe the audio you want${briefSection}`,
-    messages: [
-      {
-        role: "user",
-        content: `Create a video ad creative strategy for the brand "${brandName}".
+- Veo 3 generates synchronized audio automatically — describe the audio you want${briefSection}`;
+
+  const userPrompt = `Create a video ad creative strategy for the brand "${brandName}".
 
 Requirements:
 - Generate exactly ${totalVideos} video concepts total
@@ -131,12 +124,29 @@ Requirements:
 - Keep prompt_direction under 150 words
 - For 9:16 portrait videos: favor vertical compositions, tilt movements, and close-ups. Avoid wide pans.
 
-${VIDEO_STRATEGY_OUTPUT_SCHEMA}`,
-      },
-    ],
-  });
+${VIDEO_STRATEGY_OUTPUT_SCHEMA}`;
 
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "";
-  return parseVideoStrategy(text);
+  // Primary: GPT-4.1
+  try {
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      max_tokens: 8192,
+      temperature: 0.8,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
+    const text = completion.choices[0].message.content ?? "";
+    return parseVideoStrategy(text);
+  } catch (err) {
+    console.warn(
+      "[ai/strategy] GPT-4.1 failed for video strategy, falling back to Gemini 2.5 Pro:",
+      err instanceof Error ? err.message : err
+    );
+    const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
+    return parseVideoStrategy(raw);
+  }
 }

@@ -69,9 +69,13 @@ export function VideoGallery({
   // Hover-play refs
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
-  function handleCopyPrompt(prompt: string) {
-    navigator.clipboard.writeText(prompt);
-    toast.success("Prompt copied to clipboard");
+  async function handleCopyPrompt(prompt: string) {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success("Prompt copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   }
 
   function toggleSelect(id: string) {

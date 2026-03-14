@@ -650,8 +650,9 @@ function SettingsContent() {
                   variant="outline"
                   className="flex-shrink-0"
                   onClick={() => {
-                    navigator.clipboard.writeText(newPlaintextKey);
-                    toast.success("Copied to clipboard");
+                    navigator.clipboard.writeText(newPlaintextKey)
+                      .then(() => toast.success("Copied to clipboard"))
+                      .catch(() => toast.error("Failed to copy to clipboard"));
                   }}
                 >
                   <Copy className="h-4 w-4" />
