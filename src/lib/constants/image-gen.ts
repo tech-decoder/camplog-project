@@ -42,6 +42,22 @@ export const LOCALIZED_TEXT: Record<string, {
     disclaimer_example: "Apenas guia. Não é candidatura oficial.",
     not_affiliated: "Não afiliado com {brand}.",
   },
+  Swedish: {
+    badge: "GUIDE",
+    open_guide_cta: "ÖPPNA GUIDEN",
+    read_more_cta: "LÄS MER",
+    step_by_step: "Steg för Steg",
+    disclaimer_example: "Endast guide. Inte en officiell ansökan.",
+    not_affiliated: "Inte associerat med {brand}.",
+  },
+  Japanese: {
+    badge: "ガイド",
+    open_guide_cta: "ガイドを開く",
+    read_more_cta: "続きを読む",
+    step_by_step: "ステップバイステップ",
+    disclaimer_example: "ガイドのみ。公式の応募ではありません。",
+    not_affiliated: "{brand}とは提携していません。",
+  },
 };
 
 /** Get localized text for a language, falling back to English */
@@ -260,6 +276,7 @@ export const LANGUAGE_OPTIONS = [
   "English",
   "Spanish",
   "French",
+  "Swedish",
   "Portuguese",
   "German",
   "Italian",

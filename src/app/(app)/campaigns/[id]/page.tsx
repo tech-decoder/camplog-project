@@ -101,7 +101,8 @@ function CampaignDetailContent() {
     description: false,
   });
 
-  const [copyLanguage, setCopyLanguage] = useState<"English" | "Spanish">("English");
+  type CopyLanguage = "English" | "Spanish" | "French" | "Swedish" | "Japanese";
+  const [copyLanguage, setCopyLanguage] = useState<CopyLanguage>("English");
 
   const fetchCampaign = useCallback(async () => {
     try {
@@ -517,18 +518,19 @@ function CampaignDetailContent() {
             <h2 className="text-sm font-semibold">Ad Copy Variants</h2>
           </div>
           <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-xs">
-            <button
-              className={`px-2 py-1 rounded-md transition-colors ${copyLanguage === "English" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setCopyLanguage("English")}
-            >
-              EN
-            </button>
-            <button
-              className={`px-2 py-1 rounded-md transition-colors ${copyLanguage === "Spanish" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setCopyLanguage("Spanish")}
-            >
-              ES
-            </button>
+            {(["English", "Spanish", "French", "Swedish", "Japanese"] as const).map((lang) => (
+              <button
+                key={lang}
+                className={`px-2 py-1 rounded-md transition-colors ${copyLanguage === lang ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setCopyLanguage(lang)}
+              >
+                {lang === "English" ? "EN"
+                  : lang === "Spanish" ? "ES"
+                  : lang === "French" ? "FR"
+                  : lang === "Swedish" ? "SV"
+                  : "JA"}
+              </button>
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
