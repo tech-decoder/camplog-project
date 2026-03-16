@@ -55,9 +55,16 @@ function SettingsContent() {
   const [newPlaintextKey, setNewPlaintextKey] = useState<string | null>(null);
 
   // Copy Pool
+  type CopyPoolLanguage = "English" | "Spanish" | "French" | "Swedish" | "Japanese";
   const emptyCopyPool: CopyPool = { headlines: [], subheadlines: [], ctas: [], disclaimers: [] };
-  const [copyPools, setCopyPools] = useState<LanguageCopyPools>({ English: { ...emptyCopyPool }, Spanish: { ...emptyCopyPool } });
-  const [copyPoolLanguage, setCopyPoolLanguage] = useState<"English" | "Spanish">("English");
+  const [copyPools, setCopyPools] = useState<LanguageCopyPools>({
+    English: { ...emptyCopyPool },
+    Spanish: { ...emptyCopyPool },
+    French: { ...emptyCopyPool },
+    Swedish: { ...emptyCopyPool },
+    Japanese: { ...emptyCopyPool },
+  });
+  const [copyPoolLanguage, setCopyPoolLanguage] = useState<CopyPoolLanguage>("English");
   const [savingPool, setSavingPool] = useState(false);
   const [seedingPool, setSeedingPool] = useState(false);
 
@@ -135,6 +142,117 @@ function SettingsContent() {
       "No afiliado con {brand}.",
       "Guía informativa solamente.",
       "Este sitio no es {brand}.",
+    ],
+  };
+
+  const FRENCH_SEED: CopyPool = {
+    headlines: [
+      "EMPLOIS CHEZ {brand}",
+      "COMMENT POSTULER CHEZ {brand}",
+      "{brand} RECRUTE — POSTULEZ",
+      "OFFRES D'EMPLOI {brand}",
+      "REJOIGNEZ {brand}",
+      "GUIDE DE CANDIDATURE {brand}",
+      "POSTES DISPONIBLES CHEZ {brand}",
+      "{brand} EMBAUCHE MAINTENANT",
+    ],
+    subheadlines: [
+      "Guide étape par étape",
+      "Commencez cette semaine",
+      "Sans CV obligatoire",
+      "Postulez en quelques minutes",
+      "Temps plein • Temps partiel disponible",
+      "Repas gratuits • Horaires flexibles",
+      "Tout ce que vous devez savoir",
+      "Processus de candidature simplifié",
+    ],
+    ctas: [
+      "VOIR LES OFFRES",
+      "POSTULER MAINTENANT",
+      "OUVRIR LE GUIDE",
+      "COMMENCER",
+      "VOIR LES POSTES",
+      "LIRE LE GUIDE",
+    ],
+    disclaimers: [
+      "Guide uniquement. Pas une candidature officielle.",
+      "Non affilié à {brand}.",
+      "Guide informatif uniquement.",
+      "Ce site n'est pas {brand}.",
+    ],
+  };
+
+  const SWEDISH_SEED: CopyPool = {
+    headlines: [
+      "JOBB HOS {brand}",
+      "HUR DU ANSÖKER TILL {brand}",
+      "{brand} ANSTÄLLER NU",
+      "LEDIGA JOBB PÅ {brand}",
+      "BÖRJA JOBBA HOS {brand}",
+      "ANSÖKNINGSGUIDE {brand}",
+      "VAKANTA TJÄNSTER HOS {brand}",
+      "{brand} SÖKER PERSONAL",
+    ],
+    subheadlines: [
+      "Steg för steg guide",
+      "Börja jobba denna vecka",
+      "Inget CV krävs",
+      "Ansök på några minuter",
+      "Heltid • Deltid tillgängligt",
+      "Flexibla arbetstider • Veckopeng",
+      "Allt du behöver veta",
+      "Enkel ansökningsprocess",
+    ],
+    ctas: [
+      "SE JOBB",
+      "ANSÖK NU",
+      "ÖPPNA GUIDEN",
+      "KOM IGÅNG",
+      "LÄS GUIDEN",
+      "SE LEDIGA TJÄNSTER",
+    ],
+    disclaimers: [
+      "Endast guide. Inte en officiell ansökan.",
+      "Inte associerat med {brand}.",
+      "Informationsguide endast.",
+      "Denna webbplats är inte {brand}.",
+    ],
+  };
+
+  const JAPANESE_SEED: CopyPool = {
+    headlines: [
+      "{brand}の求人情報",
+      "{brand}に応募する方法",
+      "{brand}が採用中です",
+      "{brand}の採用ガイド",
+      "{brand}で働くには",
+      "今すぐ{brand}に応募",
+      "{brand}求人：完全ガイド",
+      "{brand}の採用情報",
+    ],
+    subheadlines: [
+      "ステップバイステップガイド",
+      "今週から働けます",
+      "履歴書不要",
+      "数分で応募できます",
+      "フルタイム・パートタイム募集中",
+      "必要な情報をすべて紹介",
+      "応募方法を詳しく解説",
+      "採用条件と給与を確認",
+    ],
+    ctas: [
+      "求人を見る",
+      "今すぐ応募",
+      "ガイドを開く",
+      "始める",
+      "詳しく見る",
+      "ガイドを読む",
+    ],
+    disclaimers: [
+      "ガイドのみ。公式の応募ではありません。",
+      "{brand}とは提携していません。",
+      "情報ガイドのみ。",
+      "このサイトは{brand}ではありません。",
     ],
   };
 
@@ -242,7 +360,7 @@ function SettingsContent() {
     }
   }
 
-  async function handleSeedCopyPool(seed: CopyPool, targetLanguage: "English" | "Spanish") {
+  async function handleSeedCopyPool(seed: CopyPool, targetLanguage: CopyPoolLanguage) {
     setSeedingPool(true);
     try {
       const currentPool = copyPools[targetLanguage] || emptyCopyPool;
@@ -790,19 +908,16 @@ function SettingsContent() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-xs w-fit">
-            <button
-              className={`px-3 py-1.5 rounded-md transition-colors font-medium ${copyPoolLanguage === "English" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setCopyPoolLanguage("English")}
-            >
-              English
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-md transition-colors font-medium ${copyPoolLanguage === "Spanish" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setCopyPoolLanguage("Spanish")}
-            >
-              Spanish
-            </button>
+          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-xs w-fit flex-wrap">
+            {(["English", "Spanish", "French", "Swedish", "Japanese"] as const).map((lang) => (
+              <button
+                key={lang}
+                className={`px-3 py-1.5 rounded-md transition-colors font-medium ${copyPoolLanguage === lang ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setCopyPoolLanguage(lang)}
+              >
+                {lang}
+              </button>
+            ))}
           </div>
           <CopyPoolEditor value={copyPool} onChange={setCopyPool} />
           <div className="flex items-center gap-2 flex-wrap">
@@ -813,7 +928,16 @@ function SettingsContent() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleSeedCopyPool(copyPoolLanguage === "English" ? ENGLISH_SEED : SPANISH_SEED, copyPoolLanguage)}
+              onClick={() => {
+                const seedMap: Record<CopyPoolLanguage, CopyPool> = {
+                  English: ENGLISH_SEED,
+                  Spanish: SPANISH_SEED,
+                  French: FRENCH_SEED,
+                  Swedish: SWEDISH_SEED,
+                  Japanese: JAPANESE_SEED,
+                };
+                handleSeedCopyPool(seedMap[copyPoolLanguage], copyPoolLanguage);
+              }}
               disabled={seedingPool}
             >
               {seedingPool ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sprout className="h-3.5 w-3.5 mr-1.5" />}
