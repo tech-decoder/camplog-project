@@ -87,7 +87,7 @@ export async function generateVideoTakeoverStrategy({
   language: string;
   duration: VideoDuration;
   creativeBrief?: CreativeBrief;
-}): Promise<VideoGenerationStrategy> {
+}): Promise<{ strategy: VideoGenerationStrategy; usedFallback: boolean }> {
   const totalVideos = totalCount || formatSplit.landscape + formatSplit.portrait;
   const briefSection = creativeBrief
     ? `\n\n${briefToSystemSection(creativeBrief)}`
@@ -140,13 +140,13 @@ ${VIDEO_STRATEGY_OUTPUT_SCHEMA}`;
       ],
     });
     const text = completion.choices[0].message.content ?? "";
-    return parseVideoStrategy(text);
+    return { strategy: parseVideoStrategy(text), usedFallback: false };
   } catch (err) {
     console.warn(
       "[ai/strategy] GPT-4.1 failed for video strategy, falling back to Gemini 2.5 Pro:",
       err instanceof Error ? err.message : err
     );
     const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
-    return parseVideoStrategy(raw);
+    return { strategy: parseVideoStrategy(raw), usedFallback: true };
   }
 }

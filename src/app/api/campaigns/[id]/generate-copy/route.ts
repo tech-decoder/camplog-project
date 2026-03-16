@@ -118,7 +118,7 @@ export async function POST(
     return NextResponse.json(
       {
         error: isAuthError
-          ? "AI API key is invalid or expired. Please check your OPENAI_API_KEY_NEW."
+          ? "AI API key is invalid or expired. Please check your OPENAI_API_KEY."
           : "Failed to generate ad copy. Please try again.",
       },
       { status: isAuthError ? 402 : 500 }

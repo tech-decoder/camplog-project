@@ -57,6 +57,7 @@ export async function POST(
 
   try {
     let strategy;
+    let usedFallback = false;
     const formatSplit = typedJob.format_split || { square: 6, portrait: 6 };
 
     // ── Step 1: Load creative memory for this brand ──────────────────────────
@@ -103,13 +104,14 @@ export async function POST(
     ];
 
     // ── Step 3: Run Creative Director agent ──────────────────────────────────
-    const creativeBrief = await generateCreativeBrief({
+    const { brief: creativeBrief, usedFallback: briefFallback } = await generateCreativeBrief({
       brandName: typedJob.brand_name,
       mode: typedJob.mode,
       stylePreferences: styles,
       memoryItems,
       language: typedJob.language,
     });
+    usedFallback = usedFallback || briefFallback;
 
     // ── Step 4: Resolve language-aware copy pool ────────────────────────────
     const languagePool = stylePrefs?.copy_pools?.[typedJob.language];
@@ -125,7 +127,7 @@ export async function POST(
         : { landscape: 3, portrait: 3 };
       const videoDuration = (typedJob.video_duration || 4) as VideoDuration;
 
-      strategy = await withStrategyRetry(
+      const { strategy: videoStrategy, usedFallback: videoFallback } = await withStrategyRetry(
         () => generateVideoTakeoverStrategy({
           brandName: typedJob.brand_name,
           totalCount: typedJob.total_count || undefined,
@@ -136,6 +138,8 @@ export async function POST(
         }),
         "Video Takeover strategy"
       );
+      strategy = videoStrategy;
+      usedFallback = usedFallback || videoFallback;
 
       // Save strategy + brief to job
       await supabase
@@ -148,11 +152,11 @@ export async function POST(
         })
         .eq("id", jobId);
 
-      return NextResponse.json({ strategy });
+      return NextResponse.json({ strategy, used_fallback: usedFallback });
     }
 
     if (typedJob.mode === "ai_takeover") {
-      strategy = await withStrategyRetry(
+      const { strategy: s, usedFallback: sf } = await withStrategyRetry(
         () => generateTakeoverStrategy({
           brandName: typedJob.brand_name,
           totalCount: typedJob.total_count || undefined,
@@ -162,8 +166,10 @@ export async function POST(
         }),
         "AI Takeover strategy"
       );
+      strategy = s;
+      usedFallback = usedFallback || sf;
     } else if (typedJob.mode === "custom") {
-      strategy = await withStrategyRetry(
+      const { strategy: s, usedFallback: sf } = await withStrategyRetry(
         () => generateCustomStrategy({
           brandName: typedJob.brand_name,
           totalCount: typedJob.total_count || undefined,
@@ -175,6 +181,8 @@ export async function POST(
         }),
         "Custom strategy"
       );
+      strategy = s;
+      usedFallback = usedFallback || sf;
     } else if (typedJob.mode === "winning_variants") {
       if (!typedJob.reference_images?.length) {
         await supabase
@@ -187,7 +195,7 @@ export async function POST(
         );
       }
 
-      strategy = await withStrategyRetry(
+      const { strategy: s, usedFallback: sf } = await withStrategyRetry(
         () => generateWinningVariantsStrategy({
           brandName: typedJob.brand_name,
           totalCount: typedJob.total_count || undefined,
@@ -198,6 +206,8 @@ export async function POST(
         }),
         "Winning Variants strategy"
       );
+      strategy = s;
+      usedFallback = usedFallback || sf;
     } else {
       return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
     }
@@ -213,7 +223,7 @@ export async function POST(
       })
       .eq("id", jobId);
 
-    return NextResponse.json({ strategy });
+    return NextResponse.json({ strategy, used_fallback: usedFallback });
   } catch (err) {
     const errorDetail = err instanceof Error
       ? `${err.name}: ${err.message}`

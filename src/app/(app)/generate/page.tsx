@@ -242,8 +242,9 @@ function GeneratePageContent() {
         return;
       }
 
-      const { strategy: newStrategy } = await stratRes.json();
+      const { strategy: newStrategy, used_fallback } = await stratRes.json();
       setStrategy(newStrategy);
+      if (used_fallback) toast.warning("OpenAI quota exceeded — strategy generated with Gemini 2.5 Pro. Quality is unaffected.", { duration: 6000 });
       setStep("strategy");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -262,8 +263,9 @@ function GeneratePageContent() {
         method: "POST",
       });
       if (res.ok) {
-        const { strategy: newStrategy } = await res.json();
+        const { strategy: newStrategy, used_fallback } = await res.json();
         setStrategy(newStrategy);
+        if (used_fallback) toast.warning("OpenAI quota exceeded — strategy regenerated with Gemini 2.5 Pro. Quality is unaffected.", { duration: 6000 });
         toast.success("Strategy regenerated");
       } else {
         const err = await res.json();
@@ -318,8 +320,9 @@ function GeneratePageContent() {
         return;
       }
 
-      const { strategy: newStrategy } = await stratRes.json();
+      const { strategy: newStrategy, used_fallback } = await stratRes.json();
       setStrategy(newStrategy);
+      if (used_fallback) toast.warning("OpenAI quota exceeded — strategy generated with Gemini 2.5 Pro. Quality is unaffected.", { duration: 6000 });
       setStep("strategy");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -370,8 +373,9 @@ function GeneratePageContent() {
         return;
       }
 
-      const { strategy: newStrategy } = await stratRes.json();
+      const { strategy: newStrategy, used_fallback } = await stratRes.json();
       setStrategy(newStrategy);
+      if (used_fallback) toast.warning("OpenAI quota exceeded — strategy generated with Gemini 2.5 Pro. Quality is unaffected.", { duration: 6000 });
       setStep("strategy");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -427,8 +431,9 @@ function GeneratePageContent() {
         return;
       }
 
-      const { strategy: newStrategy } = await stratRes.json();
+      const { strategy: newStrategy, used_fallback } = await stratRes.json();
       setStrategy(newStrategy);
+      if (used_fallback) toast.warning("OpenAI quota exceeded — strategy generated with Gemini 2.5 Pro. Quality is unaffected.", { duration: 6000 });
       setStep("strategy");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";

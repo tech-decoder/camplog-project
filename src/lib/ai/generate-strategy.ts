@@ -218,8 +218,8 @@ async function batchStrategyGeneration(
     batchSplit: FormatSplit,
     batchTotal: number,
     startIndex: number
-  ) => Promise<GenerationStrategy>
-): Promise<GenerationStrategy> {
+  ) => Promise<{ strategy: GenerationStrategy; usedFallback: boolean }>
+): Promise<{ strategy: GenerationStrategy; usedFallback: boolean }> {
   if (totalImages <= BATCH_THRESHOLD) {
     return generateBatch(formatSplit, totalImages, 0);
   }
@@ -239,29 +239,32 @@ async function batchStrategyGeneration(
     `[Strategy] Batching: ${totalImages} items → batch1=${batch1Total} batch2=${batch2Total}`
   );
 
-  const result1 = await generateBatch(batch1Split, batch1Total, 0);
+  const { strategy: result1, usedFallback: fallback1 } = await generateBatch(batch1Split, batch1Total, 0);
 
   await new Promise((r) => setTimeout(r, 2000));
 
-  const result2 = await generateBatch(
+  const { strategy: result2, usedFallback: fallback2 } = await generateBatch(
     batch2Split,
     batch2Total,
     result1.items.length
   );
 
   return {
-    brand_analysis: result1.brand_analysis,
-    style_distribution: mergeDistributions(
-      result1.style_distribution,
-      result2.style_distribution
-    ),
-    items: [
-      ...result1.items,
-      ...result2.items.map((item, i) => ({
-        ...item,
-        index: result1.items.length + i,
-      })),
-    ],
+    strategy: {
+      brand_analysis: result1.brand_analysis,
+      style_distribution: mergeDistributions(
+        result1.style_distribution,
+        result2.style_distribution
+      ),
+      items: [
+        ...result1.items,
+        ...result2.items.map((item, i) => ({
+          ...item,
+          index: result1.items.length + i,
+        })),
+      ],
+    },
+    usedFallback: fallback1 || fallback2,
   };
 }
 
@@ -271,7 +274,7 @@ async function callStrategyModel(
   systemPrompt: string,
   userPrompt: string,
   fallbackLabel: string
-): Promise<GenerationStrategy> {
+): Promise<{ strategy: GenerationStrategy; usedFallback: boolean }> {
   // Primary: GPT-4.1
   try {
     const openai = getOpenAIClient();
@@ -286,14 +289,14 @@ async function callStrategyModel(
       ],
     });
     const text = completion.choices[0].message.content ?? "";
-    return parseStrategy(text);
+    return { strategy: parseStrategy(text), usedFallback: false };
   } catch (err) {
     console.warn(
       `[ai/strategy] GPT-4.1 failed for ${fallbackLabel}, falling back to Gemini 2.5 Pro:`,
       err instanceof Error ? err.message : err
     );
     const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
-    return parseStrategy(raw);
+    return { strategy: parseStrategy(raw), usedFallback: true };
   }
 }
 
@@ -309,7 +312,7 @@ export async function generateTakeoverStrategy({
   formatSplit: FormatSplit;
   language: string;
   creativeBrief?: CreativeBrief;
-}): Promise<GenerationStrategy> {
+}): Promise<{ strategy: GenerationStrategy; usedFallback: boolean }> {
   const totalImages = totalCount || formatSplit.square + formatSplit.portrait;
 
   return batchStrategyGeneration(
@@ -376,11 +379,11 @@ export async function generateCustomStrategy({
   stylePreferences: StylePreferenceEntry[];
   copyPool?: CopyPool;
   creativeBrief?: CreativeBrief;
-}): Promise<GenerationStrategy> {
+}): Promise<{ strategy: GenerationStrategy; usedFallback: boolean }> {
   const totalImages = totalCount || formatSplit.square + formatSplit.portrait;
   const hasCopyPool = !!(copyPool && copyPool.headlines.length > 0);
 
-  const strategy = await batchStrategyGeneration(
+  const { strategy, usedFallback } = await batchStrategyGeneration(
     totalImages,
     formatSplit,
     async (batchSplit, batchTotal, startIndex) => {
@@ -459,10 +462,10 @@ ${STRATEGY_OUTPUT_SCHEMA}`;
 
   // Post-generation safety net: replace any non-pool copy
   if (hasCopyPool) {
-    return validateCopyPool(strategy, copyPool!, brandName);
+    return { strategy: validateCopyPool(strategy, copyPool!, brandName), usedFallback };
   }
 
-  return strategy;
+  return { strategy, usedFallback };
 }
 
 export async function generateWinningVariantsStrategy({
@@ -479,7 +482,7 @@ export async function generateWinningVariantsStrategy({
   language: string;
   referenceImageUrls: string[];
   creativeBrief?: CreativeBrief;
-}): Promise<GenerationStrategy> {
+}): Promise<{ strategy: GenerationStrategy; usedFallback: boolean }> {
   const totalImages = totalCount || formatSplit.square + formatSplit.portrait;
 
   return batchStrategyGeneration(
@@ -554,7 +557,7 @@ ${STRATEGY_OUTPUT_SCHEMA}`;
           ],
         });
         const text = completion.choices[0].message.content ?? "";
-        return parseStrategy(text);
+        return { strategy: parseStrategy(text), usedFallback: false };
       } catch (err) {
         console.warn(
           "[ai/strategy] GPT-4.1 failed for Winning Variants, falling back to Gemini 2.5 Pro (text-only):",
@@ -568,7 +571,7 @@ ${referenceImageUrls.map((url, i) => `${i + 1}. ${url}`).join("\n")}
 
 ${analysisOutro}`;
         const raw = await generateTextWithGeminiPro(systemPrompt, fallbackUserPrompt);
-        return parseStrategy(raw);
+        return { strategy: parseStrategy(raw), usedFallback: true };
       }
     }
   );

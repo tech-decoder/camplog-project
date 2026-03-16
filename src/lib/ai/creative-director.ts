@@ -48,7 +48,7 @@ export async function generateCreativeBrief({
   stylePreferences: StylePreferenceEntry[];
   memoryItems: CreativeMemoryItem[];
   language: string;
-}): Promise<CreativeBrief> {
+}): Promise<{ brief: CreativeBrief; usedFallback: boolean }> {
   const enabledStyles = stylePreferences.filter((s) => s.enabled);
   const styleWeightSummary =
     enabledStyles.length > 0
@@ -115,13 +115,13 @@ ${BRIEF_SCHEMA}`;
     });
 
     const text = completion.choices[0].message.content ?? "{}";
-    return parseBrief(text);
+    return { brief: parseBrief(text), usedFallback: false };
   } catch (err) {
     console.warn(
       "[ai/strategy] GPT-4.1 failed for creative brief, falling back to Gemini 2.5 Pro:",
       err instanceof Error ? err.message : err
     );
     const raw = await generateTextWithGeminiPro(systemPrompt, userPrompt);
-    return parseBrief(raw);
+    return { brief: parseBrief(raw), usedFallback: true };
   }
 }

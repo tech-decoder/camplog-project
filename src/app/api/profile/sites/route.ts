@@ -36,11 +36,19 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "sites must be an array" }, { status: 400 });
   }
 
-  // Replace all: delete existing, insert new
-  await supabase.from("user_sites").delete().eq("user_id", userId);
+  // Replace all: delete existing, then insert new
+  const { error: deleteError } = await supabase
+    .from("user_sites")
+    .delete()
+    .eq("user_id", userId);
+
+  if (deleteError) {
+    console.error("[sites] DELETE failed:", deleteError);
+    return NextResponse.json({ error: "Failed to clear existing sites" }, { status: 500 });
+  }
 
   if (sites.length > 0) {
-    await supabase.from("user_sites").insert(
+    const { error: insertError } = await supabase.from("user_sites").insert(
       sites.map((s) => ({
         user_id: userId,
         site_abbreviation: s.abbreviation.slice(0, 10),
@@ -48,6 +56,11 @@ export async function PUT(request: NextRequest) {
         site_url: s.url || null,
       }))
     );
+
+    if (insertError) {
+      console.error("[sites] INSERT failed:", insertError);
+      return NextResponse.json({ error: "Failed to save sites" }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ success: true });
