@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageShell } from "@/components/layout/page-shell";
@@ -8,7 +8,7 @@ import { GradientPageHeader } from "@/components/layout/gradient-page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/components/providers/profile-provider";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Globe, User } from "lucide-react";
+import { Loader2, Plus, X, Globe, User, Pencil } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 
@@ -23,8 +23,12 @@ export default function MySitesPage() {
   const [sites, setSites] = useState<SiteEntry[]>([]);
   const [newSiteName, setNewSiteName] = useState("");
   const [newSiteUrl, setNewSiteUrl] = useState("");
+  const [newSiteAbbr, setNewSiteAbbr] = useState("");
+  const [abbrManuallyEdited, setAbbrManuallyEdited] = useState(false);
+  const [editingAbbrIndex, setEditingAbbrIndex] = useState<number | null>(null);
   const [savingSites, setSavingSites] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const abbrInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile && !initialized) {
@@ -39,13 +43,55 @@ export default function MySitesPage() {
     }
   }, [profile, initialized]);
 
-  function generateAbbr(name: string) {
+  // Auto-focus abbreviation inline editor when it opens
+  useEffect(() => {
+    if (editingAbbrIndex !== null) {
+      abbrInputRef.current?.focus();
+      abbrInputRef.current?.select();
+    }
+  }, [editingAbbrIndex]);
+
+  function generateAbbr(name: string): string {
     return name
       .split(/\s+/)
-      .map((w) => w[0])
+      .map((w) => w[0] ?? "")
       .join("")
       .toUpperCase()
       .slice(0, 4);
+  }
+
+  function handleNewSiteNameChange(value: string) {
+    setNewSiteName(value);
+    // Only auto-fill abbreviation if user hasn't manually typed one
+    if (!abbrManuallyEdited) {
+      setNewSiteAbbr(generateAbbr(value));
+    }
+  }
+
+  function handleNewSiteAbbrChange(value: string) {
+    setAbbrManuallyEdited(true);
+    setNewSiteAbbr(value.toUpperCase().slice(0, 10));
+  }
+
+  function updateSiteAbbr(index: number, value: string) {
+    const normalized = value.toUpperCase().slice(0, 10);
+    setSites((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, abbreviation: normalized } : s))
+    );
+  }
+
+  function commitAbbrEdit() {
+    if (editingAbbrIndex === null) return;
+    const site = sites[editingAbbrIndex];
+    // Fall back to auto-generated if left blank
+    if (!site.abbreviation.trim()) {
+      setSites((prev) =>
+        prev.map((s, i) =>
+          i === editingAbbrIndex ? { ...s, abbreviation: generateAbbr(s.name) } : s
+        )
+      );
+    }
+    setEditingAbbrIndex(null);
   }
 
   function addSite() {
@@ -53,16 +99,17 @@ export default function MySitesPage() {
     const url = newSiteUrl.trim();
     if (!name) return;
 
-    setSites((prev) => [
-      ...prev,
-      { name, url, abbreviation: generateAbbr(name) },
-    ]);
+    const abbr = (newSiteAbbr.trim() || generateAbbr(name)).toUpperCase().slice(0, 10);
+    setSites((prev) => [...prev, { name, url, abbreviation: abbr }]);
     setNewSiteName("");
     setNewSiteUrl("");
+    setNewSiteAbbr("");
+    setAbbrManuallyEdited(false);
   }
 
   function removeSite(index: number) {
     setSites((prev) => prev.filter((_, i) => i !== index));
+    if (editingAbbrIndex === index) setEditingAbbrIndex(null);
   }
 
   async function handleSaveSites() {
@@ -171,11 +218,37 @@ export default function MySitesPage() {
                   key={i}
                   className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-primary">
-                      {site.abbreviation || generateAbbr(site.name)}
-                    </span>
-                  </div>
+                  {/* Abbreviation badge — click to edit */}
+                  {editingAbbrIndex === i ? (
+                    <Input
+                      ref={abbrInputRef}
+                      value={site.abbreviation}
+                      onChange={(e) => updateSiteAbbr(i, e.target.value)}
+                      onBlur={commitAbbrEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === "Escape") {
+                          e.preventDefault();
+                          commitAbbrEdit();
+                        }
+                      }}
+                      className="w-14 h-10 text-center text-xs font-bold uppercase px-1 shrink-0"
+                      maxLength={10}
+                      placeholder="ABBR"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingAbbrIndex(i)}
+                      title="Click to edit abbreviation"
+                      className="group w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 relative hover:bg-primary/20 transition-colors cursor-pointer"
+                    >
+                      <span className="text-xs font-bold text-primary group-hover:opacity-0 transition-opacity">
+                        {site.abbreviation || generateAbbr(site.name)}
+                      </span>
+                      <Pencil className="absolute h-3 w-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{site.name}</p>
                     {site.url && (
@@ -206,7 +279,7 @@ export default function MySitesPage() {
           <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={newSiteName}
-              onChange={(e) => setNewSiteName(e.target.value)}
+              onChange={(e) => handleNewSiteNameChange(e.target.value)}
               placeholder="Site name"
               className="flex-1"
               onKeyDown={(e) => {
@@ -228,6 +301,20 @@ export default function MySitesPage() {
                 }
               }}
             />
+            <Input
+              value={newSiteAbbr}
+              onChange={(e) => handleNewSiteAbbrChange(e.target.value)}
+              placeholder="ABBR"
+              className="w-full sm:w-20 uppercase"
+              maxLength={10}
+              title="Short abbreviation shown in charts (auto-generated, editable)"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSite();
+                }
+              }}
+            />
             <Button
               type="button"
               variant="outline"
@@ -239,6 +326,9 @@ export default function MySitesPage() {
               <Plus className="h-4 w-4" />
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            The abbreviation is used in charts and reports. Click an existing abbreviation badge to edit it.
+          </p>
 
           <Button
             onClick={handleSaveSites}
