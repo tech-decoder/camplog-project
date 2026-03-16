@@ -410,10 +410,10 @@ export default function GoalsPage() {
   const grossColor = (v: number) =>
     v > 0 ? "text-emerald-700 dark:text-emerald-400" : v < 0 ? "text-rose-700 dark:text-rose-400" : "text-muted-foreground/60";
 
-  // Chart data: only sites with revenue
+  // Chart data: only sites with revenue — use human-readable name, not the DB abbreviation
   const chartRows = siteRows
     .filter((r) => r.rev > 0)
-    .map((r) => ({ name: r.abbreviation, revenue: r.rev, fbm: r.fbm }));
+    .map((r) => ({ name: r.shortName || r.abbreviation, revenue: r.rev, fbm: r.fbm }));
   const barColor = (fbm: number) =>
     fbm > 10 ? "#10b981" : fbm > 0 ? "#f59e0b" : "#f43f5e";
 
