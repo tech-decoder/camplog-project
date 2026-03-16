@@ -28,6 +28,7 @@ import {
   Check,
 } from "lucide-react";
 import { format, startOfMonth, addMonths, subMonths } from "date-fns";
+import { toast } from "sonner";
 import { RevenueGoal, SiteMonthlyRevenue, GoalStrategy } from "@/lib/types/goals";
 import { useProfile } from "@/components/providers/profile-provider";
 import { formatDollar, formatPercent } from "@/lib/utils/metrics";
@@ -299,9 +300,14 @@ export default function GoalsPage() {
       if (res.ok) {
         setSiteEdits({});
         await fetchGoal();
+        toast.success("Site data saved");
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || "Failed to save site data. Please try again.");
       }
     } catch (err) {
       console.error("Failed to save sites:", err);
+      toast.error("Network error — site data could not be saved.");
     } finally {
       setSavingSites(false);
     }

@@ -115,7 +115,30 @@ export async function POST(
     if (error) console.error("Failed to upsert site:", siteData.site, error.message);
   }
 
-  // Recalculate goal actuals from ALL site data for this month (not just current request)
+  // Clean up orphaned rows: any site_monthly_revenue entry for this user+month whose
+  // abbreviation is NOT in the submitted list (e.g. from removed or renamed sites).
+  // Without this, deleted/renamed sites keep inflating goal totals.
+  const submittedAbbrs = sites.map((s) => s.site);
+  if (submittedAbbrs.length > 0) {
+    const { error: cleanupError } = await supabase
+      .from("site_monthly_revenue")
+      .delete()
+      .eq("user_id", userId)
+      .eq("month", goal.month)
+      .not("site", "in", `(${submittedAbbrs.join(",")})`);
+    if (cleanupError) {
+      console.error("[goals/sites] orphan cleanup failed:", cleanupError.message);
+    }
+  } else {
+    // User submitted zero sites — wipe all revenue rows for this month
+    await supabase
+      .from("site_monthly_revenue")
+      .delete()
+      .eq("user_id", userId)
+      .eq("month", goal.month);
+  }
+
+  // Recalculate goal actuals from the surviving site data for this month
   const { data: allSites } = await supabase
     .from("site_monthly_revenue")
     .select("revenue, fb_spend, fb_revenue, profit")

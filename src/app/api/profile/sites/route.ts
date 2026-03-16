@@ -38,14 +38,17 @@ export async function PUT(request: NextRequest) {
 
   const supabase = createAdminClient();
 
-  let body: { sites: { name: string; url?: string; abbreviation: string }[] };
+  let body: {
+    sites: { name: string; url?: string; abbreviation: string }[];
+    renames?: { old_abbreviation: string; new_abbreviation: string }[];
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { sites } = body;
+  const { sites, renames = [] } = body;
 
   if (!Array.isArray(sites)) {
     return NextResponse.json({ error: "sites must be an array" }, { status: 400 });
@@ -108,6 +111,22 @@ export async function PUT(request: NextRequest) {
         },
         { status: 500 }
       );
+    }
+  }
+
+  // Step 2b: Cascade abbreviation renames into site_monthly_revenue.
+  // When a user renames "M2" → "MOD", their stored revenue rows keep the old key "M2"
+  // and become invisible in Goals. We update them here so historical data is preserved.
+  for (const { old_abbreviation, new_abbreviation } of renames) {
+    if (!old_abbreviation || !new_abbreviation || old_abbreviation === new_abbreviation) continue;
+    const { error: renameError } = await supabase
+      .from("site_monthly_revenue")
+      .update({ site: new_abbreviation })
+      .eq("user_id", userId)
+      .eq("site", old_abbreviation);
+    if (renameError) {
+      // Non-fatal: upsert succeeded, just log the cascade failure
+      console.error(`[sites] rename cascade ${old_abbreviation}→${new_abbreviation} failed:`, renameError.message);
     }
   }
 

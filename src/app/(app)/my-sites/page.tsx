@@ -28,6 +28,9 @@ export default function MySitesPage() {
   const [editingAbbrIndex, setEditingAbbrIndex] = useState<number | null>(null);
   const [savingSites, setSavingSites] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  // Track original abbreviations from DB so we can detect renames and cascade them
+  // to site_monthly_revenue (preserving historical revenue data on abbreviation change).
+  const [originalAbbrs, setOriginalAbbrs] = useState<Record<string, string>>({});
   const abbrInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +42,10 @@ export default function MySitesPage() {
           abbreviation: s.abbreviation,
         }))
       );
+      // Snapshot the DB abbreviation for each site by name
+      const abbrMap: Record<string, string> = {};
+      profile.sites.forEach((s) => { abbrMap[s.name] = s.abbreviation; });
+      setOriginalAbbrs(abbrMap);
       setInitialized(true);
     }
   }, [profile, initialized]);
@@ -115,6 +122,16 @@ export default function MySitesPage() {
   async function handleSaveSites() {
     setSavingSites(true);
     try {
+      // Detect abbreviation renames: sites where the name exists in originalAbbrs
+      // but the abbreviation has changed. These get cascaded to site_monthly_revenue
+      // so historical revenue data isn't lost.
+      const renames = sites
+        .filter((s) => originalAbbrs[s.name] && originalAbbrs[s.name] !== (s.abbreviation || generateAbbr(s.name)))
+        .map((s) => ({
+          old_abbreviation: originalAbbrs[s.name],
+          new_abbreviation: s.abbreviation || generateAbbr(s.name),
+        }));
+
       const res = await fetch("/api/profile/sites", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -124,6 +141,7 @@ export default function MySitesPage() {
             url: s.url || undefined,
             abbreviation: s.abbreviation || generateAbbr(s.name),
           })),
+          renames,
         }),
       });
 
@@ -131,6 +149,10 @@ export default function MySitesPage() {
 
       if (res.ok) {
         await refresh();
+        // Reset snapshot so a second save doesn't re-fire the same renames
+        const newAbbrMap: Record<string, string> = {};
+        sites.forEach((s) => { newAbbrMap[s.name] = s.abbreviation || generateAbbr(s.name); });
+        setOriginalAbbrs(newAbbrMap);
         if (data.warning) {
           toast.warning(data.warning);
         } else {
