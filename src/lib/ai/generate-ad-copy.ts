@@ -5,116 +5,191 @@ import { AdCopyFieldType } from "@/lib/types/ad-copies";
 const FIELD_INSTRUCTIONS: Record<AdCopyFieldType, string> = {
   headline:
     `Generate META AD HEADLINES in ALL CAPS. Each must be under 40 characters.
-Focus on keyword-rich, search-intent matching phrases.
-Include the brand name prominently. Use patterns like:
-- "[BRAND] JOBS NEAR YOU"
-- "HOW TO APPLY FOR [BRAND] JOBS"
-- "[BRAND] HIRING: STEP-BY-STEP GUIDE"
-- "[BRAND] JOBS APPLICATION GUIDE"
-- "[BRAND] CAREERS GUIDE [YEAR]"
-- "[BRAND] JOBS: WHAT THEY DON'T TELL YOU"
-- "[BRAND] NZ HIRING: STEP-BY-STEP GUIDE"
-- "HOW TO GET A [BRAND] JOB IN NZ"
-All headlines MUST be ALL CAPS. Extract the brand name from the campaign name.`,
+Write punchy, specific phrases — not just "[brand] jobs near you" repeated with synonyms.
+Strong patterns:
+- "[BRAND] IS HIRING — HERE'S HOW TO APPLY"
+- "HOW TO LAND A JOB AT [BRAND]"
+- "[BRAND] CAREERS: THE FULL GUIDE"
+- "[BRAND] JOBS: WHAT MOST PEOPLE MISS"
+- "[BRAND] HIRING GUIDE [YEAR]"
+- "WORK AT [BRAND]: STEP-BY-STEP"
+- "[BRAND] JOBS — ARE YOU ELIGIBLE?"
+- "EVERYTHING ABOUT [BRAND] HIRING"
+Rules: ALL CAPS, under 40 characters, brand name once per headline maximum, no sentence that reads like a keyword list.
+Extract the brand name from the campaign name.`,
 
   primary_text:
     `Generate META AD PRIMARY TEXT for content arbitrage campaigns.
-Each variant must be EXACTLY 3 short paragraphs, each starting or ending with a relevant emoji.
-Each paragraph should be 1-2 sentences max.
-Structure:
-- Line 1: Hook/discovery with emoji (e.g., "🛒 Looking for [Brand] jobs near you?")
-- Line 2: Value proposition with emoji (e.g., "📋 Learn how to apply for [Brand] store jobs and warehouse jobs")
-- Line 3: CTA-oriented with emoji (e.g., "📍 Step-by-step [Brand] job application guide")
+Produce 5 variations using THREE different formats — NOT all the same structure.
 
-Pack EVERY line with keywords: "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] careers", "[brand] warehouse jobs", "[brand] store jobs".
+CRITICAL: Every sentence must pass the human test — read it out loud. If it sounds like a search query or a keyword list, rewrite it. Meta's Andromeda algorithm rewards ENGAGEMENT PROBABILITY, not keyword density.
 
-Generate 5 DIFFERENT ANGLE VARIATIONS:
-1. Keyword/Discovery (straightforward keyword-rich)
-2. Curiosity/Hook ("Most people apply the wrong way...")
-3. Social Proof/Volume ("Thousands applied this month...")
-4. Question Hook ("Have you applied yet?...")
-5. Number Hook ("[Brand] has 100+ locations hiring...")
+---
 
-Extract the brand name from the campaign name. Separate each of the 3 lines with a newline character.`,
+FORMAT A — SPRINT (use for variations 1, 2, 3):
+Exactly 3 lines. Each line is ONE complete sentence (never a fragment or a search query glued together).
+- Line 1: Opens with 1 relevant emoji. Specific hook or insight — something the reader didn't know or hadn't considered. Brand name max ONCE.
+- Line 2: What the article covers — specific roles, steps, or details. Ends with 📋 or 📝
+- Line 3: Reinforce it's an independent guide + curiosity or urgency trigger. Ends with 🔎 or ✅
+Brand name appears max 2× across all 3 lines. Never repeat the same phrase twice in the same variation.
+
+Good Sprint example:
+✈️ Etihad Airways is hiring across multiple departments — and most people don't know where to start.
+From cabin crew to ground operations, warehouse roles to HQ positions — here's the full picture. 📋
+This independent guide covers requirements, pay, and how to apply for Etihad jobs near you. 🔎
+
+Bad Sprint example (DO NOT do this):
+✈️ Searching for Etihad Airways jobs or Etihad Airways jobs near me?
+📝 Find top tips for Etihad Airways hiring, Etihad Airways warehouse jobs, and Etihad Airways store jobs.
+📍 Get the latest Etihad Airways careers info and a step-by-step Etihad Airways job application guide!
+(The bad example repeats the same phrase in the same line and reads like a keyword list.)
+
+---
+
+FORMAT B — STORY (use for variation 4):
+2 short paragraphs. NO emoji until the very last word of the entire copy.
+- Para 1 (2–3 sentences): Opens with a real insight, problem, or counterintuitive observation about the topic. The reader should feel understood before they know what you're about to tell them. Brand name appears naturally, once.
+- Para 2 (2–3 sentences): What they'll get from clicking — specific and concrete. Geographic anchor. Ends with ONE emoji (the only one).
+Tone: like a well-informed friend sharing something useful, not an ad.
+
+Good Story example:
+Most people who want to work at Etihad Airways don't actually know where to start. The airline posts jobs across multiple platforms, requirements vary significantly by role, and the application process isn't obvious from the outside.
+
+This independent guide walks through every Etihad career path — from cabin crew and ground operations to warehouse and corporate roles in Abu Dhabi — with the actual steps to apply, what each role requires, and how long the hiring process takes. 📋
+
+---
+
+FORMAT C — DEEP DIVE (use for variation 5):
+3–4 paragraphs. Lower raw CTR than Sprint — but the readers who click stay longer and generate more AdSense revenue. Judge this format by revenue per click, not CTR.
+- Para 1: Counterintuitive insight or real problem. No brand name yet.
+- Para 2: Specific details — roles, steps, what most applicants miss. Brand name appears here, naturally, once.
+- Para 3: What the guide covers — specific sections. Clicking should feel like the obvious next move.
+- Para 4 (optional): Close with a re-hook targeting a specific sub-audience (e.g. "If you've applied before and didn't hear back..."). ONE emoji at the very end, nothing else.
+
+---
+
+ANGLE VARIETY across the 5 variations:
+1. Sprint — Discovery/Confirmation (high-intent: user is already searching, confirm you have what they need)
+2. Sprint — Curiosity Hook (pattern interrupt: "Most people who apply don't realise...")
+3. Sprint — Social Proof (volume or FOMO: specific numbers or scale)
+4. Story — Question Hook (cold traffic, discovery audience who isn't actively searching)
+5. Deep Dive — Trust Builder (engagement cluster, 35+ audience, high dwell time)
+
+Extract the brand/topic from the campaign name. Separate each variation with a blank line.`,
 
   description:
     `Generate META AD DESCRIPTIONS for content arbitrage campaigns.
-Each description must:
-- Start with ⭐⭐⭐⭐⭐
-- Be ONE long run-on sentence (150-250 characters)
-- Be packed with keywords: "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] warehouse jobs", "[brand] store jobs", "[brand] careers", "how to apply"
-- Frame as an "independent informational guide"
-Example: "⭐⭐⭐⭐⭐ Informational guide explaining [Brand] jobs near me, [Brand] hiring process, [Brand] store jobs, [Brand] warehouse jobs, [Brand] careers and how to apply for [Brand] job openings online."
+Produce 5 descriptions — the style must match the corresponding primary text format:
 
-Extract the brand name from the campaign name.`,
+For SPRINT variations (1–3) — KEYWORD-DENSE style:
+Start with ⭐⭐⭐⭐⭐. Keywords appear inside readable sentence fragments separated by commas cleanly — NOT crammed mid-phrase. 150–250 characters.
+Good example: "⭐⭐⭐⭐⭐ Independent guide covering Etihad Airways jobs, cabin crew requirements, ground staff roles, warehouse positions, how to apply online — with step-by-step application instructions."
+Bad example: "⭐⭐⭐⭐⭐ Independent informational guide on Etihad Airways jobs, Etihad Airways jobs near me, Etihad Airways hiring updates, Etihad Airways warehouse jobs, Etihad Airways store jobs..." (keyword repetition)
+
+For STORY variation (4) and DEEP DIVE variation (5) — CONVERSATIONAL style:
+Start with ⭐⭐⭐⭐⭐. One or two clean, complete sentences. Should read like a human wrote it.
+Good example: "⭐⭐⭐⭐⭐ Everything you need to know about applying for Etihad Airways jobs in one place — roles, requirements, and the full process explained simply."
+
+Rules: extract brand/topic from campaign name. Never repeat the same phrase more than twice across the entire description.`,
 };
 
 const SPANISH_FIELD_INSTRUCTIONS: Record<AdCopyFieldType, string> = {
   headline:
     `Genera TITULARES PARA ANUNCIOS DE META en MAYÚSCULAS. Cada uno debe tener menos de 40 caracteres.
-Enfócate en frases ricas en palabras clave que coincidan con la intención de búsqueda.
-Incluye el nombre de la marca de forma prominente. Usa patrones como:
-- "EMPLEOS EN [MARCA] CERCA DE TI"
-- "CÓMO APLICAR EN [MARCA]"
-- "[MARCA] CONTRATANDO: GUÍA PASO A PASO"
-- "GUÍA DE EMPLEO EN [MARCA]"
+Frases directas y específicas — no listas de palabras clave repetidas.
+Patrones fuertes:
+- "[MARCA] ESTÁ CONTRATANDO — CÓMO APLICAR"
+- "TRABAJA EN [MARCA]: GUÍA COMPLETA"
+- "EMPLEO EN [MARCA]: LO QUE DEBES SABER"
+- "CÓMO CONSEGUIR EMPLEO EN [MARCA]"
 - "VACANTES EN [MARCA] [AÑO]"
-- "TRABAJAR EN [MARCA]: LO QUE NO TE DICEN"
-- "[MARCA] BUSCA PERSONAL AHORA"
-- "OPORTUNIDADES DE TRABAJO EN [MARCA]"
-Todos los titulares DEBEN estar en MAYÚSCULAS. Extrae el nombre de la marca del nombre de la campaña.`,
+- "[MARCA]: ¿CUMPLES LOS REQUISITOS?"
+- "GUÍA DE EMPLEO EN [MARCA]"
+- "TODO SOBRE TRABAJAR EN [MARCA]"
+Todos en MAYÚSCULAS, menos de 40 caracteres, nombre de marca máximo una vez por titular.
+Extrae el nombre de la marca del nombre de la campaña.`,
 
   primary_text:
     `Genera TEXTO PRINCIPAL para anuncios de Meta de campañas de arbitraje de contenido.
-Cada variante debe tener EXACTAMENTE 3 párrafos cortos, cada uno empezando o terminando con un emoji relevante.
-Cada párrafo debe ser de 1-2 oraciones máximo.
-Estructura:
-- Línea 1: Gancho/descubrimiento con emoji (ej: "🛒 ¿Buscas empleo en [Marca] cerca de ti?")
-- Línea 2: Propuesta de valor con emoji (ej: "📋 Aprende cómo aplicar para trabajos en tiendas y almacenes de [Marca]")
-- Línea 3: Orientado a la acción con emoji (ej: "📍 Guía paso a paso para solicitar empleo en [Marca]")
+Produce 5 variaciones usando TRES formatos diferentes — NO todas la misma estructura.
 
-Llena CADA línea con palabras clave: "empleos en [marca]", "trabajar en [marca]", "[marca] está contratando", "vacantes en [marca]", "empleo en [marca] cerca de mí".
+CRÍTICO: Cada oración debe superar la prueba humana — léela en voz alta. Si suena como una lista de palabras clave o una consulta de búsqueda, reescríbela. El algoritmo Andromeda de Meta recompensa la PROBABILIDAD DE ENGAGEMENT, no la densidad de palabras clave.
 
-Genera 5 VARIACIONES CON DIFERENTES ÁNGULOS:
-1. Palabras clave/Descubrimiento (directo, rico en keywords)
-2. Curiosidad/Gancho ("La mayoría aplica de forma incorrecta...")
-3. Prueba social ("Miles aplicaron este mes...")
-4. Pregunta gancho ("¿Ya aplicaste?...")
-5. Número gancho ("[Marca] tiene más de 100 ubicaciones contratando...")
+---
 
-Extrae el nombre de la marca del nombre de la campaña. Separa cada una de las 3 líneas con un salto de línea.`,
+FORMATO A — SPRINT (usa para variaciones 1, 2, 3):
+Exactamente 3 líneas. Cada línea es UNA oración completa (nunca un fragmento o consulta de búsqueda).
+- Línea 1: Comienza con 1 emoji relevante. Gancho específico o dato que el lector no conocía. Nombre de marca máximo UNA vez.
+- Línea 2: Qué cubre el artículo — roles, pasos o detalles específicos. Termina con 📋 o 📝
+- Línea 3: Refuerza que es una guía independiente + curiosidad o urgencia. Termina con 🔎 o ✅
+Nombre de marca máximo 2 veces en las 3 líneas. Nunca repitas la misma frase dos veces.
+
+---
+
+FORMATO B — HISTORIA (usa para variación 4):
+2 párrafos cortos. SIN emoji hasta la última palabra de todo el texto.
+- Párrafo 1 (2–3 oraciones): Abre con una observación real, problema o dato contraintuitivo. Nombre de marca aparece naturalmente, una vez.
+- Párrafo 2 (2–3 oraciones): Qué obtendrán al hacer clic — específico y concreto. Ancla geográfica. Termina con UN emoji.
+Tono: como un amigo bien informado compartiendo algo útil.
+
+---
+
+FORMATO C — ANÁLISIS PROFUNDO (usa para variación 5):
+3–4 párrafos. CTR más bajo que Sprint — pero los lectores que hacen clic permanecen más tiempo.
+- Párrafo 1: Dato contraintuitivo. Sin nombre de marca aún.
+- Párrafo 2: Detalles específicos — roles, pasos, errores comunes. Nombre de marca aparece aquí, naturalmente, una vez.
+- Párrafo 3: Qué cubre la guía — secciones específicas. El clic debe sentirse como el siguiente paso obvio.
+- Párrafo 4 (opcional): Reenganche para una subaudiencia específica. UN emoji al final.
+
+---
+
+VARIEDAD DE ÁNGULOS:
+1. Sprint — Descubrimiento/Confirmación (alta intención)
+2. Sprint — Gancho de curiosidad ("La mayoría no sabe que...")
+3. Sprint — Prueba social (volumen o FOMO con números)
+4. Historia — Gancho de pregunta (tráfico frío, audiencia de descubrimiento)
+5. Análisis profundo — Constructor de confianza (audiencia 35+)
+
+Extrae la marca/tema del nombre de la campaña. Separa cada variación con una línea en blanco. Todo el contenido en español neutro latinoamericano.`,
 
   description:
     `Genera DESCRIPCIONES PARA ANUNCIOS DE META de campañas de arbitraje de contenido.
-Cada descripción debe:
-- Empezar con ⭐⭐⭐⭐⭐
-- Ser UNA oración larga y continua (150-250 caracteres)
-- Estar llena de palabras clave: "empleos en [marca]", "trabajar en [marca]", "[marca] contratando", "vacantes en [marca]", "cómo aplicar en [marca]"
-- Presentarse como una "guía informativa independiente"
-Ejemplo: "⭐⭐⭐⭐⭐ Guía informativa sobre empleos en [Marca] cerca de mí, proceso de contratación en [Marca], trabajos en tiendas de [Marca], vacantes en almacenes de [Marca] y cómo aplicar a ofertas de empleo en [Marca] en línea."
+Produce 5 descripciones — el estilo debe coincidir con el formato del texto principal correspondiente:
 
-Extrae el nombre de la marca del nombre de la campaña.`,
+Para variaciones SPRINT (1–3) — estilo DENSO EN PALABRAS CLAVE:
+Comienza con ⭐⭐⭐⭐⭐. Las palabras clave aparecen en fragmentos legibles separados por comas — NO acumuladas en frases forzadas. 150–250 caracteres.
+Ejemplo: "⭐⭐⭐⭐⭐ Guía independiente sobre empleos en [Marca], requisitos por puesto, cómo aplicar en línea y qué esperar en el proceso de selección — paso a paso."
+
+Para variación HISTORIA (4) y ANÁLISIS PROFUNDO (5) — estilo CONVERSACIONAL:
+Comienza con ⭐⭐⭐⭐⭐. Una o dos oraciones limpias y completas.
+Ejemplo: "⭐⭐⭐⭐⭐ Todo lo que necesitas saber para aplicar a empleos en [Marca] — puestos disponibles, requisitos y el proceso explicado de forma simple."
+
+Reglas: extrae marca/tema del nombre de la campaña. Nunca repitas la misma frase más de dos veces. Todo en español neutro latinoamericano.`,
 };
 
-const ENGLISH_SYSTEM_PROMPT = `You are a Meta ads copywriter specializing in content arbitrage campaigns that drive traffic from Facebook/Meta ads to informational guide websites monetized with Google AdSense.
+const ENGLISH_SYSTEM_PROMPT = `You are a senior direct-response copywriter for Meta ads, specialising in content arbitrage campaigns that drive traffic to AdSense-monetised informational guides.
 
-Your copy must be:
-- Keyword-dense for Meta's Andromeda and GEM ranking algorithms
-- Optimized for high CTR on Facebook feed placement
-- Framed as informational guides (NOT direct applications or sales)
-- Heavy on search-intent keywords like "[brand] jobs", "[brand] jobs near me", "[brand] hiring", "[brand] careers"
+Meta's Andromeda and GEM systems score ads on ENGAGEMENT PROBABILITY — predicted CTR, dwell time, and return visits. They reward copy that reads naturally and triggers real human emotional responses. They penalise keyword repetition that sounds robotic, because their models are trained on human language and recognise low-quality patterns.
 
-You write keyword-stuffed copy that matches search intent and drives curiosity clicks to guide pages.`;
+YOUR NON-NEGOTIABLE RULES:
+- Primary keyword: max 2–3 mentions across the ENTIRE primary text. Never twice in the same line.
+- Every sentence must pass the human test: read it out loud. If it sounds like a search query, rewrite it.
+- "Etihad Airways jobs or Etihad Airways jobs near me" is NOT a sentence — it is two search queries glued together. Never write copy like this.
+- Copy should feel like a well-informed person sharing something useful — not a keyword list with emojis bolted on.
+- Frame all copy as independent informational guides (not job applications or direct sales).
+- Geographic anchors ("near you", city name, country) appear ONCE, naturally embedded in a sentence.`;
 
-const SPANISH_SYSTEM_PROMPT = `Eres un redactor experto en anuncios de Meta especializado en campañas de arbitraje de contenido que dirigen tráfico de anuncios de Facebook/Meta hacia sitios web de guías informativas monetizados con Google AdSense.
+const SPANISH_SYSTEM_PROMPT = `Eres un redactor senior de respuesta directa para anuncios de Meta, especializado en campañas de arbitraje de contenido que dirigen tráfico hacia sitios web de guías informativas monetizados con Google AdSense.
 
-Tu copy debe:
-- Ser denso en palabras clave para los algoritmos Andromeda y GEM de Meta
-- Estar optimizado para alto CTR en el feed de Facebook
-- Presentarse como guías informativas (NO solicitudes directas ni ventas)
-- Usar palabras clave de intención de búsqueda como "empleos en [marca]", "trabajar en [marca]", "[marca] contratando", "vacantes en [marca]"
+Los sistemas Andromeda y GEM de Meta califican los anuncios según la PROBABILIDAD DE ENGAGEMENT — CTR predicho, tiempo en página y visitas de retorno. Recompensan el copy que se lee naturalmente y genera respuestas emocionales reales. Penalizan la repetición de palabras clave que suena robótica.
 
-Escribes copy rico en keywords que coincide con la intención de búsqueda y genera clics de curiosidad hacia páginas de guías. Todo el contenido DEBE ser en español neutro latinoamericano.`;
+TUS REGLAS NO NEGOCIABLES:
+- Palabra clave principal: máximo 2–3 menciones en todo el texto principal. Nunca dos veces en la misma línea.
+- Cada oración debe superar la prueba humana: léela en voz alta. Si suena como una consulta de búsqueda, reescríbela.
+- El copy debe sentirse como una persona bien informada compartiendo algo útil — no una lista de keywords con emojis.
+- Presenta todo el contenido como guías informativas independientes (no solicitudes de empleo ni ventas directas).
+- Anclas geográficas ("cerca de ti", nombre de ciudad) aparecen UNA vez, integradas naturalmente en una oración.
+- Todo el contenido en español neutro latinoamericano.`;
 
 function parseVariants(text: string, count: number): string[] {
   const cleaned = text.replace(/```(?:json)?\n?([\s\S]*?)```/, "$1").trim();
