@@ -79,15 +79,25 @@ export default function MySitesPage() {
           })),
         }),
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         await refresh();
-        toast.success("Sites updated");
+        if (data.warning) {
+          toast.warning(data.warning);
+        } else {
+          toast.success("Sites updated");
+        }
       } else {
-        const data = await res.json();
+        // Refresh so the UI shows the actual DB state (not the failed pending state).
+        await refresh();
+        setInitialized(false); // allow useEffect to re-sync sites from refreshed profile
         toast.error(data.error || "Failed to update sites");
       }
-    } catch {
-      toast.error("Failed to update sites");
+    } catch (err) {
+      console.error("[my-sites] save error:", err);
+      toast.error("Network error — sites may not have been saved. Please try again.");
     } finally {
       setSavingSites(false);
     }
