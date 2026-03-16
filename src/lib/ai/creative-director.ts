@@ -16,7 +16,7 @@ const BRIEF_SCHEMA = `Return ONLY valid JSON (no markdown, no code fences):
 {
   "brand_analysis": "Brand name, inferred industry, target audience, emotional positioning, tone (urgent/warm/professional/casual)",
   "visual_direction": "Specific color palette recommendations (hex codes if known), typography weight (heavy/condensed/bold), background temperature (warm cream / pure white / dark), contrast level",
-  "logo_placement_rule": "Per-style rules: for storefront_card: [rule]; for graphic_text white: [rule]; for graphic_text dark guide: [rule]; for uniform_style: [rule]; for inside_store: [rule]",
+  "logo_placement_rule": "Per-style logo rules — ONE designated position ONLY, never duplicated: storefront_card: ZERO logos (building exterior signage is the only brand identity); graphic_text dark guide: brand logo at top-left corner ONCE only; graphic_text white bg: no logo (brand communicated through color palette only); uniform_style: logo embedded ON the product ONCE (apron/hat/uniform), no separate floating logo; inside_store: ZERO logos (store signage and interior decor are the only brand identity)",
   "composition_notes": "Card positioning specs, whitespace guidance, text hierarchy, element sizing",
   "copy_tone": "Voice register (urgent/approachable/authoritative), urgency level (high/medium), language register (conversational/professional), emoji usage (none/minimal)",
   "recommended_angles": "2-3 specific creative angle strategies for this brand — what hooks will stop the scroll",
@@ -83,7 +83,7 @@ ${getGlobalCreativeRules(language)}
 
 Additional creative rules derived from top-performing hiring ad campaigns (KFC, Home Depot, Walmart):
 - Card overlays on storefront: warm cream (#F5F0E8 or similar), solid fill, never translucent
-- Logo: style-specific placement only (see style descriptions) — never floating overlays on photo ads
+- Logo: ONE instance per style at its designated position only — never repeated, never on CTA buttons or dividers, zero logos on photo-based styles (storefront_card, inside_store)
 - Brand color temperature: warm palettes outperform cool ones for blue-collar/QSR hiring campaigns`;
 
   const userPrompt = `Create a creative brief for a ${language} ad campaign for the brand: "${brandName}"

@@ -75,16 +75,23 @@ TYPOGRAPHY:
 
 BRAND COLORS:
 - If the brand is well-known, use their recognizable brand colors (KFC red and yellow, Walmart blue and yellow, Home Depot orange, etc.)
-- Primary brand color: headline accents, CTA button fill, decorative elements
+- Primary brand color: headline accents, decorative dividers, decorative elements
 - Secondary brand color: dividers, accents, subtle highlights
 - Neutral base: white, near-black, or warm cream depending on style
 - NEVER ignore brand colors — every creative must visually communicate the brand through color
 
+LOGO PLACEMENT — SINGLE INSTANCE RULE:
+- The brand logo must appear AT MOST ONCE in the entire image
+- It has ONE designated position per style (see style-specific rules below)
+- NEVER render the logo a second time — not on CTA buttons, not in dividers, not in backgrounds, not repeated for decoration
+- Styles that use photo-based brand identity (storefront_card, inside_store): ZERO logos — not even one floating overlay
+
 CTA BUTTONS:
 - Always pill-shaped with fully rounded corners, wide and tall enough to be easily tappable
 - Wide (most of the image width), centered horizontally
-- Filled with brand accent color (never outline/ghost style)
-- Text: ALL CAPS, bold condensed, high-contrast color (white on dark, dark on light)
+- Fill: WARM high-converting color ONLY — use brand primary if it is red/orange/yellow/gold; use brand secondary if it is warm; otherwise use bright orange or gold (NEVER use blue, purple, teal, cool green, or gray for CTA buttons — these are low-urgency colors that underperform on mobile)
+- Text: ALL CAPS, bold condensed, white on warm/dark CTA backgrounds
+- Never outline/ghost style — solid fill only
 
 "${t.badge}" BADGE:
 - Include a bright yellow rounded "${t.badge}" badge on EVERY creative
@@ -150,9 +157,10 @@ SUBHEADLINE (below dividers):
 
 CTA BUTTON (bottom 15-20% of image):
 - Shape: fully rounded pill, ~70% image width, 48px height
-- Fill: brand primary color (KFC red, Walmart blue, etc.) — NOT generic red
+- Fill: WARM high-converting color — brand primary if red/orange/yellow (KFC red, Home Depot orange, Wendy's red); if brand is cool-colored (blue, purple), use bright orange or gold instead — NEVER blue or purple CTA
 - Text: "OPEN THE GUIDE" or "READ MORE" — white ALL CAPS bold condensed
 - NEVER "APPLY NOW" — the guide framing is critical for CTR
+- NO logo on the CTA button — it is a text-only button
 
 DISCLAIMER (absolute bottom):
 - Small gray (#999999) text, 10-11px, centered
@@ -166,7 +174,7 @@ Purpose: Frames ad as an information resource to drive curiosity clicks. The GUI
     label: "Storefront + Card Text",
     description: `Real store exterior photo — daylight, parking lot visible, shot from ~30ft showing full building signage. Yellow/gold (#FFD700) rounded-rectangle "GUIDE" badge in top-right corner of the photo area (~12-15% width, ALL CAPS bold text). Bottom 40-50% of image covered by a SOLID rounded card (NOT translucent, NOT semi-transparent): warm cream/off-white (#F5F0E8, never pure white), 20-24px border radius, subtle 4px drop shadow (rgba(0,0,0,0.12)), 85% image width, centered horizontally.
 
-Card interior top-to-bottom: ALL CAPS headline in heavy condensed sans-serif (Impact/Oswald 800), dark/black (#1A1A1A) base color with brand name rendered in brand primary color at 120% font-size relative to rest of headline. Below: lighter-weight (400) sentence-case subheadline at 60% opacity. Below: wide pill CTA button in brand accent color (e.g. KFC yellow #F5B335), 70% card width, 44-48px height, ALL CAPS bold condensed dark text inside.
+Card interior top-to-bottom: ALL CAPS headline in heavy condensed sans-serif (Impact/Oswald 800), dark/black (#1A1A1A) base color with brand name rendered in brand primary color at 120% font-size relative to rest of headline. Below: lighter-weight (400) sentence-case subheadline at 60% opacity. Below: wide pill CTA button in a WARM accent color — brand warm color if available (KFC yellow #F5B335, Home Depot orange), or bright orange if brand is cool-colored — 70% card width, 44-48px height, ALL CAPS bold condensed text inside. NO logo on CTA button.
 
 Below the card floating in the photo area: small white 14px benefit text chips separated by bullet/dot (e.g. "Part-Time \u00b7 Free Food"). Small gray (#999) disclaimer footer text at very bottom of card. CRITICAL: NEVER add a floating logo overlay — the building signage in the photo IS the brand identity.`,
     example: "KFC storefront photo with GUIDE badge top-right + warm cream card overlay: 'NOW HIRING AT KFC' (KFC in red, larger) \u2192 'Start work this week' \u2192 yellow 'APPLY IN MINUTES' pill button \u2192 white 'Part-Time \u00b7 Free Food' text below card",
@@ -197,23 +205,23 @@ export function getStylePromptBoosters(language: string = "English"): Record<str
   return {
     graphic_text: `VISUAL LAYOUT — DARK GUIDE FORMAT:
 Solid pure black background, no gradients.
-• TOP-LEFT: Small brand logo
+• TOP-LEFT: Small brand logo — appears HERE and NOWHERE ELSE in this image. One logo, one position, never repeated.
 • TOP-RIGHT: Bright yellow rounded "${t.badge}" badge
 • CENTER: Massive white ALL CAPS headline in bold condensed font, filling most of the center area across 2-3 stacked lines
-• ABOVE the headline: Two thick horizontal solid flat bars — one in brand primary color, one in brand secondary/accent color, centered. Clean sharp edges, NO brush strokes or paint texture.
-• BELOW the headline: Same two thick solid flat bars repeated
+• ABOVE the headline: Two thick horizontal solid flat bars — one in brand primary color, one in brand secondary/accent color, centered. Clean sharp edges, NO brush strokes or paint texture. NO logos on these bars.
+• BELOW the headline: Same two thick solid flat bars repeated (NO logos)
 • BELOW the dividers: Italic subheadline in soft cream color, centered — e.g. "${t.step_by_step}"
-• BOTTOM: Wide pill-shaped CTA button in the brand color, with white ALL CAPS text inside — e.g. "${t.open_guide_cta}"
+• BOTTOM: Wide pill-shaped CTA button in a WARM color — brand red/orange/yellow if the brand has one, otherwise bright orange or gold — white ALL CAPS text inside — e.g. "${t.open_guide_cta}" — NO logo on the CTA button
 • VERY BOTTOM: Tiny light-gray disclaimer text, centered`,
 
     storefront_card: `VISUAL LAYOUT — STOREFRONT + CARD:
 • TOP HALF: Real store exterior photo — daylight, parking lot visible, full building signage clearly readable
 • TOP-RIGHT of the photo: Bright yellow rounded "${t.badge}" badge
 • BOTTOM HALF: Solid warm cream/off-white rounded card overlay (fully opaque, not see-through), wide and centered
-• Card interior from top to bottom: bold ALL CAPS headline (the brand name rendered slightly larger and in brand color), a lighter softer subheadline below, then a wide pill-shaped CTA button in brand accent color with dark bold text
+• Card interior from top to bottom: bold ALL CAPS headline (the brand name rendered slightly larger and in brand color), a lighter softer subheadline below, then a wide pill-shaped CTA button in a WARM accent color (red/orange/yellow) with bold text — NO logo on the CTA button
 • Below the card floating in the photo area: small white benefit text chips
 • BOTTOM of card: Tiny light-gray disclaimer text
-• NO floating logo anywhere — the building signage in the photo IS the brand identity`,
+• ZERO LOGOS anywhere in this image — no floating logo overlays, no corner logos, no logo on the CTA button. The building's own exterior signage in the photo is the ONLY brand identity.`,
 
     uniform_style: `VISUAL LAYOUT — UNIFORM/PRODUCT STYLE:
 Clean white background with generous whitespace.
@@ -222,17 +230,17 @@ Clean white background with generous whitespace.
 • A thin horizontal divider line below the headline
 • A lighter, softer subheadline below the divider
 • CENTER: Large product image — the brand's uniform, apron, or hat shown as a clean cutout with no background, with the brand logo printed directly ON the product itself
-• BOTTOM: Wide pill-shaped CTA button in brand color
+• BOTTOM: Wide pill-shaped CTA button in a WARM brand color (red/orange/yellow) — NO logo on the CTA button
 • VERY BOTTOM: Tiny light-gray disclaimer text
-• NO separate floating logo anywhere — the logo on the product is enough`,
+• The brand logo appears EXACTLY ONCE — embedded ON the product itself (apron, hat, uniform). There is NO separate floating logo anywhere else in this image.`,
 
     inside_store: `VISUAL LAYOUT — INSIDE STORE VIEW:
 • BACKGROUND: Store interior, aisle, or warehouse photo — well-lit, clean, no harsh shadows
 • TOP-RIGHT: Bright yellow rounded "${t.badge}" badge
 • BOTTOM PORTION: Either a solid warm cream/off-white rounded card overlay OR a dark semi-transparent overlay
-• Overlay content from top to bottom: bold ALL CAPS condensed headline, a lighter softer subheadline, and a wide pill-shaped CTA button in brand color
+• Overlay content from top to bottom: bold ALL CAPS condensed headline, a lighter softer subheadline, and a wide pill-shaped CTA button in a WARM color (red/orange/yellow) — NO logo on the CTA button
 • VERY BOTTOM: Tiny light-gray disclaimer text
-• Brand is established through visible store signage, shelf labels, and branded decor in the photo — NO floating logo overlay`,
+• ZERO LOGOS anywhere in this image — no floating logo overlays. Brand is communicated ONLY through store signage, shelf labels, and branded decor visible in the background photo.`,
   };
 }
 

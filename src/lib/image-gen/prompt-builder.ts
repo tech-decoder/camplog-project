@@ -106,6 +106,21 @@ export function buildPromptFromStrategy(
     parts.push(""); // blank line separator
   }
 
+  // 1.5. Logo constraint fence — explicit single-instance rule per style.
+  // Inserted between the style booster and prompt_direction to prevent the image
+  // model from duplicating logos based on cues in the creative direction text.
+  const logoConstraints: Record<string, string> = {
+    graphic_text: `LOGO RULE: The brand logo appears EXACTLY ONCE in this image — at the TOP-LEFT corner only. Do NOT render the logo anywhere else: not on the CTA button, not on the divider bars, not in the headline zone, not floating in the background. One logo, one position, nowhere else.`,
+    storefront_card: `LOGO RULE: There are ZERO brand logos in this image. The brand is communicated SOLELY through the building's own exterior signage visible in the photo. Do NOT add any logo overlays, corner logos, watermarks, or branded icons. Zero logos.`,
+    uniform_style: `LOGO RULE: The brand logo appears EXACTLY ONCE — printed or embroidered directly ON the product hero (the apron, hat, or uniform item) as part of the product itself. Do NOT add any separate floating logo, corner logo, or additional logo anywhere else in the image.`,
+    inside_store: `LOGO RULE: There are ZERO brand logos in this image. The brand is communicated SOLELY through store signage, shelf labels, and branded decor visible in the background photo. Do NOT add any logo overlays, corner logos, or floating brand marks. Zero logos.`,
+  };
+  const logoConstraint = logoConstraints[item.ad_style];
+  if (logoConstraint) {
+    parts.push(logoConstraint);
+    parts.push("");
+  }
+
   // 2. Claude's creative direction (the detailed prompt)
   parts.push(item.prompt_direction);
 
