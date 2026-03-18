@@ -372,7 +372,11 @@ export default function GoalsPage() {
 
   // Site rows: use extracted fb_profit/fbm when available, else compute from FBR/FBS
   const siteRows = mySites.map((s) => {
-    const siteData = sites.find((sr) => sr.site === s.abbreviation);
+    const siteData = sites.find(
+      (sr) =>
+        sr.site === s.abbreviation ||
+        sr.site.toLowerCase() === s.shortName.toLowerCase()
+    );
     const edit = siteEdits[s.abbreviation];
     const rev = edit?.revenue ? parseFloat(edit.revenue) : Number(siteData?.revenue || 0);
     const spend = edit?.fb_spend ? parseFloat(edit.fb_spend) : Number(siteData?.fb_spend || 0);
@@ -416,10 +420,11 @@ export default function GoalsPage() {
   const grossColor = (v: number) =>
     v > 0 ? "text-emerald-700 dark:text-emerald-400" : v < 0 ? "text-rose-700 dark:text-rose-400" : "text-muted-foreground/60";
 
-  // Chart data: only sites with revenue — use human-readable name, not the DB abbreviation
+  // Chart data: only sites with revenue — use abbreviation from user_sites
   const chartRows = siteRows
     .filter((r) => r.rev > 0)
-    .map((r) => ({ name: r.shortName || r.abbreviation, revenue: r.rev, fbm: r.fbm }));
+    .map((r) => ({ name: r.abbreviation, revenue: r.rev, fbm: r.fbm }));
+  const yAxisWidth = Math.max(40, ...chartRows.map((r) => r.name.length * 8));
   const barColor = (fbm: number) =>
     fbm > 10 ? "#10b981" : fbm > 0 ? "#f59e0b" : "#f43f5e";
 
@@ -744,7 +749,7 @@ export default function GoalsPage() {
                       type="category"
                       dataKey="name"
                       tick={{ fontSize: 11, fontWeight: 600 }}
-                      width={40}
+                      width={yAxisWidth}
                       axisLine={false}
                       tickLine={false}
                     />

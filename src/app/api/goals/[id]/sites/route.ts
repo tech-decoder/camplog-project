@@ -35,7 +35,25 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ sites: data || [] });
+  // Normalise site field: map legacy site names → current abbreviations from user_sites
+  const { data: userSites } = await supabase
+    .from("user_sites")
+    .select("site_abbreviation, site_name")
+    .eq("user_id", userId);
+
+  const knownAbbrs = new Set((userSites || []).map((s) => s.site_abbreviation));
+  const nameToAbbr: Record<string, string> = {};
+  for (const s of userSites || []) {
+    if (s.site_name) nameToAbbr[s.site_name.toLowerCase()] = s.site_abbreviation;
+  }
+
+  const normalised = (data || []).map((row) => {
+    if (knownAbbrs.has(row.site)) return row; // already a valid abbreviation
+    const mapped = nameToAbbr[row.site.toLowerCase()];
+    return mapped ? { ...row, site: mapped } : row; // remap name → abbreviation
+  });
+
+  return NextResponse.json({ sites: normalised });
 }
 
 export async function POST(
