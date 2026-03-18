@@ -17,6 +17,7 @@ export interface UserProfile {
   onboarding_completed: boolean;
   google_drive_connected_at: string | null;
   google_drive_folder_id: string | null;
+  is_admin: boolean;
   sites: UserSite[];
 }
 

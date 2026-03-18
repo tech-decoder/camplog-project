@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at, google_drive_folder_id")
+    .select("id, email, full_name, nickname, onboarding_completed, avatar_url, google_drive_connected_at, google_drive_folder_id, is_admin")
     .eq("id", userId)
     .single();
 

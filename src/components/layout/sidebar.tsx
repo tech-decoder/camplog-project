@@ -16,24 +16,27 @@ import {
   Globe,
   Settings,
   SquareKanban,
+  Users,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useProfile } from "@/components/providers/profile-provider";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Chat", href: "/chat", icon: MessageSquare },
-  { label: "Generate", href: "/generate", icon: Sparkles },
-  { label: "Changes", href: "/changes", icon: List },
-  { label: "Tasks",   href: "/tasks",   icon: SquareKanban },
-  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
-  { label: "Goals", href: "/goals", icon: Target },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "My Sites", href: "/my-sites", icon: Globe },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Dashboard", href: "/dashboard",  icon: LayoutDashboard },
+  { label: "Chat",      href: "/chat",        icon: MessageSquare },
+  { label: "Generate",  href: "/generate",    icon: Sparkles },
+  { label: "Changes",   href: "/changes",     icon: List },
+  { label: "Tasks",     href: "/tasks",       icon: SquareKanban },
+  { label: "Campaigns", href: "/campaigns",   icon: Megaphone },
+  { label: "Goals",     href: "/goals",       icon: Target },
+  { label: "Reports",   href: "/reports",     icon: BarChart3 },
+  { label: "My Sites",  href: "/my-sites",    icon: Globe },
+  { label: "Settings",  href: "/settings",    icon: Settings },
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname    = usePathname();
+  const { profile } = useProfile();
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-sidebar border-r border-sidebar-border">
@@ -70,6 +73,29 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Admin-only: Team link */}
+        {profile?.is_admin && (
+          <>
+            <div className="pt-2 pb-1 px-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Admin
+              </p>
+            </div>
+            <Link
+              href="/admin/team"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith("/admin/team")
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/25"
+                  : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+              )}
+            >
+              <Users className="h-5 w-5" />
+              Team
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Footer — Theme toggle + Help */}
