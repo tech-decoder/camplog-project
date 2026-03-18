@@ -4,7 +4,9 @@ import { useState } from "react";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
 } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -85,6 +87,9 @@ export function TaskDetailSheet({ task, open, onClose, onUpdate }: TaskDetailShe
         showCloseButton={false}
         className="w-full sm:max-w-[420px] p-0 flex flex-col gap-0"
       >
+        <VisuallyHidden>
+          <SheetTitle>{task?.title ?? "Task detail"}</SheetTitle>
+        </VisuallyHidden>
         {task && (
           <>
             {/* ── Sticky header ─────────────────────────────────────────── */}
