@@ -18,16 +18,14 @@ import { TaskForm, TaskFormValues } from "@/components/tasks/task-form";
 import { Task } from "@/lib/types/tasks";
 
 export default function TasksPage() {
-  const [tasks,     setTasks]     = useState<Task[]>([]);
-  const [loading,   setLoading]   = useState(true);
+  const [tasks,      setTasks]      = useState<Task[]>([]);
+  const [loading,    setLoading]    = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/tasks")
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setTasks(data);
-      })
+      .then((data) => { if (Array.isArray(data)) setTasks(data); })
       .catch(() => toast.error("Failed to load tasks"))
       .finally(() => setLoading(false));
   }, []);
@@ -59,16 +57,18 @@ export default function TasksPage() {
       <GradientPageHeader
         icon={SquareKanban}
         title="Tasks"
-        description="Track campaign actions, creative to-dos, and goals on a Kanban board."
+        description="Track campaign actions, creative to-dos, and goals."
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />
-                New Task
+                <span className="hidden sm:inline">New Task</span>
+                <span className="sm:hidden">New</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            {/* Full-width on mobile, capped on sm+ */}
+            <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md rounded-xl p-5">
               <DialogHeader>
                 <DialogTitle>Create Task</DialogTitle>
               </DialogHeader>
@@ -82,7 +82,7 @@ export default function TasksPage() {
         }
       />
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />

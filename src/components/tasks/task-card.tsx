@@ -154,40 +154,40 @@ export function TaskCard({
 
         {/* Action row */}
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-          {/* Move buttons */}
+          {/* Move buttons — larger tap targets on touch */}
           <div className="flex items-center gap-0.5">
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6"
+              className="h-8 w-8 sm:h-6 sm:w-6 touch-manipulation"
               disabled={!canMoveLeft}
               onClick={(e) => { e.stopPropagation(); onMoveLeft(); }}
               title="Move left"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <ChevronLeft className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6"
+              className="h-8 w-8 sm:h-6 sm:w-6 touch-manipulation"
               disabled={!canMoveRight}
               onClick={(e) => { e.stopPropagation(); onMoveRight(); }}
               title="Move right"
             >
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
             </Button>
           </div>
 
-          {/* ··· menu */}
+          {/* ··· menu — always visible on mobile, hover-only on desktop */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 sm:h-6 sm:w-6 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity touch-manipulation"
                 onClick={(e) => e.stopPropagation()}
               >
-                <MoreHorizontal className="h-3.5 w-3.5" />
+                <MoreHorizontal className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">

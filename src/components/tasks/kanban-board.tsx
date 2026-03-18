@@ -8,28 +8,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Task, TaskStatus } from "@/lib/types/tasks";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import { Task, TaskStatus, TASK_STATUS_LABELS } from "@/lib/types/tasks";
 import { KanbanColumn } from "./kanban-column";
 import { TaskForm, TaskFormValues, taskToFormValues } from "./task-form";
 import { TaskDetailSheet } from "./task-detail-sheet";
 
 const STATUSES: TaskStatus[] = ["todo", "in_progress", "done"];
 
+const STATUS_EMOJI: Record<TaskStatus, string> = {
+  todo:        "📋",
+  in_progress: "⚡",
+  done:        "✅",
+};
+
 interface KanbanBoardProps {
   initialTasks: Task[];
 }
 
 export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
-  const [tasks,       setTasks]       = useState<Task[]>(initialTasks);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [viewingTask, setViewingTask] = useState<Task | null>(null);
-  const [sheetOpen,   setSheetOpen]   = useState(false);
+  const [tasks,        setTasks]        = useState<Task[]>(initialTasks);
+  const [editingTask,  setEditingTask]  = useState<Task | null>(null);
+  const [viewingTask,  setViewingTask]  = useState<Task | null>(null);
+  const [sheetOpen,    setSheetOpen]    = useState(false);
+  const [activeTab,    setActiveTab]    = useState<TaskStatus>("todo");
 
-  // ── Quick-add / Create ──────────────────────────────────────────────────
+  // ── Quick-add ─────────────────────────────────────────────────────────────
   async function handleQuickAdd(title: string, status: TaskStatus) {
     try {
       const res = await fetch("/api/tasks", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, status }),
       });
@@ -41,33 +54,8 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     }
   }
 
-  // ── Full form create (called from dialog) ───────────────────────────────
-  async function handleCreate(values: TaskFormValues) {
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          description:   values.description   || null,
-          site:          values.site          || null,
-          campaign_name: values.campaign_name || null,
-          due_date:      values.due_date      || null,
-        }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
-      const created: Task = await res.json();
-      setTasks((prev) => [created, ...prev]);
-      toast.success("Task created");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create task");
-      throw err;
-    }
-  }
-
-  // ── Update ──────────────────────────────────────────────────────────────
+  // ── Update ────────────────────────────────────────────────────────────────
   const handleUpdate = useCallback(async (id: string, values: TaskFormValues) => {
-    // Optimistic
     setTasks((prev) =>
       prev.map((t) =>
         t.id === id
@@ -84,7 +72,7 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     );
     try {
       const res = await fetch(`/api/tasks/${id}`, {
-        method: "PATCH",
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
@@ -97,7 +85,6 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
       const updated: Task = await res.json();
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
-      // keep sheet/dialog in sync
       if (viewingTask?.id === id) setViewingTask(updated);
       setEditingTask(null);
       toast.success("Task updated");
@@ -107,31 +94,28 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     }
   }, [viewingTask]);
 
-  // ── Move (status change) ────────────────────────────────────────────────
+  // ── Move ──────────────────────────────────────────────────────────────────
   async function handleMove(taskId: string, newStatus: TaskStatus) {
-    // Optimistic
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
       const updated: Task = await res.json();
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      // Follow the card to its new column on mobile
+      setActiveTab(newStatus);
     } catch (err) {
-      // Rollback
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t } : t))
-      );
       toast.error(err instanceof Error ? err.message : "Failed to move task");
     }
   }
 
-  // ── Delete ──────────────────────────────────────────────────────────────
+  // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete(taskId: string) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     try {
@@ -143,40 +127,67 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     }
   }
 
-  // ── View (sheet) ────────────────────────────────────────────────────────
+  // ── View ──────────────────────────────────────────────────────────────────
   function handleView(task: Task) {
     setViewingTask(task);
     setSheetOpen(true);
   }
 
-  const tasksByStatus = (status: TaskStatus) =>
-    tasks.filter((t) => t.status === status);
+  const tasksByStatus = (s: TaskStatus) => tasks.filter((t) => t.status === s);
+
+  // Shared column props factory
+  const colProps = (status: TaskStatus) => ({
+    status,
+    tasks:        tasksByStatus(status),
+    allStatuses:  STATUSES,
+    onMoveTask:   handleMove,
+    onEditTask:   (t: Task) => setEditingTask(t),
+    onDeleteTask: handleDelete,
+    onViewTask:   handleView,
+    onQuickAdd:   handleQuickAdd,
+  });
 
   return (
     <>
-      {/* Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {STATUSES.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            tasks={tasksByStatus(status)}
-            allStatuses={STATUSES}
-            onMoveTask={handleMove}
-            onEditTask={(task) => setEditingTask(task)}
-            onDeleteTask={handleDelete}
-            onViewTask={handleView}
-            onQuickAdd={handleQuickAdd}
-          />
+      {/* ── Mobile: tab switcher (hidden md+) ─────────────────────────── */}
+      <div className="md:hidden">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as TaskStatus)}
+        >
+          <TabsList className="w-full grid grid-cols-3 h-10 mb-4">
+            {STATUSES.map((s) => (
+              <TabsTrigger key={s} value={s} className="text-xs gap-1 px-1">
+                <span>{STATUS_EMOJI[s]}</span>
+                <span className="truncate">{TASK_STATUS_LABELS[s]}</span>
+                <span className="ml-0.5 rounded-full bg-muted-foreground/20 px-1 text-[10px] font-semibold">
+                  {tasksByStatus(s).length}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {STATUSES.map((s) => (
+            <TabsContent key={s} value={s}>
+              <KanbanColumn {...colProps(s)} isMobile />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+
+      {/* ── Desktop: 3-column layout (hidden <md) ─────────────────────── */}
+      <div className="hidden md:flex gap-4 overflow-x-auto pb-4 items-start">
+        {STATUSES.map((s) => (
+          <KanbanColumn key={s} {...colProps(s)} />
         ))}
       </div>
 
-      {/* Edit dialog */}
+      {/* ── Edit dialog ───────────────────────────────────────────────── */}
       <Dialog
         open={!!editingTask}
         onOpenChange={(o) => { if (!o) setEditingTask(null); }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-xl">
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
@@ -191,7 +202,7 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Detail sheet */}
+      {/* ── Detail sheet ──────────────────────────────────────────────── */}
       <TaskDetailSheet
         task={viewingTask}
         open={sheetOpen}
@@ -202,5 +213,4 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
   );
 }
 
-// Export handleCreate so the page can pass it to the header button
 export type { KanbanBoardProps };
