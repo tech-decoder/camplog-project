@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Globe,
   Settings,
+  SquareKanban,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Chat", href: "/chat", icon: MessageSquare },
   { label: "Generate", href: "/generate", icon: Sparkles },
   { label: "Changes", href: "/changes", icon: List },
+  { label: "Tasks",   href: "/tasks",   icon: SquareKanban },
   { label: "Campaigns", href: "/campaigns", icon: Megaphone },
   { label: "Goals", href: "/goals", icon: Target },
   { label: "Reports", href: "/reports", icon: BarChart3 },
