@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, startOfMonth, addMonths, subMonths, parseISO } from "date-fns";
-import { Users, ChevronLeft, ChevronRight, Loader2, TrendingUp } from "lucide-react";
+import { Users, ChevronLeft, ChevronRight, Loader2, TrendingUp, Globe, DollarSign, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { GradientPageHeader } from "@/components/layout/gradient-page-header";
@@ -12,6 +12,7 @@ import { MemberCard } from "@/components/admin/member-card";
 import { TeamOverview } from "@/lib/types/admin";
 import { useProfile } from "@/components/providers/profile-provider";
 import { formatDollar, formatPercent } from "@/lib/utils/metrics";
+import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
   const router          = useRouter();
@@ -104,23 +105,37 @@ export default function TeamPage() {
             label="Total Sites"
             value={String(overview.total_sites)}
             sub={`${overview.members.length} members`}
+            icon={Globe}
+            iconBg="bg-sky-500/10"
+            iconColor="text-sky-600 dark:text-sky-400"
+            valueColor="text-sky-600 dark:text-sky-400"
           />
           <SummaryTile
             label="Total Revenue"
             value={formatDollar(overview.total_revenue)}
             sub={monthLabel}
-            highlight
+            icon={TrendingUp}
+            iconBg="bg-primary/10"
+            iconColor="text-primary"
+            valueColor="text-primary"
           />
           <SummaryTile
             label="Total Profit"
             value={formatDollar(overview.total_profit)}
             sub={totalMargin !== null ? `${formatPercent(totalMargin)} margin` : undefined}
-            positive={overview.total_profit >= 0}
+            icon={DollarSign}
+            iconBg={overview.total_profit >= 0 ? "bg-emerald-500/10" : "bg-red-500/10"}
+            iconColor={overview.total_profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}
+            valueColor={overview.total_profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}
           />
           <SummaryTile
             label="Total FB Spend"
             value={formatDollar(overview.total_fb_spend)}
             sub="ad spend"
+            icon={Activity}
+            iconBg="bg-orange-500/10"
+            iconColor="text-orange-600 dark:text-orange-400"
+            valueColor=""
           />
         </div>
       )}
@@ -153,34 +168,29 @@ function SummaryTile({
   label,
   value,
   sub,
-  highlight,
-  positive,
+  icon: Icon,
+  iconBg,
+  iconColor,
+  valueColor,
 }: {
   label:      string;
   value:      string;
   sub?:       string;
-  highlight?: boolean;
-  positive?:  boolean;
+  icon:       React.ElementType;
+  iconBg:     string;
+  iconColor:  string;
+  valueColor: string;
 }) {
   return (
-    <div className={cn(
-      "rounded-xl border border-border px-4 py-3",
-      highlight ? "bg-primary/5 border-primary/20" : "bg-card"
-    )}>
-      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
-      <p className={cn(
-        "text-xl font-bold",
-        positive === true  ? "text-emerald-600 dark:text-emerald-400" :
-        positive === false ? "text-red-600 dark:text-red-400" :
-        highlight          ? "text-primary" : ""
-      )}>
-        {value}
-      </p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+    <div className="rounded-xl border border-border bg-card px-5 py-4 flex flex-col gap-3">
+      <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", iconBg)}>
+        <Icon className={cn("h-4 w-4", iconColor)} />
+      </div>
+      <div>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
+        <p className={cn("text-2xl font-bold leading-tight", valueColor)}>{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+      </div>
     </div>
   );
-}
-
-function cn(...classes: (string | undefined | false)[]): string {
-  return classes.filter(Boolean).join(" ");
 }
