@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -29,10 +29,20 @@ const STATUS_EMOJI: Record<TaskStatus, string> = {
 
 interface KanbanBoardProps {
   initialTasks: Task[];
+  pendingTask?: Task | null;
 }
 
-export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
+export function KanbanBoard({ initialTasks, pendingTask }: KanbanBoardProps) {
   const [tasks,        setTasks]        = useState<Task[]>(initialTasks);
+
+  // Sync newly-created tasks from the parent dialog into our local state
+  useEffect(() => {
+    if (!pendingTask) return;
+    setTasks((prev) => {
+      if (prev.find((t) => t.id === pendingTask.id)) return prev;
+      return [pendingTask, ...prev];
+    });
+  }, [pendingTask]);
   const [editingTask,  setEditingTask]  = useState<Task | null>(null);
   const [viewingTask,  setViewingTask]  = useState<Task | null>(null);
   const [sheetOpen,    setSheetOpen]    = useState(false);

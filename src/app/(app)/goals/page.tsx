@@ -984,19 +984,6 @@ export default function GoalsPage() {
                   <CardTitle className="text-base">AI Strategy</CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Confidence badge — visible in header as soon as strategy exists */}
-                  {strategy?.weekly_projection?.confidence && (
-                    <span className={cn(
-                      "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md",
-                      strategy.weekly_projection.confidence === "high"
-                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                        : strategy.weekly_projection.confidence === "medium"
-                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                        : "bg-muted text-muted-foreground"
-                    )}>
-                      {strategy.weekly_projection.confidence} confidence
-                    </span>
-                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -1046,20 +1033,67 @@ export default function GoalsPage() {
                     );
                   })()}
 
-                  {/* ── 2-col grid: Actions+Budget (left) | Risks+Projection (right) ── */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* ── 2. Monthly Projection — full-width strip ───────────── */}
+                  {strategy.weekly_projection && (
+                    <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <BarChart2 className="h-3.5 w-3.5 text-primary" />
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly Projection</h4>
+                        {strategy.weekly_projection.confidence && (
+                          <span className={cn(
+                            "ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md",
+                            strategy.weekly_projection.confidence === "high"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : strategy.weekly_projection.confidence === "medium"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {strategy.weekly_projection.confidence} confidence
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                          <p className="text-lg font-bold text-primary tabular-nums">
+                            ${Number(strategy.weekly_projection.projected_monthly_revenue ?? 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
+                          <p className={cn(
+                            "text-lg font-bold tabular-nums",
+                            Number(strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-rose-600 dark:text-rose-400"
+                          )}>
+                            ${Number(strategy.weekly_projection.projected_monthly_profit ?? 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
+                          <p className="text-lg font-bold tabular-nums">
+                            {Number(strategy.weekly_projection.projected_margin_pct ?? 0).toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 3-col grid: Actions (left) | Budget (center) | Risks (right) ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                     {/* ── Left column ──────────────────────────────────────── */}
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-3">
 
                       {/* Recommended Actions */}
                       {strategy.daily_actions?.length > 0 && (
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                          <div className="flex items-center gap-2 mb-3">
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                          <div className="flex items-center gap-2 mb-2">
                             <Zap className="h-3.5 w-3.5 text-primary" />
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommended Actions</h4>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {strategy.daily_actions.map((action, i) => {
                               const borderColor =
                                 action.priority === "high"   ? "border-l-rose-500"
@@ -1074,7 +1108,7 @@ export default function GoalsPage() {
                                 : action.priority === "medium" ? "bg-amber-500"
                                 : "bg-slate-400";
                               return (
-                                <div key={i} className={cn("flex items-start gap-2.5 px-3 py-2.5 rounded-xl border-l-4", borderColor, bgColor)}>
+                                <div key={i} className={cn("flex items-start gap-2 px-3 py-2 rounded-xl border-l-4", borderColor, bgColor)}>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
@@ -1082,7 +1116,7 @@ export default function GoalsPage() {
                                       </span>
                                       <span className="text-xs font-medium leading-snug">{action.action}</span>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{action.reasoning}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{action.reasoning}</p>
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
                                     <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", dotColor)} />
@@ -1097,12 +1131,12 @@ export default function GoalsPage() {
 
                       {/* Budget Allocation */}
                       {strategy.budget_allocation?.length > 0 && (
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                          <div className="flex items-center gap-2 mb-3">
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                          <div className="flex items-center gap-2 mb-2">
                             <Wallet className="h-3.5 w-3.5 text-primary" />
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Budget Allocation</h4>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {strategy.budget_allocation.map((alloc, i) => {
                               const isIncrease = alloc.change === "increase";
                               const isDecrease = alloc.change === "decrease";
@@ -1116,7 +1150,7 @@ export default function GoalsPage() {
                                 : isDecrease ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
                                 : "bg-muted/40 border-border";
                               return (
-                                <div key={i} className={cn("flex items-center gap-2.5 px-3 py-2 rounded-xl border", rowBg)}>
+                                <div key={i} className={cn("flex items-center gap-2 px-3 py-2 rounded-xl border", rowBg)}>
                                   <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide flex-shrink-0">
                                     {alloc.site}
                                   </span>
@@ -1138,17 +1172,17 @@ export default function GoalsPage() {
                       )}
                     </div>
 
-                    {/* ── Right column ─────────────────────────────────────── */}
-                    <div className="flex flex-col gap-4">
+                    {/* ── Right column — Risk Flags only ───────────────────── */}
+                    <div className="flex flex-col gap-3">
 
                       {/* Risk Flags */}
                       {strategy.risk_flags?.length > 0 && (
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                          <div className="flex items-center gap-2 mb-3">
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                          <div className="flex items-center gap-2 mb-2">
                             <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
                             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Risk Flags</h4>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {strategy.risk_flags.map((flag, i) => {
                               const isHigh = flag.severity === "high";
                               const isMed  = flag.severity === "medium";
@@ -1161,7 +1195,7 @@ export default function GoalsPage() {
                                 : isMed ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                                 : "bg-muted text-muted-foreground";
                               return (
-                                <div key={i} className={cn("flex items-start gap-2.5 px-3 py-2.5 rounded-xl border", rowBg)}>
+                                <div key={i} className={cn("flex items-start gap-2 px-3 py-2 rounded-xl border", rowBg)}>
                                   <AlertTriangle className={cn("h-3.5 w-3.5 flex-shrink-0 mt-0.5", iconColor)} />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs font-semibold">{flag.site}</p>
@@ -1173,41 +1207,6 @@ export default function GoalsPage() {
                                 </div>
                               );
                             })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Monthly Projection */}
-                      {strategy.weekly_projection && (
-                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <BarChart2 className="h-3.5 w-3.5 text-primary" />
-                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly Projection</h4>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                              <p className="text-base font-bold text-primary tabular-nums">
-                                ${Number(strategy.weekly_projection.projected_monthly_revenue ?? 0).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
-                              <p className={cn(
-                                "text-base font-bold tabular-nums",
-                                Number(strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-rose-600 dark:text-rose-400"
-                              )}>
-                                ${Number(strategy.weekly_projection.projected_monthly_profit ?? 0).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
-                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
-                              <p className="text-base font-bold tabular-nums">
-                                {Number(strategy.weekly_projection.projected_margin_pct ?? 0).toFixed(1)}%
-                              </p>
-                            </div>
                           </div>
                         </div>
                       )}

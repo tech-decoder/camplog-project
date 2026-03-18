@@ -18,9 +18,10 @@ import { TaskForm, TaskFormValues } from "@/components/tasks/task-form";
 import { Task } from "@/lib/types/tasks";
 
 export default function TasksPage() {
-  const [tasks,      setTasks]      = useState<Task[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [tasks,       setTasks]       = useState<Task[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [createOpen,  setCreateOpen]  = useState(false);
+  const [pendingTask, setPendingTask] = useState<Task | null>(null);
 
   useEffect(() => {
     fetch("/api/tasks")
@@ -47,7 +48,7 @@ export default function TasksPage() {
       throw new Error((body as { error?: string }).error ?? "Failed to create task");
     }
     const created: Task = await res.json();
-    setTasks((prev) => [created, ...prev]);
+    setPendingTask(created);   // signals KanbanBoard to prepend instantly
     setCreateOpen(false);
     toast.success("Task created");
   }
@@ -89,7 +90,7 @@ export default function TasksPage() {
             <span className="text-sm">Loading tasks...</span>
           </div>
         ) : (
-          <KanbanBoard initialTasks={tasks} />
+          <KanbanBoard initialTasks={tasks} pendingTask={pendingTask} />
         )}
       </div>
     </PageShell>
