@@ -12,6 +12,7 @@ import {
   Target,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   Calendar,
   Loader2,
   Sparkles,
@@ -26,9 +27,14 @@ import {
   ImageIcon,
   X,
   Check,
+  Zap,
+  ShieldAlert,
+  BarChart2,
+  Wallet,
 } from "lucide-react";
 import { format, startOfMonth, addMonths, subMonths } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { RevenueGoal, SiteMonthlyRevenue, GoalStrategy } from "@/lib/types/goals";
 import { useProfile } from "@/components/providers/profile-provider";
 import { formatDollar, formatPercent } from "@/lib/utils/metrics";
@@ -972,7 +978,9 @@ export default function GoalsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
                   <CardTitle className="text-base">AI Strategy</CardTitle>
                 </div>
                 <Button
@@ -992,176 +1000,227 @@ export default function GoalsPage() {
             </CardHeader>
             <CardContent>
               {generatingStrategy ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">
-                      Analyzing your data and generating strategy...
-                    </p>
+                /* ── Loading state ───────────────────────────────────────── */
+                <div className="flex flex-col items-center justify-center gap-3 py-10 rounded-xl bg-primary/5 border border-primary/15 text-center">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
+                  <p className="text-sm font-semibold text-primary">Analyzing your data…</p>
+                  <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                    Building a personalised strategy from your goals and site performance
+                  </p>
                 </div>
               ) : strategy ? (
-                <div className="space-y-6">
-                  {/* Summary + Pace */}
-                  <div className="flex items-start gap-3">
-                    <Badge
-                      variant="secondary"
-                      className={`text-xs flex-shrink-0 ${
-                        strategy.pace_status === "ahead"
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : strategy.pace_status === "on_track"
-                            ? "bg-primary/10 text-primary"
-                            : strategy.pace_status === "behind"
-                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                              : "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                      }`}
-                    >
-                      {strategy.pace_status === "ahead"
-                        ? "Ahead"
-                        : strategy.pace_status === "on_track"
-                          ? "On Track"
-                          : strategy.pace_status === "behind"
-                            ? "Behind"
-                            : "Critical"}
-                    </Badge>
-                    <p className="text-sm leading-relaxed">
-                      {strategy.strategy_summary}
-                    </p>
-                  </div>
+                <div className="space-y-0">
 
-                  {/* Priority Actions */}
+                  {/* ── 1. Status banner ──────────────────────────────────── */}
+                  {(() => {
+                    const cfg = {
+                      critical: { bg: "bg-rose-500/8 border-rose-200 dark:border-rose-800",   label: "Critical", labelColor: "text-rose-600 dark:text-rose-400" },
+                      behind:   { bg: "bg-amber-500/8 border-amber-200 dark:border-amber-800", label: "Behind",   labelColor: "text-amber-600 dark:text-amber-400" },
+                      on_track: { bg: "bg-primary/5 border-primary/20",                        label: "On Track", labelColor: "text-primary" },
+                      ahead:    { bg: "bg-emerald-500/8 border-emerald-200 dark:border-emerald-800", label: "Ahead", labelColor: "text-emerald-600 dark:text-emerald-400" },
+                    }[strategy.pace_status] ?? { bg: "bg-muted/40 border-border", label: strategy.pace_status, labelColor: "text-muted-foreground" };
+                    return (
+                      <div className={cn("rounded-xl border p-4 mb-5", cfg.bg)}>
+                        <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-1.5", cfg.labelColor)}>
+                          {cfg.label}
+                        </p>
+                        <p className="text-sm leading-relaxed">{strategy.strategy_summary}</p>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── 2. Recommended Actions ────────────────────────────── */}
                   {strategy.daily_actions?.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">
-                        Recommended Actions
-                      </h4>
+                    <div className="pt-5 border-t border-border/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Zap className="h-4 w-4 text-primary" />
+                        <h4 className="text-sm font-semibold">Recommended Actions</h4>
+                      </div>
                       <div className="space-y-2">
-                        {strategy.daily_actions.map((action, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
-                          >
-                            <Badge
-                              variant="secondary"
-                              className={`text-xs flex-shrink-0 mt-0.5 ${
-                                action.priority === "high"
-                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                                  : action.priority === "medium"
-                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                                    : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {action.priority}
-                            </Badge>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-primary/10 text-primary text-xs"
-                                >
-                                  {action.site}
-                                </Badge>
-                                <span className="text-sm font-medium">
-                                  {action.action}
-                                </span>
+                        {strategy.daily_actions.map((action, i) => {
+                          const borderColor =
+                            action.priority === "high"   ? "border-l-rose-500"
+                            : action.priority === "medium" ? "border-l-amber-500"
+                            : "border-l-slate-300 dark:border-l-slate-600";
+                          const bgColor =
+                            action.priority === "high"   ? "bg-rose-500/5"
+                            : action.priority === "medium" ? "bg-amber-500/5"
+                            : "bg-muted/40";
+                          const dotColor =
+                            action.priority === "high"   ? "bg-rose-500"
+                            : action.priority === "medium" ? "bg-amber-500"
+                            : "bg-slate-400";
+                          return (
+                            <div key={i} className={cn("flex items-start gap-3 p-3 rounded-xl border-l-4", borderColor, bgColor)}>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+                                    {action.site}
+                                  </span>
+                                  <span className="text-sm font-medium leading-snug">{action.action}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{action.reasoning}</p>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {action.reasoning}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                                <span className={cn("h-2 w-2 rounded-full flex-shrink-0", dotColor)} />
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{action.priority}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
 
-                  {/* Risk Flags */}
-                  {strategy.risk_flags?.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">
-                        Risk Flags
-                      </h4>
+                  {/* ── 3. Budget Allocation ──────────────────────────────── */}
+                  {strategy.budget_allocation?.length > 0 && (
+                    <div className="pt-5 border-t border-border/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Wallet className="h-4 w-4 text-primary" />
+                        <h4 className="text-sm font-semibold">Budget Allocation</h4>
+                      </div>
                       <div className="space-y-2">
-                        {strategy.risk_flags.map((flag, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-500/10"
-                          >
-                            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400 flex-shrink-0" />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">
-                                {flag.site}
+                        {strategy.budget_allocation.map((alloc, i) => {
+                          const isIncrease = alloc.change === "increase";
+                          const isDecrease = alloc.change === "decrease";
+                          const ChangeIcon = isIncrease ? TrendingUp : isDecrease ? TrendingDown : Minus;
+                          const changeColor = isIncrease
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : isDecrease ? "text-rose-600 dark:text-rose-400"
+                            : "text-muted-foreground";
+                          const rowBg = isIncrease
+                            ? "bg-emerald-500/5 border-emerald-200 dark:border-emerald-800"
+                            : isDecrease ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
+                            : "bg-muted/40 border-border";
+                          return (
+                            <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border", rowBg)}>
+                              <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide flex-shrink-0">
+                                {alloc.site}
                               </span>
-                              <span className="text-sm text-muted-foreground">
-                                {" "}
-                                · {flag.issue}
-                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <ChangeIcon className={cn("h-3.5 w-3.5 flex-shrink-0", changeColor)} />
+                                  <span className={cn("text-xs font-semibold capitalize", changeColor)}>{alloc.change}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ${alloc.current_daily_spend?.toFixed(0)}/day → <span className="font-medium text-foreground">${alloc.recommended_daily_spend?.toFixed(0)}/day</span>
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{alloc.reason}</p>
+                              </div>
                             </div>
-                            <Badge
-                              variant="secondary"
-                              className={`text-xs ${
-                                flag.severity === "high"
-                                  ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                                  : flag.severity === "medium"
-                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                                    : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {flag.severity}
-                            </Badge>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
 
-                  {/* Projection */}
+                  {/* ── 4. Risk Flags ────────────────────────────────────── */}
+                  {strategy.risk_flags?.length > 0 && (
+                    <div className="pt-5 border-t border-border/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ShieldAlert className="h-4 w-4 text-rose-500" />
+                        <h4 className="text-sm font-semibold">Risk Flags</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {strategy.risk_flags.map((flag, i) => {
+                          const isHigh = flag.severity === "high";
+                          const isMed  = flag.severity === "medium";
+                          const rowBg  = isHigh ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
+                                       : isMed  ? "bg-amber-500/5 border-amber-200 dark:border-amber-800"
+                                       : "bg-muted/40 border-border";
+                          const iconColor = isHigh ? "text-rose-500" : isMed ? "text-amber-500" : "text-muted-foreground";
+                          const pillColor = isHigh
+                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                            : isMed ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : "bg-muted text-muted-foreground";
+                          return (
+                            <div key={i} className={cn("flex items-start gap-3 p-3 rounded-xl border", rowBg)}>
+                              <AlertTriangle className={cn("h-4 w-4 flex-shrink-0 mt-0.5", iconColor)} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold">{flag.site}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{flag.issue}</p>
+                              </div>
+                              <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 mt-0.5", pillColor)}>
+                                {flag.severity}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 5. Monthly Projection ────────────────────────────── */}
                   {strategy.weekly_projection && (
-                    <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                      <h4 className="text-sm font-semibold mb-2">
-                        Monthly Projection
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground text-xs">
-                            Projected Revenue
-                          </p>
-                          <p className="font-semibold">
-                            $
-                            {strategy.weekly_projection.projected_monthly_revenue?.toLocaleString()}
+                    <div className="pt-5 border-t border-border/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <BarChart2 className="h-4 w-4 text-primary" />
+                          <h4 className="text-sm font-semibold">Monthly Projection</h4>
+                        </div>
+                        {strategy.weekly_projection.confidence && (
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md",
+                            strategy.weekly_projection.confidence === "high"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : strategy.weekly_projection.confidence === "medium"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {strategy.weekly_projection.confidence} confidence
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-xl border border-border bg-card px-4 py-3">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                          <p className="text-lg font-bold text-primary tabular-nums">
+                            ${strategy.weekly_projection.projected_monthly_revenue?.toLocaleString()}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-muted-foreground text-xs">
-                            Projected Profit
-                          </p>
-                          <p className="font-semibold">
-                            $
-                            {strategy.weekly_projection.projected_monthly_profit?.toLocaleString()}
+                        <div className="rounded-xl border border-border bg-card px-4 py-3">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
+                          <p className={cn(
+                            "text-lg font-bold tabular-nums",
+                            (strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-rose-600 dark:text-rose-400"
+                          )}>
+                            ${strategy.weekly_projection.projected_monthly_profit?.toLocaleString()}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-muted-foreground text-xs">
-                            Projected Margin
-                          </p>
-                          <p className="font-semibold">
-                            {strategy.weekly_projection.projected_margin_pct?.toFixed(
-                              1
-                            )}
-                            %
+                        <div className="rounded-xl border border-border bg-card px-4 py-3">
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
+                          <p className="text-lg font-bold tabular-nums">
+                            {strategy.weekly_projection.projected_margin_pct?.toFixed(1)}%
                           </p>
                         </div>
                       </div>
                     </div>
                   )}
+
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Sparkles className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Click &quot;Get AI Strategy&quot; to generate data-driven
-                    recommendations for hitting your monthly goals.
+                /* ── Empty state ─────────────────────────────────────────── */
+                <div className="flex flex-col items-center justify-center py-10 rounded-xl bg-primary/5 border border-primary/15 text-center">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold mb-1">No strategy generated yet</p>
+                  <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                    Generate a data-driven strategy from your goals and site performance to get prioritised recommendations.
                   </p>
+                  <Button
+                    size="sm"
+                    className="mt-4"
+                    onClick={handleGenerateStrategy}
+                    disabled={generatingStrategy}
+                  >
+                    <Sparkles className="h-4 w-4 mr-1.5" />
+                    Get AI Strategy
+                  </Button>
                 </div>
               )}
             </CardContent>
