@@ -14,6 +14,10 @@ export async function POST(
   const postMetrics: CampaignMetrics = body.post_metrics;
   const screenshotBase64: string | null = body.screenshot_base64 || null;
 
+  if (!postMetrics || Object.keys(postMetrics).length === 0) {
+    return NextResponse.json({ error: "No post-change metrics provided" }, { status: 400 });
+  }
+
   // Fetch the existing change
   const { data: change, error: fetchError } = await supabase
     .from("changes")

@@ -27,7 +27,7 @@ export async function generateImpactAssessment(
 ): Promise<ImpactResult> {
   const openai = getOpenAIClient();
 
-  const deltas = computeMetricDeltas(change.pre_metrics, postMetrics);
+  const deltas = computeMetricDeltas(change.pre_metrics ?? {}, postMetrics ?? {});
 
   const deltasTable = deltas
     .map(

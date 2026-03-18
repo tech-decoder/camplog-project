@@ -17,6 +17,7 @@ export function computeMetricDeltas(
   pre: CampaignMetrics,
   post: CampaignMetrics
 ): MetricDelta[] {
+  if (!pre || !post) return [];
   const deltas: MetricDelta[] = [];
 
   for (const [key, config] of Object.entries(METRIC_LABELS)) {

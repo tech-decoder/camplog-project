@@ -205,10 +205,14 @@ export default function ChangeDetailPage() {
         setChange(updated);
         toast.success("Impact review submitted");
       } else {
-        toast.error("Failed to submit review");
+        const body = await res.json().catch(() => ({}));
+        const msg = (body as { error?: string })?.error
+          ? `Failed: ${(body as { error?: string }).error}`
+          : "Failed to submit review";
+        toast.error(msg);
       }
     } catch {
-      toast.error("Failed to submit review");
+      toast.error("Failed to submit review — check your connection");
     } finally {
       setSubmitting(false);
     }
