@@ -26,6 +26,18 @@ export async function POST(
     return NextResponse.json({ error: "Goal not found" }, { status: 404 });
   }
 
+  // Fetch user profile for personalised strategy
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nickname, full_name")
+    .eq("id", userId)
+    .single();
+
+  const userName =
+    profile?.nickname ??
+    profile?.full_name?.split(" ")[0] ??
+    "there";
+
   // Fetch site revenue data
   const { data: siteData } = await supabase
     .from("site_monthly_revenue")
@@ -87,7 +99,8 @@ export async function POST(
       goal,
       progress,
       siteData || [],
-      recentChanges || []
+      recentChanges || [],
+      userName
     );
 
     // Save strategy to goal

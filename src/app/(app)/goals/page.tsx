@@ -983,19 +983,34 @@ export default function GoalsPage() {
                   </div>
                   <CardTitle className="text-base">AI Strategy</CardTitle>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleGenerateStrategy}
-                  disabled={generatingStrategy}
-                >
-                  {generatingStrategy ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-1" />
+                <div className="flex items-center gap-2">
+                  {/* Confidence badge — visible in header as soon as strategy exists */}
+                  {strategy?.weekly_projection?.confidence && (
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md",
+                      strategy.weekly_projection.confidence === "high"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : strategy.weekly_projection.confidence === "medium"
+                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {strategy.weekly_projection.confidence} confidence
+                    </span>
                   )}
-                  {strategy ? "Refresh Strategy" : "Get AI Strategy"}
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateStrategy}
+                    disabled={generatingStrategy}
+                  >
+                    {generatingStrategy ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 mr-1" />
+                    )}
+                    {strategy ? "Refresh Strategy" : "Get AI Strategy"}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1011,9 +1026,9 @@ export default function GoalsPage() {
                   </p>
                 </div>
               ) : strategy ? (
-                <div className="space-y-0">
+                <div className="space-y-4">
 
-                  {/* ── 1. Status banner ──────────────────────────────────── */}
+                  {/* ── 1. Status banner — single row ─────────────────────── */}
                   {(() => {
                     const cfg = {
                       critical: { bg: "bg-rose-500/8 border-rose-200 dark:border-rose-800",   label: "Critical", labelColor: "text-rose-600 dark:text-rose-400" },
@@ -1022,184 +1037,182 @@ export default function GoalsPage() {
                       ahead:    { bg: "bg-emerald-500/8 border-emerald-200 dark:border-emerald-800", label: "Ahead", labelColor: "text-emerald-600 dark:text-emerald-400" },
                     }[strategy.pace_status] ?? { bg: "bg-muted/40 border-border", label: strategy.pace_status, labelColor: "text-muted-foreground" };
                     return (
-                      <div className={cn("rounded-xl border p-4 mb-5", cfg.bg)}>
-                        <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-1.5", cfg.labelColor)}>
+                      <div className={cn("rounded-xl border px-4 py-3 flex items-start gap-3", cfg.bg)}>
+                        <span className={cn("text-[10px] font-bold uppercase tracking-widest flex-shrink-0 mt-0.5 min-w-[58px]", cfg.labelColor)}>
                           {cfg.label}
-                        </p>
+                        </span>
                         <p className="text-sm leading-relaxed">{strategy.strategy_summary}</p>
                       </div>
                     );
                   })()}
 
-                  {/* ── 2. Recommended Actions ────────────────────────────── */}
-                  {strategy.daily_actions?.length > 0 && (
-                    <div className="pt-5 border-t border-border/50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Zap className="h-4 w-4 text-primary" />
-                        <h4 className="text-sm font-semibold">Recommended Actions</h4>
-                      </div>
-                      <div className="space-y-2">
-                        {strategy.daily_actions.map((action, i) => {
-                          const borderColor =
-                            action.priority === "high"   ? "border-l-rose-500"
-                            : action.priority === "medium" ? "border-l-amber-500"
-                            : "border-l-slate-300 dark:border-l-slate-600";
-                          const bgColor =
-                            action.priority === "high"   ? "bg-rose-500/5"
-                            : action.priority === "medium" ? "bg-amber-500/5"
-                            : "bg-muted/40";
-                          const dotColor =
-                            action.priority === "high"   ? "bg-rose-500"
-                            : action.priority === "medium" ? "bg-amber-500"
-                            : "bg-slate-400";
-                          return (
-                            <div key={i} className={cn("flex items-start gap-3 p-3 rounded-xl border-l-4", borderColor, bgColor)}>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
-                                    {action.site}
-                                  </span>
-                                  <span className="text-sm font-medium leading-snug">{action.action}</span>
+                  {/* ── 2-col grid: Actions+Budget (left) | Risks+Projection (right) ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    {/* ── Left column ──────────────────────────────────────── */}
+                    <div className="flex flex-col gap-4">
+
+                      {/* Recommended Actions */}
+                      {strategy.daily_actions?.length > 0 && (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Zap className="h-3.5 w-3.5 text-primary" />
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommended Actions</h4>
+                          </div>
+                          <div className="space-y-2">
+                            {strategy.daily_actions.map((action, i) => {
+                              const borderColor =
+                                action.priority === "high"   ? "border-l-rose-500"
+                                : action.priority === "medium" ? "border-l-amber-500"
+                                : "border-l-slate-300 dark:border-l-slate-600";
+                              const bgColor =
+                                action.priority === "high"   ? "bg-rose-500/5"
+                                : action.priority === "medium" ? "bg-amber-500/5"
+                                : "bg-muted/40";
+                              const dotColor =
+                                action.priority === "high"   ? "bg-rose-500"
+                                : action.priority === "medium" ? "bg-amber-500"
+                                : "bg-slate-400";
+                              return (
+                                <div key={i} className={cn("flex items-start gap-2.5 px-3 py-2.5 rounded-xl border-l-4", borderColor, bgColor)}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                                        {action.site}
+                                      </span>
+                                      <span className="text-xs font-medium leading-snug">{action.action}</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{action.reasoning}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                                    <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", dotColor)} />
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{action.priority}</span>
+                                  </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{action.reasoning}</p>
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-                                <span className={cn("h-2 w-2 rounded-full flex-shrink-0", dotColor)} />
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{action.priority}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
-                  {/* ── 3. Budget Allocation ──────────────────────────────── */}
-                  {strategy.budget_allocation?.length > 0 && (
-                    <div className="pt-5 border-t border-border/50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Wallet className="h-4 w-4 text-primary" />
-                        <h4 className="text-sm font-semibold">Budget Allocation</h4>
-                      </div>
-                      <div className="space-y-2">
-                        {strategy.budget_allocation.map((alloc, i) => {
-                          const isIncrease = alloc.change === "increase";
-                          const isDecrease = alloc.change === "decrease";
-                          const ChangeIcon = isIncrease ? TrendingUp : isDecrease ? TrendingDown : Minus;
-                          const changeColor = isIncrease
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : isDecrease ? "text-rose-600 dark:text-rose-400"
-                            : "text-muted-foreground";
-                          const rowBg = isIncrease
-                            ? "bg-emerald-500/5 border-emerald-200 dark:border-emerald-800"
-                            : isDecrease ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
-                            : "bg-muted/40 border-border";
-                          return (
-                            <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl border", rowBg)}>
-                              <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide flex-shrink-0">
-                                {alloc.site}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <ChangeIcon className={cn("h-3.5 w-3.5 flex-shrink-0", changeColor)} />
-                                  <span className={cn("text-xs font-semibold capitalize", changeColor)}>{alloc.change}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ${Number(alloc.current_daily_spend ?? 0).toFixed(0)}/day → <span className="font-medium text-foreground">${Number(alloc.recommended_daily_spend ?? 0).toFixed(0)}/day</span>
+                      {/* Budget Allocation */}
+                      {strategy.budget_allocation?.length > 0 && (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Wallet className="h-3.5 w-3.5 text-primary" />
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Budget Allocation</h4>
+                          </div>
+                          <div className="space-y-2">
+                            {strategy.budget_allocation.map((alloc, i) => {
+                              const isIncrease = alloc.change === "increase";
+                              const isDecrease = alloc.change === "decrease";
+                              const ChangeIcon = isIncrease ? TrendingUp : isDecrease ? TrendingDown : Minus;
+                              const changeColor = isIncrease
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : isDecrease ? "text-rose-600 dark:text-rose-400"
+                                : "text-muted-foreground";
+                              const rowBg = isIncrease
+                                ? "bg-emerald-500/5 border-emerald-200 dark:border-emerald-800"
+                                : isDecrease ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
+                                : "bg-muted/40 border-border";
+                              return (
+                                <div key={i} className={cn("flex items-center gap-2.5 px-3 py-2 rounded-xl border", rowBg)}>
+                                  <span className="inline-flex items-center rounded-md bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide flex-shrink-0">
+                                    {alloc.site}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      <ChangeIcon className={cn("h-3 w-3 flex-shrink-0", changeColor)} />
+                                      <span className={cn("text-[10px] font-semibold capitalize", changeColor)}>{alloc.change}</span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        ${Number(alloc.current_daily_spend ?? 0).toFixed(0)} → <span className="font-medium text-foreground">${Number(alloc.recommended_daily_spend ?? 0).toFixed(0)}/day</span>
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{alloc.reason}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Right column ─────────────────────────────────────── */}
+                    <div className="flex flex-col gap-4">
+
+                      {/* Risk Flags */}
+                      {strategy.risk_flags?.length > 0 && (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Risk Flags</h4>
+                          </div>
+                          <div className="space-y-2">
+                            {strategy.risk_flags.map((flag, i) => {
+                              const isHigh = flag.severity === "high";
+                              const isMed  = flag.severity === "medium";
+                              const rowBg  = isHigh ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
+                                           : isMed  ? "bg-amber-500/5 border-amber-200 dark:border-amber-800"
+                                           : "bg-muted/40 border-border";
+                              const iconColor = isHigh ? "text-rose-500" : isMed ? "text-amber-500" : "text-muted-foreground";
+                              const pillColor = isHigh
+                                ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
+                                : isMed ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                : "bg-muted text-muted-foreground";
+                              return (
+                                <div key={i} className={cn("flex items-start gap-2.5 px-3 py-2.5 rounded-xl border", rowBg)}>
+                                  <AlertTriangle className={cn("h-3.5 w-3.5 flex-shrink-0 mt-0.5", iconColor)} />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold">{flag.site}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{flag.issue}</p>
+                                  </div>
+                                  <span className={cn("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5", pillColor)}>
+                                    {flag.severity}
                                   </span>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{alloc.reason}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
-                  {/* ── 4. Risk Flags ────────────────────────────────────── */}
-                  {strategy.risk_flags?.length > 0 && (
-                    <div className="pt-5 border-t border-border/50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <ShieldAlert className="h-4 w-4 text-rose-500" />
-                        <h4 className="text-sm font-semibold">Risk Flags</h4>
-                      </div>
-                      <div className="space-y-2">
-                        {strategy.risk_flags.map((flag, i) => {
-                          const isHigh = flag.severity === "high";
-                          const isMed  = flag.severity === "medium";
-                          const rowBg  = isHigh ? "bg-rose-500/5 border-rose-200 dark:border-rose-800"
-                                       : isMed  ? "bg-amber-500/5 border-amber-200 dark:border-amber-800"
-                                       : "bg-muted/40 border-border";
-                          const iconColor = isHigh ? "text-rose-500" : isMed ? "text-amber-500" : "text-muted-foreground";
-                          const pillColor = isHigh
-                            ? "bg-rose-500/10 text-rose-700 dark:text-rose-400"
-                            : isMed ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                            : "bg-muted text-muted-foreground";
-                          return (
-                            <div key={i} className={cn("flex items-start gap-3 p-3 rounded-xl border", rowBg)}>
-                              <AlertTriangle className={cn("h-4 w-4 flex-shrink-0 mt-0.5", iconColor)} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold">{flag.site}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{flag.issue}</p>
-                              </div>
-                              <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 mt-0.5", pillColor)}>
-                                {flag.severity}
-                              </span>
+                      {/* Monthly Projection */}
+                      {strategy.weekly_projection && (
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <BarChart2 className="h-3.5 w-3.5 text-primary" />
+                            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly Projection</h4>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                              <p className="text-base font-bold text-primary tabular-nums">
+                                ${Number(strategy.weekly_projection.projected_monthly_revenue ?? 0).toLocaleString()}
+                              </p>
                             </div>
-                          );
-                        })}
-                      </div>
+                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
+                              <p className={cn(
+                                "text-base font-bold tabular-nums",
+                                Number(strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-rose-600 dark:text-rose-400"
+                              )}>
+                                ${Number(strategy.weekly_projection.projected_monthly_profit ?? 0).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="rounded-lg border border-border bg-card px-3 py-2.5">
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
+                              <p className="text-base font-bold tabular-nums">
+                                {Number(strategy.weekly_projection.projected_margin_pct ?? 0).toFixed(1)}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* ── 5. Monthly Projection ────────────────────────────── */}
-                  {strategy.weekly_projection && (
-                    <div className="pt-5 border-t border-border/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <BarChart2 className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold">Monthly Projection</h4>
-                        </div>
-                        {strategy.weekly_projection.confidence && (
-                          <span className={cn(
-                            "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md",
-                            strategy.weekly_projection.confidence === "high"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : strategy.weekly_projection.confidence === "medium"
-                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                              : "bg-muted text-muted-foreground"
-                          )}>
-                            {strategy.weekly_projection.confidence} confidence
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="rounded-xl border border-border bg-card px-4 py-3">
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                          <p className="text-lg font-bold text-primary tabular-nums">
-                            ${Number(strategy.weekly_projection.projected_monthly_revenue ?? 0).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-border bg-card px-4 py-3">
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
-                          <p className={cn(
-                            "text-lg font-bold tabular-nums",
-                            Number(strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-rose-600 dark:text-rose-400"
-                          )}>
-                            ${Number(strategy.weekly_projection.projected_monthly_profit ?? 0).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-border bg-card px-4 py-3">
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
-                          <p className="text-lg font-bold tabular-nums">
-                            {Number(strategy.weekly_projection.projected_margin_pct ?? 0).toFixed(1)}%
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
 
                 </div>
               ) : (

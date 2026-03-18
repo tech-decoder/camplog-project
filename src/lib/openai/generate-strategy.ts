@@ -6,7 +6,8 @@ export async function generateGoalStrategy(
   goal: Record<string, unknown>,
   progress: Record<string, unknown>,
   siteData: Array<Record<string, unknown>>,
-  recentChanges: Array<Record<string, unknown>>
+  recentChanges: Array<Record<string, unknown>>,
+  userName = "there"
 ): Promise<GoalStrategy> {
   const openai = getOpenAIClient();
 
@@ -32,6 +33,7 @@ export async function generateGoalStrategy(
       : "No recent changes.";
 
   const context = `
+User: ${userName}
 Month: ${goal.month}
 Target Revenue: $${goal.target_revenue || "not set"}
 Target Profit: $${goal.target_profit || "not set"}
