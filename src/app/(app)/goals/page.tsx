@@ -1104,7 +1104,7 @@ export default function GoalsPage() {
                                   <ChangeIcon className={cn("h-3.5 w-3.5 flex-shrink-0", changeColor)} />
                                   <span className={cn("text-xs font-semibold capitalize", changeColor)}>{alloc.change}</span>
                                   <span className="text-xs text-muted-foreground">
-                                    ${alloc.current_daily_spend?.toFixed(0)}/day → <span className="font-medium text-foreground">${alloc.recommended_daily_spend?.toFixed(0)}/day</span>
+                                    ${Number(alloc.current_daily_spend ?? 0).toFixed(0)}/day → <span className="font-medium text-foreground">${Number(alloc.recommended_daily_spend ?? 0).toFixed(0)}/day</span>
                                   </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{alloc.reason}</p>
@@ -1177,24 +1177,24 @@ export default function GoalsPage() {
                         <div className="rounded-xl border border-border bg-card px-4 py-3">
                           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
                           <p className="text-lg font-bold text-primary tabular-nums">
-                            ${strategy.weekly_projection.projected_monthly_revenue?.toLocaleString()}
+                            ${Number(strategy.weekly_projection.projected_monthly_revenue ?? 0).toLocaleString()}
                           </p>
                         </div>
                         <div className="rounded-xl border border-border bg-card px-4 py-3">
                           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Profit</p>
                           <p className={cn(
                             "text-lg font-bold tabular-nums",
-                            (strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
+                            Number(strategy.weekly_projection.projected_monthly_profit ?? 0) >= 0
                               ? "text-emerald-600 dark:text-emerald-400"
                               : "text-rose-600 dark:text-rose-400"
                           )}>
-                            ${strategy.weekly_projection.projected_monthly_profit?.toLocaleString()}
+                            ${Number(strategy.weekly_projection.projected_monthly_profit ?? 0).toLocaleString()}
                           </p>
                         </div>
                         <div className="rounded-xl border border-border bg-card px-4 py-3">
                           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Margin</p>
                           <p className="text-lg font-bold tabular-nums">
-                            {strategy.weekly_projection.projected_margin_pct?.toFixed(1)}%
+                            {Number(strategy.weekly_projection.projected_margin_pct ?? 0).toFixed(1)}%
                           </p>
                         </div>
                       </div>
