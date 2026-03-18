@@ -36,4 +36,5 @@ export interface TeamOverview {
   total_revenue:  number;
   total_profit:   number;
   total_fb_spend: number;
+  total_sites:    number;
 }

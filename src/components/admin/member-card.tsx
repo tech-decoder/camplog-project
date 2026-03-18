@@ -141,17 +141,26 @@ export function MemberCard({ member }: MemberCardProps) {
 
         {/* ── Sites ────────────────────────────────────────────────── */}
         <div className="flex flex-wrap gap-1 items-center">
-          <span className="text-xs text-muted-foreground mr-0.5">Sites:</span>
+          <span className="text-xs text-muted-foreground mr-0.5">
+            Sites{member.site_count > 0 ? ` (${member.site_count})` : ""}:
+          </span>
           {member.sites.length > 0 ? (
-            member.sites.map((s) => (
-              <Badge
-                key={s}
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0 h-4 font-semibold uppercase"
-              >
-                {s}
-              </Badge>
-            ))
+            <>
+              {member.sites.slice(0, 6).map((s) => (
+                <Badge
+                  key={s}
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 h-4 font-semibold uppercase"
+                >
+                  {s}
+                </Badge>
+              ))}
+              {member.sites.length > 6 && (
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  +{member.sites.length - 6} more
+                </span>
+              )}
+            </>
           ) : (
             <span className="text-xs text-muted-foreground">None added</span>
           )}

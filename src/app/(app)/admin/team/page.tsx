@@ -71,7 +71,10 @@ export default function TeamPage() {
       <GradientPageHeader
         icon={Users}
         title="Team Overview"
-        description={`Campaign performance for all members · ${monthLabel}`}
+        description={overview
+          ? `${overview.members.length} members · ${overview.total_sites} sites · ${monthLabel}`
+          : `Campaign performance for all members · ${monthLabel}`
+        }
         actions={
           /* Month navigator */
           <div className="flex items-center gap-1 rounded-lg border border-border bg-background px-1">
@@ -98,9 +101,9 @@ export default function TeamPage() {
       {overview && !loading && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <SummaryTile
-            label="Members"
-            value={String(overview.members.length)}
-            sub="users tracked"
+            label="Total Sites"
+            value={String(overview.total_sites)}
+            sub={`${overview.members.length} members`}
           />
           <SummaryTile
             label="Total Revenue"
