@@ -47,6 +47,7 @@ export async function POST(
       impact_summary: assessment.impact_summary,
       impact_verdict: assessment.impact_verdict,
       impact_kpi_trends: assessment.kpi_trends || null,
+      impact_action_points: assessment.action_points || null,
       impact_reviewed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

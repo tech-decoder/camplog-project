@@ -80,6 +80,7 @@ export interface Change {
     ad_cpc?: { trend: string; detail: string };
     fb_margin?: { trend: string; detail: string };
   } | null;
+  impact_action_points?: string[] | null;
   status: ChangeStatus;
   void_reason: string | null;
   tags: string[];

@@ -17,6 +17,7 @@ interface ImpactResult {
     ad_cpc?: KpiTrend;
     fb_margin?: KpiTrend;
   } | null;
+  action_points?: string[] | null;
 }
 
 export async function generateImpactAssessment(
@@ -71,7 +72,7 @@ ${screenshotBase64 ? "A screenshot of the dash.ltv.so dashboard is attached. Use
       { role: "user", content: userContent },
     ],
     response_format: { type: "json_object" },
-    max_tokens: 1500,
+    max_tokens: 2000,
     temperature: 0.2,
   });
 
@@ -90,12 +91,14 @@ ${screenshotBase64 ? "A screenshot of the dash.ltv.so dashboard is attached. Use
       impact_summary: parsed.impact_summary || "Unable to generate assessment.",
       impact_verdict: parsed.impact_verdict || "inconclusive",
       kpi_trends: parsed.kpi_trends || null,
+      action_points: Array.isArray(parsed.action_points) ? parsed.action_points : null,
     };
   } catch {
     return {
       impact_summary: "Unable to parse impact assessment.",
       impact_verdict: "inconclusive",
       kpi_trends: null,
+      action_points: null,
     };
   }
 }

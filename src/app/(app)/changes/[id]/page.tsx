@@ -30,6 +30,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 import { Change, CampaignMetrics } from "@/lib/types/changes";
 import {
   ACTION_TYPE_CONFIG,
@@ -771,176 +772,214 @@ export default function ChangeDetailPage() {
       )}
 
       {/* AI Impact Assessment — full width */}
-      {!isVoided && change.impact_summary && (
-        <Card className={`overflow-hidden ${
+      {!isVoided && change.impact_summary && (() => {
+        const verdictColor =
+          change.impact_verdict === "positive" ? "bg-emerald-500"
+          : change.impact_verdict === "negative" ? "bg-rose-500"
+          : change.impact_verdict === "inconclusive" ? "bg-amber-500"
+          : "bg-border";
+        const verdictBorder =
           change.impact_verdict === "positive" ? "border-emerald-500/30"
           : change.impact_verdict === "negative" ? "border-rose-500/30"
           : change.impact_verdict === "inconclusive" ? "border-amber-500/30"
-          : "border-border"
-        }`}>
-          {/* Colored accent bar */}
-          <div className={`h-1 w-full ${
-            change.impact_verdict === "positive" ? "bg-emerald-500"
-            : change.impact_verdict === "negative" ? "bg-rose-500"
-            : change.impact_verdict === "inconclusive" ? "bg-amber-500"
-            : "bg-border"
-          }`} />
+          : "border-border";
+        const verdictIconBg =
+          change.impact_verdict === "positive" ? "bg-emerald-500/15"
+          : change.impact_verdict === "negative" ? "bg-rose-500/15"
+          : change.impact_verdict === "inconclusive" ? "bg-amber-500/15"
+          : "bg-muted";
+        const verdictIconColor =
+          change.impact_verdict === "positive" ? "text-emerald-600 dark:text-emerald-400"
+          : change.impact_verdict === "negative" ? "text-rose-600 dark:text-rose-400"
+          : change.impact_verdict === "inconclusive" ? "text-amber-600 dark:text-amber-400"
+          : "text-muted-foreground";
+        const summaryCallout =
+          change.impact_verdict === "positive" ? "bg-emerald-500/5 border-emerald-500"
+          : change.impact_verdict === "negative" ? "bg-rose-500/5 border-rose-500"
+          : change.impact_verdict === "inconclusive" ? "bg-amber-500/5 border-amber-500"
+          : "bg-muted/50 border-border";
 
-          <CardHeader className="pb-3 pt-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className={`shrink-0 rounded-full p-2 ${
-                  change.impact_verdict === "positive" ? "bg-emerald-500/15"
-                  : change.impact_verdict === "negative" ? "bg-rose-500/15"
-                  : change.impact_verdict === "inconclusive" ? "bg-amber-500/15"
-                  : "bg-muted"
-                }`}>
-                  {change.impact_verdict === "positive"
-                    ? <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    : change.impact_verdict === "negative"
-                      ? <TrendingDown className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                      : <Minus className="h-4 w-4 text-muted-foreground" />}
+        const kpiMeta = [
+          { key: "fb_cpc"    as const, label: "FB CPC",    preKey: "fb_cpc"        as keyof typeof change.pre_metrics, unit: "$"  as const, goodDirection: "lower"  as const },
+          { key: "ad_rpm"    as const, label: "Ad RPM",    preKey: "ad_rpm"        as keyof typeof change.pre_metrics, unit: "$"  as const, goodDirection: "higher" as const },
+          { key: "ad_cpc"    as const, label: "Ad CPC",    preKey: "ad_cpc"        as keyof typeof change.pre_metrics, unit: "$"  as const, goodDirection: "higher" as const },
+          { key: "fb_margin" as const, label: "FB Margin", preKey: "fb_margin_pct" as keyof typeof change.pre_metrics, unit: "%"  as const, goodDirection: "higher" as const },
+        ];
+
+        const trendBase: Record<string, { statusLabel: string; color: string; bg: string; iconBg: string }> = {
+          improving:          { statusLabel: "Improving",   color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/8 border-emerald-500/25",  iconBg: "bg-emerald-500/15" },
+          declining:          { statusLabel: "Declining",   color: "text-rose-700 dark:text-rose-400",       bg: "bg-rose-500/8 border-rose-500/25",        iconBg: "bg-rose-500/15"    },
+          spike_then_drop:    { statusLabel: "Spike → Drop", color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-500/8 border-amber-500/25",      iconBg: "bg-amber-500/15"   },
+          drop_then_recovery: { statusLabel: "Recovering",  color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-500/8 border-amber-500/25",      iconBg: "bg-amber-500/15"   },
+          volatile:           { statusLabel: "Volatile",    color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-500/8 border-amber-500/25",      iconBg: "bg-amber-500/15"   },
+          stable:             { statusLabel: "Stable",      color: "text-muted-foreground",                  bg: "bg-muted/40 border-border",               iconBg: "bg-muted"          },
+          insufficient_data:  { statusLabel: "No Data",     color: "text-muted-foreground",                  bg: "bg-muted/40 border-border",               iconBg: "bg-muted"          },
+        };
+
+        const formatKpiValue = (val: number | string | undefined, unit: "$" | "%") => {
+          if (val == null) return "–";
+          const n = Number(val);
+          if (unit === "$") return `$${n.toFixed(n < 1 ? 3 : 2)}`;
+          return `${n.toFixed(1)}%`;
+        };
+
+        return (
+          <Card className={`overflow-hidden ${verdictBorder}`}>
+            {/* Coloured top bar */}
+            <div className={`h-1 w-full ${verdictColor}`} />
+
+            <CardHeader className="pb-3 pt-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`shrink-0 rounded-full p-2.5 ${verdictIconBg}`}>
+                    {change.impact_verdict === "positive"
+                      ? <TrendingUp className={`h-4 w-4 ${verdictIconColor}`} />
+                      : change.impact_verdict === "negative"
+                        ? <TrendingDown className={`h-4 w-4 ${verdictIconColor}`} />
+                        : <Minus className={`h-4 w-4 ${verdictIconColor}`} />}
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">AI Impact Assessment</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">Analyzed by CampLog · your ad arbitrage analyst</p>
+                  </div>
                 </div>
+                {change.impact_verdict && (
+                  <Badge
+                    variant="secondary"
+                    className={`shrink-0 text-xs font-semibold px-3 py-1.5 ${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
+                  >
+                    {VERDICT_CONFIG[change.impact_verdict]?.label}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+
+              {/* ── Summary callout ── */}
+              <div className={`rounded-lg px-4 py-3.5 border-l-4 ${summaryCallout}`}>
+                <p className="text-sm leading-relaxed text-foreground/90">{change.impact_summary}</p>
+              </div>
+
+              {/* ── Metric Breakdown ── */}
+              {change.impact_kpi_trends && (
                 <div>
-                  <CardTitle className="text-base">AI Impact Assessment</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Automated pre/post metrics analysis</p>
-                </div>
-              </div>
-              {change.impact_verdict && (
-                <Badge
-                  variant="secondary"
-                  className={`shrink-0 text-xs font-semibold px-2.5 py-1 ${VERDICT_CONFIG[change.impact_verdict]?.bgColor} ${VERDICT_CONFIG[change.impact_verdict]?.color}`}
-                >
-                  {VERDICT_CONFIG[change.impact_verdict]?.label}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                    Metric Breakdown
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {kpiMeta.map(({ key, label, preKey, unit, goodDirection }) => {
+                      const trend = change.impact_kpi_trends?.[key];
+                      if (!trend) return null;
 
-          <CardContent className="space-y-5">
-            {/* Summary callout */}
-            <div className={`rounded-lg px-4 py-3 border-l-4 ${
-              change.impact_verdict === "positive"
-                ? "bg-emerald-500/5 border-emerald-500"
-                : change.impact_verdict === "negative"
-                  ? "bg-rose-500/5 border-rose-500"
-                  : change.impact_verdict === "inconclusive"
-                    ? "bg-amber-500/5 border-amber-500"
-                    : "bg-muted/50 border-border"
-            }`}>
-              <p className="text-sm leading-relaxed text-foreground/90">{change.impact_summary}</p>
-            </div>
-
-            {/* KPI Trend Cards */}
-            {change.impact_kpi_trends && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                  Metric Breakdown
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(
-                    [
-                      { key: "fb_cpc", label: "FB CPC", goodDirection: "lower" },
-                      { key: "ad_rpm", label: "Ad RPM", goodDirection: "higher" },
-                      { key: "ad_cpc", label: "Ad CPC", goodDirection: "higher" },
-                      { key: "fb_margin", label: "FB Margin", goodDirection: "higher" },
-                    ] as const
-                  ).map(({ key, label, goodDirection }) => {
-                    const trend = change.impact_kpi_trends?.[key];
-                    if (!trend) return null;
-
-                    const trendConfig: Record<string, {
-                      icon: React.ReactNode;
-                      statusLabel: string;
-                      color: string;
-                      bg: string;
-                      iconBg: string;
-                    }> = {
-                      improving: {
-                        icon: goodDirection === "lower"
+                      const base = trendBase[trend.trend] || trendBase.stable;
+                      let trendIcon: React.ReactNode;
+                      if (trend.trend === "improving") {
+                        trendIcon = goodDirection === "lower"
                           ? <TrendingDown className="h-3.5 w-3.5" />
-                          : <TrendingUp className="h-3.5 w-3.5" />,
-                        statusLabel: "Improving",
-                        color: "text-emerald-700 dark:text-emerald-400",
-                        bg: "bg-emerald-500/8 border-emerald-500/25",
-                        iconBg: "bg-emerald-500/15",
-                      },
-                      declining: {
-                        icon: goodDirection === "lower"
+                          : <TrendingUp className="h-3.5 w-3.5" />;
+                      } else if (trend.trend === "declining") {
+                        trendIcon = goodDirection === "lower"
                           ? <TrendingUp className="h-3.5 w-3.5" />
-                          : <TrendingDown className="h-3.5 w-3.5" />,
-                        statusLabel: "Declining",
-                        color: "text-rose-700 dark:text-rose-400",
-                        bg: "bg-rose-500/8 border-rose-500/25",
-                        iconBg: "bg-rose-500/15",
-                      },
-                      spike_then_drop: {
-                        icon: <TrendingDown className="h-3.5 w-3.5" />,
-                        statusLabel: "Spike → Drop",
-                        color: "text-amber-700 dark:text-amber-400",
-                        bg: "bg-amber-500/8 border-amber-500/25",
-                        iconBg: "bg-amber-500/15",
-                      },
-                      drop_then_recovery: {
-                        icon: <TrendingUp className="h-3.5 w-3.5" />,
-                        statusLabel: "Recovering",
-                        color: "text-amber-700 dark:text-amber-400",
-                        bg: "bg-amber-500/8 border-amber-500/25",
-                        iconBg: "bg-amber-500/15",
-                      },
-                      volatile: {
-                        icon: <Minus className="h-3.5 w-3.5" />,
-                        statusLabel: "Volatile",
-                        color: "text-amber-700 dark:text-amber-400",
-                        bg: "bg-amber-500/8 border-amber-500/25",
-                        iconBg: "bg-amber-500/15",
-                      },
-                      stable: {
-                        icon: <Minus className="h-3.5 w-3.5" />,
-                        statusLabel: "Stable",
-                        color: "text-muted-foreground",
-                        bg: "bg-muted/40 border-border",
-                        iconBg: "bg-muted",
-                      },
-                      insufficient_data: {
-                        icon: <Minus className="h-3.5 w-3.5" />,
-                        statusLabel: "No Data",
-                        color: "text-muted-foreground",
-                        bg: "bg-muted/40 border-border",
-                        iconBg: "bg-muted",
-                      },
-                    };
+                          : <TrendingDown className="h-3.5 w-3.5" />;
+                      } else if (trend.trend === "spike_then_drop") {
+                        trendIcon = <TrendingDown className="h-3.5 w-3.5" />;
+                      } else if (trend.trend === "drop_then_recovery") {
+                        trendIcon = <TrendingUp className="h-3.5 w-3.5" />;
+                      } else {
+                        trendIcon = <Minus className="h-3.5 w-3.5" />;
+                      }
 
-                    const cfg = trendConfig[trend.trend] || trendConfig.stable;
+                      const preVal = change.pre_metrics?.[preKey];
+                      const postVal = change.post_metrics?.[preKey];
+                      const hasValues = preVal != null || postVal != null;
 
-                    return (
-                      <div key={key} className={`rounded-xl border p-3.5 flex flex-col gap-2.5 ${cfg.bg}`}>
-                        {/* Top row: label + icon */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {label}
-                          </span>
-                          <div className={`rounded-full p-1.5 ${cfg.iconBg}`}>
-                            <span className={cfg.color}>{cfg.icon}</span>
+                      return (
+                        <div key={key} className={`rounded-xl border p-3.5 flex flex-col gap-2 ${base.bg}`}>
+                          {/* Label + icon */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              {label}
+                            </span>
+                            <div className={`rounded-full p-1.5 ${base.iconBg}`}>
+                              <span className={base.color}>{trendIcon}</span>
+                            </div>
                           </div>
+
+                          {/* Pre → Post */}
+                          {hasValues && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-mono text-muted-foreground">
+                                {formatKpiValue(preVal, unit)}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground/50">→</span>
+                              <span className={`text-xs font-mono font-semibold ${base.color}`}>
+                                {formatKpiValue(postVal, unit)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Status */}
+                          <p className={`text-sm font-bold leading-none ${base.color}`}>{base.statusLabel}</p>
+
+                          {/* Detail */}
+                          {trend.detail && (
+                            <p className="text-[11px] leading-snug text-muted-foreground line-clamp-3">
+                              {trend.detail}
+                            </p>
+                          )}
                         </div>
-                        {/* Status pill */}
-                        <p className={`text-sm font-bold ${cfg.color}`}>{cfg.statusLabel}</p>
-                        {/* Detail text — always visible, not just tooltip */}
-                        {trend.detail && (
-                          <p className="text-[11px] leading-snug text-muted-foreground line-clamp-3">
-                            {trend.detail}
-                          </p>
-                        )}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Action Points ── */}
+              {change.impact_action_points && change.impact_action_points.length > 0 && (
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 mb-3.5">
+                    <div className="rounded-full bg-amber-500/15 p-1.5">
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      Action Points
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {change.impact_action_points.map((point, i) => (
+                      <div key={i} className="flex gap-3">
+                        <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <p className="text-sm leading-relaxed text-foreground/85">{point}</p>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── CampLog footer ── */}
+              <div>
+                <Separator className="mb-3" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="rounded-full bg-primary/10 p-1">
+                    <Target className="h-3 w-3 text-primary" />
+                  </div>
+                  <span>
+                    Analyzed by{" "}
+                    <span className="font-semibold text-foreground">CampLog</span>
+                    {change.impact_reviewed_at && (
+                      <> · {format(new Date(change.impact_reviewed_at), "MMM d, yyyy")}</>
+                    )}
+                  </span>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Impact Review Form — only for non-pause, non-reviewed, non-voided changes */}
       {needsReview && !isVoided && (
