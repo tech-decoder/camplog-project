@@ -39,10 +39,10 @@ export function ChatMessage({ message }: MessageProps) {
     >
       <div
         className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-3 overflow-hidden",
+          "rounded-2xl px-4 py-3 overflow-hidden",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground"
+            ? "max-w-xl bg-primary text-primary-foreground"
+            : "max-w-[85%] bg-muted text-foreground"
         )}
       >
         {/* Images */}
