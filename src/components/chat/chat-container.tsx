@@ -155,7 +155,7 @@ export function ChatContainer() {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="space-y-4">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
