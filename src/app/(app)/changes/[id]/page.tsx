@@ -348,7 +348,7 @@ export default function ChangeDetailPage() {
   const siteInfo = change.site ? SITE_ABBREVIATION_MAP[change.site] : null;
 
   return (
-    <div className="space-y-6 max-w-5xl" onPaste={handlePaste}>
+    <div className="space-y-6 max-w-5xl mx-auto" onPaste={handlePaste}>
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
